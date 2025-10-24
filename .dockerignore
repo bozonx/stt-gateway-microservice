@@ -21,6 +21,7 @@ tsconfig.spec.json
 .env.development
 .env.*.local
 env.development.example
+env.production.example
 *.log
 npm-debug.log*
 pnpm-debug.log*
@@ -39,7 +40,6 @@ dev_docs/
 README.md
 CHANGELOG.md
 *.md
-!package.json
 
 # Git
 .git/
@@ -56,8 +56,14 @@ docker-compose*.yml
 .github/
 .gitlab-ci.yml
 
+# TypeScript configs (only keep tsconfig.build.json for production)
+tsconfig.json
+tsconfig.eslint.json
+nest-cli.json
+
 # Misc
 tmp/
 temp/
 *.tmp
+LICENSE
 

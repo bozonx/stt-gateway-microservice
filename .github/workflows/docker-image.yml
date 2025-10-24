@@ -35,6 +35,9 @@ jobs:
       - name: Run unit tests
         run: pnpm test:unit
 
+      - name: Remove dev dependencies
+        run: pnpm prune --prod
+
       - name: Build the project
         run: pnpm build
 
