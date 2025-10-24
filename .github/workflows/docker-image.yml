@@ -20,7 +20,7 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: latest
+          version: 10.13.1
 
       - name: Install dependencies
         run: pnpm install
@@ -28,8 +28,14 @@ jobs:
       - name: Run unit tests
         run: pnpm test:unit
 
+      - name: Get version from package.json
+        id: version
+        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
       - name: Build the Docker image
-        run: docker build . --file docker/Dockerfile --tag bozonx/stt-gateway-microservice:latest
+        run: |
+          docker build . --file docker/Dockerfile --tag bozonx/stt-gateway-microservice:${{ steps.version.outputs.VERSION }}
+          docker build . --file docker/Dockerfile --tag bozonx/stt-gateway-microservice:latest
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3
@@ -38,4 +44,6 @@ jobs:
           password: ${{ secrets.DOCKER_ACCESS_TOKEN }}
 
       - name: Push to Docker Hub
-        run: docker push bozonx/stt-gateway-microservice:latest
+        run: |
+          docker push bozonx/stt-gateway-microservice:${{ steps.version.outputs.VERSION }}
+          docker push bozonx/stt-gateway-microservice:latest
