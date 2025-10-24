@@ -12,15 +12,22 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Get versions from package.json
+        id: versions
+        run: |
+          echo "APP_VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+          echo "PNPM_VERSION=$(node -p "require('./package.json').packageManager.split('@')[1]")" >> $GITHUB_OUTPUT
+          echo "NODE_VERSION=$(node -p "require('./package.json').engines.node.replace('>=', '').split('.')[0]")" >> $GITHUB_OUTPUT
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '22'
+          node-version: ${{ steps.versions.outputs.NODE_VERSION }}
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.13.1
+          version: ${{ steps.versions.outputs.PNPM_VERSION }}
 
       - name: Install dependencies
         run: pnpm install
@@ -31,13 +38,9 @@ jobs:
       - name: Build the project
         run: pnpm build
 
-      - name: Get version from package.json
-        id: version
-        run: echo "VERSION=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
-
       - name: Build the Docker image
         run: |
-          docker build . --file docker/Dockerfile --tag bozonx/stt-gateway-microservice:${{ steps.version.outputs.VERSION }}
+          docker build . --file docker/Dockerfile --tag bozonx/stt-gateway-microservice:${{ steps.versions.outputs.APP_VERSION }}
           docker build . --file docker/Dockerfile --tag bozonx/stt-gateway-microservice:latest
 
       - name: Login to Docker Hub
@@ -48,5 +51,5 @@ jobs:
 
       - name: Push to Docker Hub
         run: |
-          docker push bozonx/stt-gateway-microservice:${{ steps.version.outputs.VERSION }}
+          docker push bozonx/stt-gateway-microservice:${{ steps.versions.outputs.APP_VERSION }}
           docker push bozonx/stt-gateway-microservice:latest
