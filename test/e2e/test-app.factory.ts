@@ -12,7 +12,11 @@ export async function createTestApp(): Promise<NestFastifyApplication> {
     imports: [AppModule],
   }).compile();
 
-  const app = moduleRef.createNestApplication<NestFastifyApplication>(new FastifyAdapter());
+  const app = moduleRef.createNestApplication<NestFastifyApplication>(
+    new FastifyAdapter({
+      logger: false, // We'll use Pino logger instead
+    })
+  );
 
   app.useGlobalPipes(
     new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true, transform: true }),

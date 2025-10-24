@@ -12,9 +12,15 @@ import { readPackageVersion } from '@/utils/package-version.utils';
 
 async function bootstrap() {
   // Create app with bufferLogs enabled to capture early logs
-  const app = await NestFactory.create<NestFastifyApplication>(AppModule, new FastifyAdapter(), {
-    bufferLogs: true,
-  });
+  const app = await NestFactory.create<NestFastifyApplication>(
+    AppModule, 
+    new FastifyAdapter({
+      logger: false, // We'll use Pino logger instead
+    }), 
+    {
+      bufferLogs: true,
+    }
+  );
 
   // Use Pino logger for the entire application
   app.useLogger(app.get(Logger));

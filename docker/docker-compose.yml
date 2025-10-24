@@ -1,7 +1,7 @@
 services:
   micro-stt:
-    image: bozonx/micro-stt:latest
-    container_name: micro-stt
+    image: bozonx/stt-gateway-microservice:latest
+    container_name: stt-gateway-microservice
     ports:
       - '8080:80'
     environment:
@@ -20,7 +20,7 @@ services:
 
       # Authorization
       - AUTH_ENABLED=true
-      - AUTH_TOKENS=your-production-token-here
+      - AUTH_TOKENS=${AUTH_TOKENS}
 
       # STT settings
       - STT_DEFAULT_PROVIDER=assemblyai
@@ -30,7 +30,7 @@ services:
       - STT_POLL_INTERVAL_MS=1500
       - STT_MAX_SYNC_WAIT_MIN=3
       - ALLOW_CUSTOM_API_KEY=false
-      - ASSEMBLYAI_API_KEY=your-assemblyai-api-key-here
+      - ASSEMBLYAI_API_KEY=${ASSEMBLYAI_API_KEY}
     restart: unless-stopped
     healthcheck:
       test:
