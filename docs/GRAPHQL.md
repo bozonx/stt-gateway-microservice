@@ -2,7 +2,7 @@
 
 ## Введение
 
-В дополнение к REST API, сервис `micro-stt` предоставляет **GraphQL API** с поддержкой **Apollo Federation** для интеграции в API Gateway. GraphQL API выполняет ту же бизнес-логику, что и REST API, но предоставляет более гибкий способ запроса данных.
+В дополнение к REST API, сервис `micro-stt` предоставляет **GraphQL API** с поддержкой **GraphQL Federation v2** для интеграции в WunderGraph Cosmo. GraphQL API выполняет ту же бизнес-логику, что и REST API, но предоставляет более гибкий способ запроса данных.
 
 ### Когда использовать GraphQL vs REST
 
@@ -201,18 +201,25 @@ GraphQL API возвращает HTTP статус `200 OK` даже при на
 | `Missing provider API key`               | UNAUTHORIZED    | Отсутствует API ключ провайдера   |
 | `TRANSCRIPTION_TIMEOUT`                  | GATEWAY_TIMEOUT | Превышено время ожидания          |
 
-## Apollo Federation
+## WunderGraph Federation
 
-Сервис готов к интеграции в **Apollo Gateway** для построения единого API из нескольких микросервисов.
+Сервис готов к интеграции в **WunderGraph Cosmo** для построения федеративного GraphQL API.
 
-### Конфигурация Gateway
+### Конфигурация WunderGraph Cosmo
 
-```javascript
-const { ApolloGateway } = require('@apollo/gateway');
+```typescript
+// wundergraph.config.ts
+import { configureWunderGraphApplication } from '@wundergraph/sdk';
+import { graphql } from '@wundergraph/sdk/datasources';
 
-const gateway = new ApolloGateway({
-  serviceList: [
-    { name: 'micro-stt', url: 'http://localhost:3000/api/graphql' },
+export default configureWunderGraphApplication({
+  apis: [
+    graphql({
+      id: 'micro-stt',
+      name: 'micro-stt',
+      url: 'http://localhost:3000/api/graphql',
+      federation: true,
+    }),
     // другие микросервисы...
   ],
 });
@@ -227,6 +234,24 @@ curl -X POST http://localhost:3000/api/graphql \
   -H 'Content-Type: application/json' \
   -d '{"query": "{ _service { sdl } }"}'
 ```
+
+### Federation Directives
+
+Сервис использует следующие Federation директивы через SDL:
+
+- `@key(fields: "requestId")` - для типа `TranscriptionResponse`
+- `@shareable` - для совместного использования типов между сервисами
+
+Federation директивы добавляются через `typeDefs` в конфигурации Apollo Server, что обеспечивает совместимость с WunderGraph Cosmo.
+
+### CORS Configuration
+
+Сервис настроен для работы с WunderGraph Gateway:
+
+- Разрешены все origins для Federation Gateway
+- Поддержка credentials для аутентификации
+- Разрешены методы: GET, POST, OPTIONS
+- Поддерживаемые заголовки: Content-Type, Authorization, X-Requested-With
 
 ## Интроспекция
 

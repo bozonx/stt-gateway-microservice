@@ -4,18 +4,20 @@
 
 ### Added
 
-- **GraphQL API с Apollo Server** (23.10.2025)
+- **GraphQL API с WunderGraph Federation** (23.10.2025)
   - Добавлен GraphQL API с использованием Apollo Server (Code First подход)
-  - Поддержка Apollo Federation для интеграции в API Gateway
-  - GraphQL Query `apiInfo` - метаинформация API
+  - Поддержка GraphQL Federation v2 для интеграции в WunderGraph Cosmo
+  - GraphQL Query `health` - проверка работоспособности
   - GraphQL Mutation `transcribeFile` - транскрибация аудио
   - Apollo Sandbox для разработки (доступен в development режиме)
+  - Federation директивы: `@key`, `@shareable` для типов
+  - CORS конфигурация для WunderGraph Gateway
   - Полная документация GraphQL API в `docs/GRAPHQL.md`
   - Unit и E2E тесты для GraphQL резолверов
   - Чёткое разделение: REST API в `src/modules/`, GraphQL в `src/graphql/`
   - Переиспользование бизнес-логики через существующие сервисы
   - Единая аутентификация для REST и GraphQL
-  - Готовность к Apollo Federation для API Gateway
+  - Готовность к WunderGraph Federation для API Gateway
 
 ### Changed
 

@@ -140,9 +140,9 @@ curl -X POST http://localhost:3000/api/graphql \
   }'
 ```
 
-### Apollo Federation Ready
+### WunderGraph Federation Ready
 
-Сервис готов к интеграции в **Apollo Gateway** для построения единого API из нескольких микросервисов. Используется `@apollo/subgraph` для federation поддержки.
+Сервис готов к интеграции в **WunderGraph Cosmo** для построения федеративного GraphQL API. Поддерживает GraphQL Federation v2 с использованием `@apollo/subgraph`.
 
 📖 **Полная документация GraphQL:** [docs/GRAPHQL.md](docs/GRAPHQL.md)
 

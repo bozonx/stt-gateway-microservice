@@ -3,6 +3,7 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
 import { ApolloServerPluginLandingPageLocalDefault } from '@apollo/server/plugin/landingPage/default';
 import { ConfigService } from '@nestjs/config';
+import { buildSubgraphSchema } from '@apollo/subgraph';
 import { TranscriptionModule } from '@modules/transcription/transcription.module';
 import { TranscriptionResolver } from './resolvers/transcription.resolver';
 import { HealthResolver } from './resolvers/health.resolver';
@@ -25,9 +26,13 @@ import { HealthResolver } from './resolvers/health.resolver';
           plugins: isDev ? [ApolloServerPluginLandingPageLocalDefault()] : [],
           // Включаем introspection для development и federation
           introspection: true,
-          // Готовность к Federation
+          // Federation конфигурация для WunderGraph
           buildSchemaOptions: {
             numberScalarMode: 'integer',
+            // Добавляем Federation директивы через SDL
+            typeDefs: `
+              extend type TranscriptionResponse @key(fields: "requestId") @shareable
+            `,
           },
         };
       },
