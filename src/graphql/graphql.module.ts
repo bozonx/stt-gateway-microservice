@@ -18,6 +18,7 @@ import { HealthResolver } from './resolvers/health.resolver';
 
         return {
           autoSchemaFile: true,
+          sortSchema: true,
           path: `${basePath}/graphql`,
           // Apollo Sandbox (заменяет GraphiQL) в development
           playground: false,

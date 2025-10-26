@@ -75,8 +75,6 @@ curl http://localhost:8080/api/v1/health
 # API info
 curl http://localhost:8080/api/v1
 
-# Swagger документация
-open http://localhost:8080/api/docs
 ```
 
 ## Сборка собственного образа

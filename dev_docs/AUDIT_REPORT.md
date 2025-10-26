@@ -53,7 +53,7 @@
 
 - ✅ Использование class-validator и class-transformer
 - ✅ Детальные DTO с декораторами валидации
-- ✅ Отличная Swagger документация для DTOs
+- ✅ Отличная документация для DTOs
 - ✅ Правильные сообщения об ошибках валидации
 
 ### 6. **Безопасность**
@@ -64,13 +64,13 @@
 - ✅ Проверка размера файла перед обработкой
 - ✅ Timeout для HTTP запросов
 
-### 7. **Документация и Swagger**
+### 7. **Документация**
 
-- ✅ Полная Swagger/OpenAPI документация
+- ✅ Полная документация API
 - ✅ Детальные описания для всех эндпоинтов
 - ✅ Примеры запросов и ответов
 - ✅ Документация всех возможных ошибок
-- ✅ Кастомизация Swagger UI
+- ✅ Кастомизация UI
 
 ### 8. **Тестирование**
 
@@ -588,7 +588,7 @@ async function bootstrap() {
       directives: {
         defaultSrc: [`'self'`],
         styleSrc: [`'self'`, `'unsafe-inline'`],
-        imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
+        imgSrc: [`'self'`, 'data:'],
         scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
       },
     },
@@ -640,7 +640,7 @@ import { CacheModule } from '@nestjs/cache-manager';
 export class TranscriptionModule {}
 ```
 
-#### 13. **Добавить Swagger authentication схемы**
+#### 13. **Добавить authentication схемы**
 
 ```typescript
 // src/main.ts
@@ -676,7 +676,7 @@ export const SSRF_PROTECTION = {
 } as const;
 ```
 
-#### 15. **Добавить Swagger examples для более полной документации**
+#### 15. **Добавить examples для более полной документации**
 
 ```typescript
 // src/common/dto/transcribe-file.dto.ts
@@ -696,7 +696,7 @@ export const SSRF_PROTECTION = {
 })
 ```
 
-#### 16. **Добавить response schema в Swagger**
+#### 16. **Добавить response schema**
 
 ```typescript
 // src/modules/transcription/transcription.controller.ts
@@ -770,7 +770,7 @@ pnpm add @opentelemetry/sdk-node @opentelemetry/auto-instrumentations-node
 Fastify поддерживает JSON Schema валидацию, которая быстрее class-validator:
 
 ```typescript
-// Можно комбинировать с class-validator для Swagger документации
+// Можно комбинировать с class-validator для документации
 const schema = {
   body: {
     type: 'object',
@@ -840,7 +840,7 @@ const schema = {
 
 ### Документация
 
-- ✅ Swagger/OpenAPI
+- ✅ OpenAPI
 - ✅ README с примерами
 - ✅ Комментарии в коде
 - ✅ DTOs документированы
@@ -900,7 +900,7 @@ const schema = {
 | TypeScript         | 9/10   | Строгая типизация, правильные практики |
 | Безопасность       | 7/10   | Базовая защита есть, нужны улучшения   |
 | Тестирование       | 6/10   | Недостаточное покрытие                 |
-| Документация       | 9/10   | Отличная Swagger документация          |
+| Документация       | 9/10   | Отличная документация                  |
 | Производительность | 8/10   | Fastify + хорошая архитектура          |
 | Мониторинг         | 5/10   | Только health checks, нет метрик       |
 | DevOps             | 8/10   | Хороший Docker setup                   |
@@ -926,7 +926,7 @@ const schema = {
 
 - Чистая архитектура с правильным разделением ответственности
 - Строгая типизация и использование современного TypeScript
-- Отличная документация API через Swagger
+- Отличная документация API
 - Хорошая структура проекта
 
 Основные области для улучшения:

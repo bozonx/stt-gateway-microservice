@@ -505,8 +505,6 @@ curl -X POST http://localhost:3000/api/v1/transcriptions/file \
   -H 'Authorization: Bearer test-token' \
   -d '{"audioUrl": "https://example.com/audio.mp3"}' | jq
 
-# Check Swagger docs
-curl http://localhost:3000/api/docs-json | jq
 ```
 
 ## Common Tasks
@@ -545,15 +543,6 @@ nest generate controller my-controller
 # Check TypeScript types without building
 pnpm tsc --noEmit
 ```
-
-### Swagger Documentation Updates
-
-After updating DTOs or endpoints:
-
-1. Add `@ApiProperty()` decorators to DTOs
-2. Add `@ApiResponse()` decorators to controllers
-3. Update descriptions and examples
-4. Restart the service and check `http://localhost:3000/api/docs`
 
 ### Environment-Specific Testing
 

@@ -20,8 +20,7 @@
    - Используется метод `app.getHttpAdapter().getInstance().register(helmet, options)`
    - Это правильный способ регистрации Fastify плагинов в NestJS
 
-3. **Настройка CSP для Swagger UI**
-   - Учтены требования Swagger UI для работы с CSP
+3. **Настройка CSP для веб-приложения**
    - Добавлены необходимые источники для стилей, изображений и скриптов
 
 4. **Документация**
@@ -55,7 +54,7 @@ contentSecurityPolicy: {
   directives: {
     defaultSrc: [`'self'`],
     styleSrc: [`'self'`, `'unsafe-inline'`],
-    imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
+    imgSrc: [`'self'`, 'data:'],
     scriptSrc: [`'self'`, `https: 'unsafe-inline'`],
   },
 }
@@ -118,7 +117,7 @@ Type assertion обходит проверку типов TypeScript без об
 upgradeInsecureRequests: appConfig.nodeEnv === 'production' ? [] : undefined,
 ```
 
-Это приводило к ошибке при открытии Swagger UI: `"Content-Security-Policy received an invalid directive value for upgrade-insecure-requests"`
+Это приводило к ошибке CSP: `"Content-Security-Policy received an invalid directive value for upgrade-insecure-requests"`
 
 **Причина:**
 Директива `upgrade-insecure-requests` не принимает значения - она либо присутствует (пустой массив `[]`), либо должна быть полностью исключена из объекта. Передача `undefined` как значения директивы вызывает ошибку в @fastify/helmet.
@@ -149,7 +148,7 @@ await app
         fontSrc: [`'self'`, 'https:', 'data:'],
         formAction: [`'self'`],
         frameAncestors: [`'self'`],
-        imgSrc: [`'self'`, 'data:', 'validator.swagger.io'],
+        imgSrc: [`'self'`, 'data:'],
         objectSrc: [`'none'`],
         scriptSrc: [`'self'`, 'https:', `'unsafe-inline'`],
         scriptSrcAttr: [`'none'`],
@@ -171,19 +170,19 @@ await app
 
 #### Content Security Policy (CSP)
 
-| Директива                 | Значение                                  | Назначение                                                     |
-| ------------------------- | ----------------------------------------- | -------------------------------------------------------------- |
-| `defaultSrc`              | `'self'`                                  | Политика по умолчанию для всех ресурсов                        |
-| `baseUri`                 | `'self'`                                  | Ограничение URL в теге `<base>` - защита от base URI injection |
-| `fontSrc`                 | `'self'`, `https:`, `data:`               | Контроль источников шрифтов                                    |
-| `formAction`              | `'self'`                                  | Ограничение URL для отправки форм - защита от form hijacking   |
-| `frameAncestors`          | `'self'`                                  | Контроль embedding в iframe - защита от clickjacking           |
-| `imgSrc`                  | `'self'`, `data:`, `validator.swagger.io` | Источники изображений (включая Swagger UI)                     |
-| `objectSrc`               | `'none'`                                  | Блокировка опасных плагинов (Flash, Java, ActiveX)             |
-| `scriptSrc`               | `'self'`, `https:`, `'unsafe-inline'`     | Источники JavaScript (настроено для Swagger UI)                |
-| `scriptSrcAttr`           | `'none'`                                  | Блокировка inline event handlers (onclick и т.д.)              |
-| `styleSrc`                | `'self'`, `https:`, `'unsafe-inline'`     | Источники CSS (настроено для Swagger UI)                       |
-| `upgradeInsecureRequests` | `[]` (только production)                  | Автоматический апгрейд HTTP → HTTPS                            |
+| Директива                 | Значение                              | Назначение                                                     |
+| ------------------------- | ------------------------------------- | -------------------------------------------------------------- |
+| `defaultSrc`              | `'self'`                              | Политика по умолчанию для всех ресурсов                        |
+| `baseUri`                 | `'self'`                              | Ограничение URL в теге `<base>` - защита от base URI injection |
+| `fontSrc`                 | `'self'`, `https:`, `data:`           | Контроль источников шрифтов                                    |
+| `formAction`              | `'self'`                              | Ограничение URL для отправки форм - защита от form hijacking   |
+| `frameAncestors`          | `'self'`                              | Контроль embedding в iframe - защита от clickjacking           |
+| `imgSrc`                  | `'self'`, `data:`                     | Источники изображений                                          |
+| `objectSrc`               | `'none'`                              | Блокировка опасных плагинов (Flash, Java, ActiveX)             |
+| `scriptSrc`               | `'self'`, `https:`, `'unsafe-inline'` | Источники JavaScript                                           |
+| `scriptSrcAttr`           | `'none'`                              | Блокировка inline event handlers (onclick и т.д.)              |
+| `styleSrc`                | `'self'`, `https:`, `'unsafe-inline'` | Источники CSS                                                  |
+| `upgradeInsecureRequests` | `[]` (только production)              | Автоматический апгрейд HTTP → HTTPS                            |
 
 #### Strict Transport Security (HSTS)
 
@@ -213,7 +212,7 @@ await app
 | Использование `@fastify/helmet` вместо `helmet`                   | ✅     | Правильно реализовано                  |
 | Регистрация через `app.getHttpAdapter().getInstance().register()` | ✅     | Правильный подход для NestJS           |
 | Регистрация до middleware и роутов                                | ✅     | Helmet регистрируется рано в bootstrap |
-| Настройка CSP для документации API                                | ✅     | Swagger UI корректно настроен          |
+| Настройка CSP для веб-приложения                                  | ✅     | CSP корректно настроен                 |
 | Использование актуальной версии                                   | ✅     | @fastify/helmet@13.0.2 актуален        |
 
 ### OWASP Security Headers Best Practices
@@ -232,18 +231,18 @@ await app
 
 ### MDN Web Security Guidelines
 
-| Рекомендация MDN                               | Исходное состояние       | После улучшений                       |
-| ---------------------------------------------- | ------------------------ | ------------------------------------- |
-| Использование CSP 3.0 директив                 | ⚠️ Частично              | ✅ Полностью                          |
-| Избегание `unsafe-inline` где возможно         | ⚠️ Требуется для Swagger | ⚠️ Компромисс для Swagger UI          |
-| Использование nonces/hashes                    | ❌ Не реализовано        | ℹ️ Не требуется для текущего use case |
-| Разделение production/development конфигураций | ❌ Отсутствует           | ✅ Реализовано                        |
+| Рекомендация MDN                               | Исходное состояние              | После улучшений                       |
+| ---------------------------------------------- | ------------------------------- | ------------------------------------- |
+| Использование CSP 3.0 директив                 | ⚠️ Частично                     | ✅ Полностью                          |
+| Избегание `unsafe-inline` где возможно         | ⚠️ Требуется для веб-приложения | ⚠️ Компромисс для веб-приложения      |
+| Использование nonces/hashes                    | ❌ Не реализовано               | ℹ️ Не требуется для текущего use case |
+| Разделение production/development конфигураций | ❌ Отсутствует                  | ✅ Реализовано                        |
 
 ## Рекомендации для дальнейшего улучшения
 
 ### 1. Использование CSP nonces (опционально)
 
-Для максимальной безопасности можно использовать CSP nonces вместо `'unsafe-inline'` для Swagger UI:
+Для максимальной безопасности можно использовать CSP nonces вместо `'unsafe-inline'`:
 
 ```typescript
 contentSecurityPolicy: {
@@ -256,7 +255,7 @@ contentSecurityPolicy: {
 enableCSPNonces: true, // Включает автоматическую генерацию nonces
 ```
 
-**Примечание:** Требует модификации Swagger UI templates для использования nonces.
+**Примечание:** Требует модификации HTML templates для использования nonces.
 
 ### 2. CSP Reporting
 
@@ -281,7 +280,7 @@ if (appConfig.nodeEnv === 'production') {
   // Более строгие настройки
   helmetConfig.contentSecurityPolicy.directives.scriptSrc = [`'self'`];
   helmetConfig.contentSecurityPolicy.directives.styleSrc = [`'self'`];
-  // Отключить Swagger UI в production или переместить на отдельный поддомен
+  // Отключить документацию в production или переместить на отдельный поддомен
 }
 ```
 

@@ -31,7 +31,6 @@ describe('Index (e2e)', () => {
     expect(body).toHaveProperty('links');
     expect(body.links).toMatchObject({
       self: '/api/v1',
-      docs: '/api/docs',
       health: '/api/v1/health',
       transcriptions: '/api/v1/transcriptions',
     });

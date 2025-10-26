@@ -110,7 +110,7 @@
 
 ### Fixed
 
-- **Исправлена ошибка CSP при загрузке Swagger UI**: изменён способ условного добавления директивы `upgradeInsecureRequests`
+- **Исправлена ошибка CSP**: изменён способ условного добавления директивы `upgradeInsecureRequests`
   - Директива теперь добавляется через spread оператор только для production окружения
   - Исправлена ошибка: "Content-Security-Policy received an invalid directive value for upgrade-insecure-requests"
   - Использован правильный подход: `...(condition && { directive: value })` вместо тернарного оператора с `undefined`
@@ -149,11 +149,11 @@
 
 - **Helmet для HTTP заголовков безопасности**: интегрирован `@fastify/helmet` для защиты от веб-уязвимостей
   - Установлен пакет `@fastify/helmet@13.0.2`
-  - Настроена Content-Security-Policy (CSP) с поддержкой Swagger UI
+  - Настроена Content-Security-Policy (CSP) с поддержкой веб-приложения
     - `defaultSrc: 'self'` - ограничение загрузки ресурсов
-    - `styleSrc: 'self', 'unsafe-inline'` - стили для Swagger UI
-    - `imgSrc: 'self', data:, validator.swagger.io` - изображения для Swagger UI
-    - `scriptSrc: 'self', https: 'unsafe-inline'` - скрипты для Swagger UI
+    - `styleSrc: 'self', 'unsafe-inline'` - стили для веб-приложения
+    - `imgSrc: 'self', data:` - изображения для веб-приложения
+    - `scriptSrc: 'self', https: 'unsafe-inline'` - скрипты для веб-приложения
   - Автоматические заголовки безопасности:
     - `X-Content-Type-Options: nosniff` - защита от MIME-sniffing
     - `X-Frame-Options` - защита от clickjacking
@@ -166,7 +166,7 @@
 ### Improved
 
 - Значительное улучшение безопасности микросервиса за счёт HTTP заголовков
-- Защита Swagger UI документации от XSS и clickjacking атак
+- Защита веб-приложения от XSS и clickjacking атак
 - Соответствие современным best practices безопасности веб-приложений
 - Все тесты (unit и e2e) прошли успешно с новой конфигурацией Helmet
 
@@ -191,7 +191,7 @@
   - Улучшены примеры unit тестов в `docs/DEVELOPMENT.md` с использованием shared mock helpers
   - Добавлена информация о новых debug скриптах: `test:unit:debug`, `test:e2e:debug`
   - Добавлены актуальные метрики покрытия тестами (~87% statements, ~76% branches, ~92% functions)
-  - Обновлена версия в Swagger документации (`src/main.ts`: 0.12.0 → 0.12.2)
+  - Обновлена версия в документации (`src/main.ts`: 0.12.0 → 0.12.2)
 
 ## 0.12.2
 
@@ -388,14 +388,14 @@
 - Новая обязательная переменная окружения `AUTH_TOKENS` для списка разрешённых токенов
 - Создан `AuthGuard` для проверки Bearer токенов в заголовке Authorization
 - Bearer авторизация применена ко всем эндпоинтам `/api/v1/transcriptions/*`
-- Добавлена документация по авторизации в Swagger UI (Bearer Auth)
+- Добавлена документация по авторизации (Bearer Auth)
 - Health check эндпоинты и индекс API остаются публичными
 
 ### Changed
 
 - Обновлена документация API в README.md с примерами использования Bearer токенов
 - Обновлены примеры curl запросов с добавлением заголовка Authorization
-- Расширена документация ошибок 401 (Unauthorized) в Swagger
+- Расширена документация ошибок 401 (Unauthorized)
 
 ### Tests
 
@@ -507,24 +507,9 @@
 
 ### Added
 
-- **Swagger/OpenAPI документация**: полная интеграция документации API
-  - Установлен пакет `@nestjs/swagger@11.2.1`
-  - Настроен `SwaggerModule` в `main.ts` с детальной конфигурацией
-  - Добавлены декораторы `@ApiProperty` и `@ApiPropertyOptional` к `TranscribeFileDto`
-  - Создан `TranscriptionResponseDto` с полным описанием структуры ответа транскрибации
-  - Добавлены декораторы к `TranscriptionController`:
-    - `@ApiTags`, `@ApiOperation` для описания эндпоинтов
-    - `@ApiResponse`, `@ApiBadRequestResponse`, `@ApiUnauthorizedResponse`, `@ApiGatewayTimeoutResponse`, `@ApiServiceUnavailableResponse` для документирования всех возможных ответов
-  - Добавлены декораторы к `HealthController` с примерами ответов
-  - Документация доступна по адресу: `http://localhost:3000/api/docs`
-  - Настроена кастомизация Swagger UI (скрытие topbar, сортировка тегов, фильтрация, время выполнения запросов)
-
 ### Improved
 
-- API теперь полностью задокументирован с примерами запросов и ответов
-- Все эндпоинты имеют детальные описания и информацию о возможных ошибках
 - Улучшена читаемость кода за счёт явного указания типов возврата в контроллерах
-- Добавлены метаданные проекта в Swagger (заголовок, описание, версия, контакты, лицензия)
 
 ## 0.8.2
 

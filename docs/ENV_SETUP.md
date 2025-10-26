@@ -331,4 +331,3 @@ PORT=9000 NODE_ENV=production node dist/main.js
 
 - [NestJS Configuration](https://docs.nestjs.com/techniques/configuration)
 - [Авторизация](./AUTH.md)
-- [Swagger документация](./SWAGGER.md)

@@ -9,7 +9,6 @@ High-performance Speech-to-Text (STT) microservice built with NestJS + Fastify. 
 - 🎯 **Synchronous transcription** - Transcribe audio files via URL
 - 🔌 **Multiple STT providers** - Currently supports AssemblyAI (extensible architecture)
 - 🔐 **Built-in authentication** - Optional Bearer token authorization
-- 📚 **OpenAPI/Swagger documentation** - Interactive API documentation
 - 🏥 **Health checks** - Kubernetes-ready readiness and liveness probes
 - 🛡️ **Centralized error handling** - Consistent error responses
 - 📊 **Structured logging** - Production-ready JSON logging with Pino
@@ -119,26 +118,6 @@ The service uses environment-specific configuration files:
 
 Rate limiting has been removed from the service. It should be implemented at the API Gateway or reverse proxy level.
 
-## API Documentation
-
-Interactive Swagger documentation is available after starting the service:
-
-```
-http://localhost:3000/api/docs
-```
-
-> **Note:** Examples in this documentation use `localhost:3000` which is typical for development. In production, use your configured `LISTEN_HOST` and `LISTEN_PORT` (default: `0.0.0.0:80`).
-
-The Swagger UI provides:
-
-- Complete endpoint descriptions
-- Interactive API testing
-- Request/response examples
-- Error documentation
-- OpenAPI specification export: `http://localhost:3000/api/docs-json`
-
-📖 **More details:** [docs/SWAGGER.md](docs/SWAGGER.md)
-
 ## GraphQL API
 
 В дополнение к REST API, сервис предоставляет **GraphQL API** на том же порту с поддержкой **Apollo Federation** для интеграции в API Gateway.
@@ -187,7 +166,6 @@ Returns API information and available endpoints.
   "time": "2025-10-18T10:00:00Z",
   "links": {
     "self": "/api/v1",
-    "docs": "/api/docs",
     "health": "/api/v1/health",
     "transcriptions": "/api/v1/transcriptions"
   }
@@ -579,11 +557,11 @@ Comprehensive CSP configuration protects against XSS, clickjacking, and code inj
 - **font-src:** `'self'`, `https:`, `data:` - Controls font sources
 - **form-action:** `'self'` - Restricts form submission URLs
 - **frame-ancestors:** `'self'` - Prevents embedding in iframes (clickjacking protection)
-- **img-src:** `'self'`, `data:`, `validator.swagger.io` - Image sources (includes Swagger UI support)
+- **img-src:** `'self'`, `data:` - Image sources
 - **object-src:** `'none'` - Blocks plugins (Flash, Java, etc.)
-- **script-src:** `'self'`, `https:`, `'unsafe-inline'` - Script sources (configured for Swagger UI)
+- **script-src:** `'self'`, `https:`, `'unsafe-inline'` - Script sources
 - **script-src-attr:** `'none'` - Blocks inline event handlers
-- **style-src:** `'self'`, `https:`, `'unsafe-inline'` - Style sources (configured for Swagger UI)
+- **style-src:** `'self'`, `https:`, `'unsafe-inline'` - Style sources
 - **upgrade-insecure-requests:** Enabled in production - Automatically upgrades HTTP to HTTPS
 
 #### Strict Transport Security (HSTS)
@@ -605,7 +583,7 @@ These headers are enabled by default:
 - **X-Permitted-Cross-Domain-Policies:** `none` - Restricts cross-domain policies
 - **X-XSS-Protection:** `0` - Disabled as CSP provides superior protection
 
-These headers are automatically added to all responses, providing defense-in-depth security for the API and Swagger UI.
+These headers are automatically added to all responses, providing defense-in-depth security for the API.
 
 ### SSRF Protection
 
@@ -697,7 +675,6 @@ docker logs micro-stt
 - [Authentication Guide](docs/AUTH.md) - Detailed Bearer token authentication documentation
 - [Environment Setup](docs/ENV_SETUP.md) - Complete environment configuration guide
 - [Logging](docs/LOGGING.md) - Logging architecture and best practices
-- [Swagger/OpenAPI](docs/SWAGGER.md) - API documentation and Swagger UI guide
 - [Development Guide](docs/DEVELOPMENT.md) - For developers working on the codebase
 - [Changelog](docs/CHANGELOG.md) - Version history and changes
 
