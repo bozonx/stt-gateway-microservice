@@ -1,6 +1,6 @@
-# Бойлерплейт микросервиса (NestJS + Fastify)
+# STT Gateway Microservice (NestJS + Fastify)
 
-Минимальный шаблон сервиса на NestJS с Fastify, готовый для быстрого старта проектов.
+Высокопроизводительный микросервис для синхронной транскрибации аудио по URL на базе NestJS + Fastify. По умолчанию использует провайдера AssemblyAI. Без встроенной авторизации, Swagger, GraphQL и rate limiting.
 
 ## Что включено
 
@@ -55,21 +55,65 @@ URL по умолчанию (prod): `http://localhost:80/api/v1`
 
 ## Эндпоинты
 
-- `GET /{API_BASE_PATH}/{API_VERSION}/health`
+- `GET /{API_BASE_PATH}/{API_VERSION}` — индекс API, ссылки на основные ресурсы
+- `GET /{API_BASE_PATH}/{API_VERSION}/health` — базовая проверка здоровья
 - `POST /{API_BASE_PATH}/{API_VERSION}/transcriptions/file` — синхронная транскрибация аудио по URL
 
-Пример запроса:
+Примеры:
+
+Индекс API
+
+```bash
+curl http://localhost:80/api/v1
+```
+
+Транскрибация файла по URL
 
 ```bash
 curl -X POST \
   http://localhost:80/api/v1/transcriptions/file \
   -H 'Content-Type: application/json' \
   -d '{
-    "audioUrl": "https://example.com/audio.mp3"
+    "audioUrl": "https://example.com/audio.mp3",
+    "provider": "assemblyai",
+    "timestamps": false
   }'
 ```
 
-Примечание: для успешной транскрибации требуется задать переменную окружения `ASSEMBLYAI_API_KEY` (или передать поле `apiKey` в теле запроса, если `ALLOW_CUSTOM_API_KEY=true`).
+Тело запроса:
+
+```json
+{
+  "audioUrl": "https://example.com/audio.mp3", // обязательный URL (http/https), приватные/loopback хосты запрещены
+  "provider": "assemblyai",                     // опционально; по умолчанию assemblyai
+  "timestamps": false,                           // опционально; включает отметки слов
+  "apiKey": "YOUR_ASSEMBLYAI_KEY"              // опционально; используется, если ALLOW_CUSTOM_API_KEY=true
+}
+```
+
+Пример ответа (200 OK):
+
+```json
+{
+  "text": "Transcribed text...",
+  "provider": "assemblyai",
+  "requestId": "abc123",
+  "durationSec": 123.45,
+  "language": "en",
+  "confidenceAvg": 0.92,
+  "wordsCount": 204,
+  "processingMs": 8421,
+  "timestampsEnabled": false
+}
+```
+
+Коды ответов:
+
+- `200 OK` — успешная транскрибация
+- `400 Bad Request` — невалидные параметры/URL, приватные хосты, превышен лимит размера файла, неподдерживаемый провайдер
+- `401 Unauthorized` — отсутствует API ключ провайдера (когда `ALLOW_CUSTOM_API_KEY=false` и не задан `ASSEMBLYAI_API_KEY`)
+- `503 Service Unavailable` — ошибка провайдера
+- `504 Gateway Timeout` — превышено максимальное время ожидания синхронной транскрипции
 
 ## Тесты
 См. инструкции в `docs/dev.md`.
@@ -78,6 +122,7 @@ curl -X POST \
 
 - Dockerfile ожидает уже собранный `dist/`
 - Пример запуска — `docker/docker-compose.yml`
+- Для работы провайдера укажите `ASSEMBLYAI_API_KEY` через переменные окружения контейнера или используйте `ALLOW_CUSTOM_API_KEY=true` и передавайте `apiKey` в теле запроса.
 
 ```bash
 # Сборка приложения
@@ -87,7 +132,18 @@ pnpm build
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-После запуска (compose): `http://localhost:8080/api/v1/health`
+Подробнее см. `docs/DOCKER.md`.
+
+## Логирование
+
+Сервис использует `nestjs-pino`:
+
+- В dev — человекочитаемый формат (`pino-pretty`).
+- В prod — JSON-логи с полем `@timestamp` и базовыми полями `service`, `environment`.
+- Редактируются чувствительные заголовки: `authorization`, `x-api-key`.
+- В prod не логируются обращения к `/health`.
+
+Подробнее см. `docs/LOGGING.md`.
 
 ## Примечания
 
