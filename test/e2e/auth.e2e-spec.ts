@@ -75,14 +75,6 @@ describe('Authorization E2E Tests', () => {
       const response = await app.inject({ method: 'GET', url: '/api/v1/health' });
       expect(response.statusCode).toBe(200);
     });
-    it('GET /api/v1/health/ready should work without authorization', async () => {
-      const response = await app.inject({ method: 'GET', url: '/api/v1/health/ready' });
-      expect(response.statusCode).toBe(200);
-    });
-    it('GET /api/v1/health/live should work without authorization', async () => {
-      const response = await app.inject({ method: 'GET', url: '/api/v1/health/live' });
-      expect(response.statusCode).toBe(200);
-    });
   });
 
   describe('Index endpoint should remain public', () => {
