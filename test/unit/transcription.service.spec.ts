@@ -2,7 +2,7 @@ import { Test } from '@nestjs/testing';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule } from '@nestjs/config';
 import { TranscriptionService } from '@modules/transcription/transcription.service';
-import { AssemblyAiProvider } from '@providers/assemblyai/assemblyai.provider';
+import { AssemblyAiProvider } from '@/providers/assemblyai/assemblyai.provider';
 import { STT_PROVIDER } from '@common/constants/tokens';
 import { of } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
