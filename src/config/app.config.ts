@@ -1,6 +1,6 @@
 import { registerAs } from '@nestjs/config';
-import { IsInt, IsString, IsIn, Min, Max, IsArray, IsBoolean, validateSync } from 'class-validator';
-import { plainToClass, Transform } from 'class-transformer';
+import { IsInt, IsString, IsIn, Min, Max, validateSync } from 'class-validator';
+import { plainToClass } from 'class-transformer';
 
 export class AppConfig {
   @IsInt()
@@ -23,28 +23,6 @@ export class AppConfig {
   // Allow only Pino log levels
   @IsIn(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent'])
   public logLevel!: string;
-
-  @IsBoolean()
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value.toLowerCase() === 'true';
-    }
-    return Boolean(value);
-  })
-  public authEnabled!: boolean;
-
-  @IsArray()
-  @IsString({ each: true })
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      return value
-        .split(',')
-        .map(token => token.trim())
-        .filter(token => token.length > 0);
-    }
-    return value;
-  })
-  public authTokens!: string[];
 }
 
 export default registerAs('app', (): AppConfig => {
@@ -55,8 +33,6 @@ export default registerAs('app', (): AppConfig => {
     apiVersion: (process.env.API_VERSION ?? 'v1').replace(/^\/+|\/+$/g, ''),
     nodeEnv: process.env.NODE_ENV ?? 'production',
     logLevel: process.env.LOG_LEVEL ?? 'warn',
-    authEnabled: process.env.AUTH_ENABLED ?? 'false',
-    authTokens: process.env.AUTH_TOKENS ?? '',
   });
 
   const errors = validateSync(config, {

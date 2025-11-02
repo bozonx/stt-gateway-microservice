@@ -1,11 +1,9 @@
-import { Body, Controller, Post, HttpCode, HttpStatus, UseGuards, Inject } from '@nestjs/common';
+import { Body, Controller, Post, HttpCode, HttpStatus, Inject } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
 import { TranscribeFileDto } from '@common/dto/transcribe-file.dto';
 import { TranscriptionResponseDto } from '@common/dto/transcription-response.dto';
-import { AuthGuard } from '@common/guards/auth.guard';
 import { TranscriptionService } from './transcription.service';
 
-@UseGuards(AuthGuard)
 @Controller('transcriptions')
 export class TranscriptionController {
   constructor(

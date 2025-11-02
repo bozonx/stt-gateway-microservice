@@ -2,7 +2,7 @@ import type { NestFastifyApplication } from '@nestjs/platform-fastify';
 import { createTestApp } from './test-app.factory';
 import { saveEnvVars, restoreEnvVars } from './env-helper';
 
-describe('Authorization Disabled E2E Tests', () => {
+describe.skip('Authorization Disabled E2E Tests', () => {
   let app: NestFastifyApplication;
   let envSnapshot: ReturnType<typeof saveEnvVars>;
 

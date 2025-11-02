@@ -7,13 +7,14 @@
 - Уточнены prod URL и Docker Compose команды в README
 - В разделе env добавлено упоминание `TZ` и что источником истины является `.env.production.example`
 
-## 0.15.0 — Boilerplate refactor
+## 0.15.0 — Refactor
 
-- Полностью удалены функциональности STT, GraphQL и Auth
-- Оставлен только модуль Health (простой health-check)
+- Удалены GraphQL и Swagger
+- Удалена встроенная авторизация (Bearer Auth)
+- Сохранён функционал STT (модуль транскрипции и провайдер AssemblyAI)
 - Упрощены конфиги окружения (`.env.*`)
-- Обновлён `AppModule` и логирование (service: `nestjs-boilerplate`)
-- Очищены и пересобраны тесты (unit + e2e только для health)
+- Обновлён `AppModule` и логирование
+- Тесты пересобраны; auth-тесты отключены
 - Переработан `docker-compose.yml` до минимального примера (локальная сборка)
 - Обновлён `README.md` (рус.)
-- Удалены устаревшие документы в `docs/` (STT/Auth/GraphQL)
+- Актуализирована документация в `docs/` (ENV, dev)

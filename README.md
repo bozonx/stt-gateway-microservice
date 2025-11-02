@@ -10,6 +10,7 @@
 - ⚡ Fastify
 - 🧪 Настроенные Jest-тесты (unit и e2e)
 - 🐳 Готовность к работе в Docker
+- 🎙️ STT эндпоинт транскрибации через AssemblyAI
 
 ## Быстрый старт
 
@@ -55,6 +56,18 @@ URL по умолчанию (prod): `http://localhost:80/api/v1`
 ## Эндпоинты
 
 - `GET /{API_BASE_PATH}/{API_VERSION}/health`
+- `POST /{API_BASE_PATH}/{API_VERSION}/transcriptions/file` — синхронная транскрибация аудио по URL
+
+Пример запроса:
+
+```bash
+curl -X POST \
+  http://localhost:3000/api/v1/transcriptions/file \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "audioUrl": "https://example.com/audio.mp3"
+  }'
+```
 
 ## Тесты
 См. инструкции в `docs/dev.md`.
@@ -73,6 +86,11 @@ docker compose -f docker/docker-compose.yml up -d --build
 ```
 
 После запуска (compose): `http://localhost:8080/api/v1/health`
+
+## Примечания
+
+- В проекте отсутствуют Swagger и GraphQL.
+- Встроенная авторизация удалена.
 
 ## Лицензия
 

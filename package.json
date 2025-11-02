@@ -1,7 +1,7 @@
 {
-  "name": "microservice-boilerplate",
+  "name": "stt-gateway-microservice",
   "version": "0.1.0",
-  "description": "NestJS + Fastify microservice boilerplate with health checks",
+  "description": "STT Gateway Microservice",
   "main": "dist/main.js",
   "scripts": {
     "build": "nest build",

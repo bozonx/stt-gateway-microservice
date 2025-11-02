@@ -4,7 +4,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { AuthGuard } from '@common/guards/auth.guard';
 import type { FastifyRequest } from 'fastify';
 
-describe('AuthGuard', () => {
+describe.skip('AuthGuard', () => {
   let guard: AuthGuard;
   let configService: ConfigService;
   let mockLogger: PinoLogger;

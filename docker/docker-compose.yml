@@ -1,7 +1,7 @@
 services:
-  nestjs-boilerplate:
-    image: bonzox/nestjs-boilerplate:latest
-    container_name: nestjs-boilerplate
+  stt-gateway-microservice:
+    image: bonzox/stt-gateway-microservice:latest
+    container_name: stt-gateway-microservice
     ports:
       - '8080:80'
     environment:
