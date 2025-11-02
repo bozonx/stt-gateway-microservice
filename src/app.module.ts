@@ -7,12 +7,15 @@ import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
 import appConfig from '@config/app.config';
 import type { AppConfig } from '@config/app.config';
 import pkg from '../package.json';
+import sttConfig from '@config/stt.config';
+import { TranscriptionModule } from '@modules/transcription/transcription.module';
+import { IndexModule } from '@modules/index/index.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig],
+      load: [appConfig, sttConfig],
       envFilePath: [`.env.${process.env.NODE_ENV || 'development'}`, '.env'],
       cache: true,
     }),
@@ -89,6 +92,8 @@ import pkg from '../package.json';
       },
     }),
     HealthModule,
+    IndexModule,
+    TranscriptionModule,
   ],
   controllers: [],
   providers: [
@@ -99,3 +104,4 @@ import pkg from '../package.json';
   ],
 })
 export class AppModule {}
+
