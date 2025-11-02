@@ -62,12 +62,14 @@ URL по умолчанию (prod): `http://localhost:80/api/v1`
 
 ```bash
 curl -X POST \
-  http://localhost:3000/api/v1/transcriptions/file \
+  http://localhost:80/api/v1/transcriptions/file \
   -H 'Content-Type: application/json' \
   -d '{
     "audioUrl": "https://example.com/audio.mp3"
   }'
 ```
+
+Примечание: для успешной транскрибации требуется задать переменную окружения `ASSEMBLYAI_API_KEY` (или передать поле `apiKey` в теле запроса, если `ALLOW_CUSTOM_API_KEY=true`).
 
 ## Тесты
 См. инструкции в `docs/dev.md`.

@@ -2,10 +2,12 @@
 
 ## Unreleased
 
-- README ориентирован на production-использование (убраны dev-инструкции)
-- Добавлен `docs/dev.md` с инструкциями по разработке и dev-режиму
-- Уточнены prod URL и Docker Compose команды в README
-- В разделе env добавлено упоминание `TZ` и что источником истины является `.env.production.example`
+- README: ориентирован на production-использование; dev-инструкции перенесены в `docs/dev.md`
+- README: уточнены prod URL и команды Docker Compose, пример запроса использует порт 80
+- Docker Compose: переведён на локальную сборку через `docker/Dockerfile` вместо внешнего образа
+- package.json: переименован пакет в `micro-stt`, версия синхронизирована с `0.15.0`
+- Тесты: закреплена связка `jest@29` + `ts-jest@29` для совместимости
+- Источник истины env: добавлено упоминание `TZ` и что источником истины является `.env.production.example`
 
 ## 0.15.0 — Refactor
 
