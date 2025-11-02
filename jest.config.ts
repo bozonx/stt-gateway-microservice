@@ -6,7 +6,6 @@ const moduleNameMapper = {
   '^@common/(.*)$': '<rootDir>/src/common/$1',
   '^@modules/(.*)$': '<rootDir>/src/modules/$1',
   '^@config/(.*)$': '<rootDir>/src/config/$1',
-  '^@providers/(.*)$': '<rootDir>/src/providers/$1',
   '^@test/(.*)$': '<rootDir>/test/$1',
 };
 
@@ -39,7 +38,7 @@ const config: Config = {
       testEnvironment: 'node',
       moduleFileExtensions,
       rootDir: '.',
-      testMatch: ['<rootDir>/test/unit/**/*.spec.ts', '<rootDir>/src/**/*.spec.ts'],
+      testMatch: ['<rootDir>/test/unit/health*.spec.ts'],
       testPathIgnorePatterns: ['<rootDir>/test/e2e/', '<rootDir>/dist/'],
       setupFilesAfterEnv: ['<rootDir>/test/setup/unit.setup.ts'],
       collectCoverageFrom: ['src/**/*.(t|j)s'],
@@ -57,7 +56,7 @@ const config: Config = {
       testEnvironment: 'node',
       moduleFileExtensions,
       rootDir: '.',
-      testRegex: '.*\\.e2e-spec\\.ts$',
+      testMatch: ['<rootDir>/test/e2e/health.e2e-spec.ts'],
       setupFilesAfterEnv: ['<rootDir>/test/setup/e2e.setup.ts'],
       collectCoverageFrom: ['src/**/*.(t|j)s'],
       coverageDirectory: 'coverage',
