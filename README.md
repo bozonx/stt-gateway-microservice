@@ -1,73 +1,73 @@
 # STT Gateway Microservice (NestJS + Fastify)
 
-Высокопроизводительный микросервис для синхронной транскрибации аудио по URL на базе NestJS + Fastify. По умолчанию использует провайдера AssemblyAI. Без встроенной авторизации, Swagger, GraphQL и rate limiting.
+High-performance microservice for synchronous speech-to-text by audio URL, built with NestJS + Fastify. Uses AssemblyAI by default. No built-in auth, Swagger, or GraphQL.
 
-## Что включено
+## What's included
 
-- 🏥 Простой health-check эндпоинт `/{API_BASE_PATH}/{API_VERSION}/health`
-- 📊 Логирование через Pino (JSON в prod)
-- 🛡️ Глобальный фильтр ошибок
-- ⚡ Fastify
-- 🧪 Настроенные Jest-тесты (unit и e2e)
-- 🐳 Готовность к работе в Docker
-- 🎙️ STT эндпоинт транскрибации через AssemblyAI
+- 🏥 Minimal health-check endpoint `/{API_BASE_PATH}/{API_VERSION}/health`
+- 📊 Structured logging via Pino (JSON in production)
+- 🛡️ Global error filter
+- ⚡ Fastify runtime
+- 🧪 Ready-to-use Jest tests (unit and e2e)
+- 🐳 Docker-ready
+- 🎙️ Synchronous transcription endpoint via AssemblyAI
 
-## Быстрый старт
+## Production Quick Start
 
-Требования:
+Choose one of the options below.
 
-- Node.js 22+
-- pnpm 10+
+- Docker Compose (recommended for quick run):
 
 ```bash
-# 1) Установка зависимостей
+docker compose -f docker/docker-compose.yml up -d --build
+```
+
+- Run from source:
+
+```bash
 pnpm install
-
-# 2) Окружение (prod)
 cp env.production.example .env.production
-
-# 3) Сборка и запуск (prod)
 pnpm build
 pnpm start:prod
 ```
 
-URL по умолчанию (prod): `http://localhost:80/api/v1`
-Для Docker Compose: `http://localhost:8080/api/v1`
+Default URLs:
 
-## Переменные окружения
+- Service: `http://localhost:80/api/v1`
+- Docker Compose: `http://localhost:8080/api/v1`
 
-Файлы окружения:
+## Environment
 
-- `.env.production`
-- `.env` (опционально)
+- Files:
+  - `.env.production`
+  - `.env` (optional)
+- Source of truth: `.env.production.example`
 
-Источник истины для переменных: `.env.production.example`.
-
-Ключевые переменные:
+Key variables:
 
 - `NODE_ENV` — `production|development|test`
-- `LISTEN_HOST` — например, `0.0.0.0` или `localhost`
-- `LISTEN_PORT` — например, `80` или `3000`
-- `API_BASE_PATH` — префикс API (по умолчанию `api`)
-- `API_VERSION` — версия API (по умолчанию `v1`)
+- `LISTEN_HOST` — e.g. `0.0.0.0` or `localhost`
+- `LISTEN_PORT` — e.g. `80` or `3000`
+- `API_BASE_PATH` — API prefix (default `api`)
+- `API_VERSION` — API version (default `v1`)
 - `LOG_LEVEL` — `trace|debug|info|warn|error|fatal|silent`
-- `TZ` — таймзона (по умолчанию `UTC`)
+- `TZ` — timezone (default `UTC`)
 
-## Эндпоинты
+## Endpoints
 
-- `GET /{API_BASE_PATH}/{API_VERSION}` — индекс API, ссылки на основные ресурсы
-- `GET /{API_BASE_PATH}/{API_VERSION}/health` — базовая проверка здоровья
-- `POST /{API_BASE_PATH}/{API_VERSION}/transcriptions/file` — синхронная транскрибация аудио по URL
+- `GET /{API_BASE_PATH}/{API_VERSION}` — API index with service info and links
+- `GET /{API_BASE_PATH}/{API_VERSION}/health` — basic health check
+- `POST /{API_BASE_PATH}/{API_VERSION}/transcriptions/file` — synchronous transcription by audio URL
 
-Примеры:
+Examples
 
-Индекс API
+- API index
 
 ```bash
 curl http://localhost:80/api/v1
 ```
 
-Транскрибация файла по URL
+- Transcription by URL
 
 ```bash
 curl -X POST \
@@ -76,22 +76,29 @@ curl -X POST \
   -d '{
     "audioUrl": "https://example.com/audio.mp3",
     "provider": "assemblyai",
-    "timestamps": false
+    "timestamps": false,
+    "apiKey": "YOUR_ASSEMBLYAI_KEY"
   }'
 ```
 
-Тело запроса:
+Request body
 
 ```json
 {
-  "audioUrl": "https://example.com/audio.mp3", // обязательный URL (http/https), приватные/loopback хосты запрещены
-  "provider": "assemblyai",                     // опционально; по умолчанию assemblyai
-  "timestamps": false,                           // опционально; включает отметки слов
-  "apiKey": "YOUR_ASSEMBLYAI_KEY"              // опционально; используется, если ALLOW_CUSTOM_API_KEY=true
+  "audioUrl": "https://example.com/audio.mp3",
+  "provider": "assemblyai",
+  "timestamps": false,
+  "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
 ```
 
-Пример ответа (200 OK):
+Notes:
+
+- `audioUrl` must be http(s); private/loopback hosts are rejected.
+- `provider` is optional, defaults to `assemblyai` if omitted and allowed.
+- `apiKey` is used only when `ALLOW_CUSTOM_API_KEY=true`; otherwise the service uses `ASSEMBLYAI_API_KEY` from the environment.
+
+Sample response (200 OK)
 
 ```json
 {
@@ -107,49 +114,45 @@ curl -X POST \
 }
 ```
 
-Коды ответов:
+Status codes:
 
-- `200 OK` — успешная транскрибация
-- `400 Bad Request` — невалидные параметры/URL, приватные хосты, превышен лимит размера файла, неподдерживаемый провайдер
-- `401 Unauthorized` — отсутствует API ключ провайдера (когда `ALLOW_CUSTOM_API_KEY=false` и не задан `ASSEMBLYAI_API_KEY`)
-- `503 Service Unavailable` — ошибка провайдера
-- `504 Gateway Timeout` — превышено максимальное время ожидания синхронной транскрипции
+- `200 OK` — transcription succeeded
+- `400 Bad Request` — invalid params/URL, private hosts, file too large, unsupported provider
+- `401 Unauthorized` — missing provider API key (when `ALLOW_CUSTOM_API_KEY=false` and no `ASSEMBLYAI_API_KEY`)
+- `503 Service Unavailable` — provider error
+- `504 Gateway Timeout` — exceeded max synchronous waiting time
 
-## Тесты
-См. инструкции в `docs/dev.md`.
+## Tests
+See `docs/dev.md` for development and testing instructions.
 
 ## Docker
 
-- Dockerfile ожидает уже собранный `dist/`
-- Пример запуска — `docker/docker-compose.yml`
-- Для работы провайдера укажите `ASSEMBLYAI_API_KEY` через переменные окружения контейнера или используйте `ALLOW_CUSTOM_API_KEY=true` и передавайте `apiKey` в теле запроса.
+- Example Compose file — `docker/docker-compose.yml`
+- To use the provider, either set `ASSEMBLYAI_API_KEY` in the container environment or enable `ALLOW_CUSTOM_API_KEY=true` and supply `apiKey` in the request body.
 
 ```bash
-# Сборка приложения
-pnpm build
-
-# Локальный запуск через compose (без cd)
+# Local run with compose (from repo root)
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-Подробнее см. `docs/DOCKER.md`.
+See `docs/DOCKER.md` for more details.
 
-## Логирование
+## Logging
 
-Сервис использует `nestjs-pino`:
+The service uses `nestjs-pino`:
 
-- В dev — человекочитаемый формат (`pino-pretty`).
-- В prod — JSON-логи с полем `@timestamp` и базовыми полями `service`, `environment`.
-- Редактируются чувствительные заголовки: `authorization`, `x-api-key`.
-- В prod не логируются обращения к `/health`.
+- Dev: human-readable format via `pino-pretty`
+- Prod: JSON logs with `@timestamp` and basic `service`/`environment` fields
+- Sensitive headers are redacted: `authorization`, `x-api-key`
+- `/health` requests are not logged in production
 
-Подробнее см. `docs/LOGGING.md`.
+See `docs/LOGGING.md` for details.
 
-## Примечания
+## Notes
 
-- В проекте отсутствуют Swagger и GraphQL.
-- Встроенная авторизация удалена.
+- No Swagger or GraphQL included
+- No built-in authorization
 
-## Лицензия
+## License
 
 MIT
