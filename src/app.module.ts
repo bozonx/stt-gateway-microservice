@@ -6,7 +6,6 @@ import { HealthModule } from '@modules/health/health.module';
 import { AllExceptionsFilter } from '@common/filters/all-exceptions.filter';
 import appConfig from '@config/app.config';
 import type { AppConfig } from '@config/app.config';
-import pkg from '../package.json';
 import sttConfig from '@config/stt.config';
 import { TranscriptionModule } from '@modules/transcription/transcription.module';
 import { IndexModule } from '@modules/index/index.module';
@@ -24,13 +23,14 @@ import { IndexModule } from '@modules/index/index.module';
       useFactory: (configService: ConfigService) => {
         const appConfig = configService.get<AppConfig>('app')!;
         const isDev = appConfig.nodeEnv === 'development';
+        const serviceName = process.env.SERVICE_NAME || 'tmp-files-microservice';
 
         return {
           pinoHttp: {
             level: appConfig.logLevel,
             timestamp: () => `,"@timestamp":"${new Date().toISOString()}"`,
             base: {
-              service: (pkg as any).name ?? 'app',
+              service: serviceName,
               environment: appConfig.nodeEnv,
             },
             transport: isDev
