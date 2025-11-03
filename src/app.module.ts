@@ -9,6 +9,7 @@ import type { AppConfig } from '@config/app.config';
 import sttConfig from '@config/stt.config';
 import { TranscriptionModule } from '@modules/transcription/transcription.module';
 import { IndexModule } from '@modules/index/index.module';
+import pkg from '../package.json';
 
 @Module({
   imports: [
@@ -23,14 +24,13 @@ import { IndexModule } from '@modules/index/index.module';
       useFactory: (configService: ConfigService) => {
         const appConfig = configService.get<AppConfig>('app')!;
         const isDev = appConfig.nodeEnv === 'development';
-        const serviceName = process.env.SERVICE_NAME || 'tmp-files-microservice';
 
         return {
           pinoHttp: {
             level: appConfig.logLevel,
             timestamp: () => `,"@timestamp":"${new Date().toISOString()}"`,
             base: {
-              service: serviceName,
+              service: (pkg as any).name ?? 'app',
               environment: appConfig.nodeEnv,
             },
             transport: isDev

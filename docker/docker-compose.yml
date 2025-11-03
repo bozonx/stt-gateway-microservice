@@ -1,5 +1,5 @@
 services:
-  sttGatewayMicroservice:
+  stt-gateway-microservice:
     image: ghcr.io/bozonx/stt-gateway-microservice:latest
     container_name: stt-gateway-microservice
     hostname: sttgatewaymicroservice
@@ -24,3 +24,4 @@ services:
       interval: 30s
       timeout: 3s
       retries: 3
+      start_period: 5s
