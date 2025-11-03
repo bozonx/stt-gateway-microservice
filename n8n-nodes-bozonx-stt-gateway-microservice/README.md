@@ -1,15 +1,18 @@
-# n8n-nodes-bozonx-tmp-files
+# n8n-nodes-bozonx-stt-gateway-microservice
 
-Это пакет community-ноды для n8n. Нода отправляет бинарный файл или URL на файл в микросервис временного хранения и возвращает временную ссылку (URL).
+Community-нода для n8n, выполняющая синхронную транскрибацию аудио по URL через STT Gateway Microservice (по умолчанию провайдер AssemblyAI).
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
 
-[Установка](#installation)
-[Использование](#использование)
-[Поля](#поля)
-[Credentials](#credentials)
-[Совместимость](#совместимость)
-[Ресурсы](#ресурсы)
+Секции:
+
+- [Установка](#installation)
+- [Использование](#использование)
+- [Поля](#поля)
+- [Credentials](#credentials)
+- [Продвинутое](#продвинутое)
+- [Совместимость](#совместимость)
+- [Ресурсы](#ресурсы)
 
 ## Installation
 
@@ -17,57 +20,70 @@
 
 ## Использование
 
-Нода отправляет данные в эндпоинт `POST {{baseUrl}}/api/v1/tmp-files`.
+Нода отправляет запрос в эндпоинт микросервиса:
 
-- Если выбран источник `URL`, отправляется JSON `{ url: string, ttl: number }`.
-- Если выбран источник `Binary`, отправляется `multipart/form-data` с полями:
-  - `file` — содержимое бинарного поля из входящего item
-  - `ttl` — строковое значение времени жизни в минутах
+```
+POST {{baseUrl}}/api/v1/transcriptions/file
+Content-Type: application/json
 
-Базовый URL и авторизация берутся из Credentials. Используется Basic Auth (username/password).
+{
+  "audioUrl": "https://example.com/audio.mp3",
+  "provider": "assemblyai",
+  "timestamps": false,
+  "apiKey": "YOUR_ASSEMBLYAI_KEY" // необязательно
+}
+```
+
+- `baseUrl` берётся из Credentials. Не включайте туда `/api/v1` — нода добавит путь сама.
+- Аутентификация (если нужна) — Basic (username/password) на API Gateway, сам сервис авторизацию не выполняет.
+
+### Пример ответа (200 OK)
+
+```json
+{
+  "text": "Transcribed text...",
+  "provider": "assemblyai",
+  "requestId": "abc123",
+  "durationSec": 123.45,
+  "language": "en",
+  "confidenceAvg": 0.92,
+  "wordsCount": 204,
+  "processingMs": 8421,
+  "timestampsEnabled": false
+}
+```
 
 ## Поля
 
-- **Source Type** — выбор источника данных: `Binary` или `URL`.
-- **Binary Property** — имя бинарного поля из входящих данных (по умолчанию `data`). Видно только при `Binary`.
-- **File URL** — URL файла (видно только при `URL`).
-- **TTL (minutes)** — время жизни файла в минутах (обязательное поле, минимум `1`, по умолчанию `60`).
+- **Audio URL** — обязательный. Публичный HTTPS URL на аудиофайл.
+- **Provider** — обязательный. Список со значением `assemblyai`.
+- **Timestamps** — чекбокс. По умолчанию выключен.
+- **Provider API Key** — строка, необязательно. Передаётся в провайдер, если политика сервиса позволяет кастомный ключ.
 
 ## Credentials
 
-Используются кастомные креды `Tmp Files API`:
+Креды `STT Gateway API`:
 
-- **Base URL** — базовый URL микросервиса (обязательное поле).
-- **Username** — имя пользователя для Basic Auth.
-- **Password** — пароль для Basic Auth.
+- **Base URL** — базовый URL сервиса, без `/api/v1` (обязательное поле).
+- **Username** — имя пользователя для Basic Auth (опционально).
+- **Password** — пароль для Basic Auth (опционально).
 
-Поддерживаются выражения, поэтому можно использовать переменные окружения при настройке кредов:
+Можно использовать выражения и переменные окружения, например:
 
-- Для Base URL: `{{$env.TMP_FILES_BASE_URL}}`
-- Для Username: `{{$env.TMP_FILES_USERNAME}}`
-- Для Password: `{{$env.TMP_FILES_PASSWORD}}`
+- Base URL: `{{$env.STT_GATEWAY_BASE_URL}}`
+- Username: `{{$env.STT_GATEWAY_USERNAME}}`
+- Password: `{{$env.STT_GATEWAY_PASSWORD}}`
 
-## Continue On Fail
+## Продвинутое
 
-Если включить опцию “Continue On Fail” в настройках ноды, обработка не прервётся на первом ошибочном элементе:
-
-- Ошибочные элементы будут возвращены с полем `json.error` и с сохранением ссылки на исходный элемент через `pairedItem`.
-- Успешные элементы вернут обычный `json`-ответ сервиса.
-
-Где включать:
-
-- Откройте ноду → вкладка Settings → переключатель “Continue On Fail”.
-
-Когда полезно:
-
-- При батчевой загрузке файлов/URL, чтобы единичная ошибка не останавливала весь процесс.
-
-Когда не стоит включать:
+- Поддерживается настройка `Continue On Fail` в Settings ноды. При ошибке элемент вернётся с `json.error`, а выполнение продолжится для остальных элементов.
+- Заголовок `Accept: application/json` установлен по умолчанию. Тело запроса — JSON.
 
 ## Совместимость
 
-Поддерживается n8n версии `1.60.0` и выше.
+Разработано и проверено с n8n `1.60.0+`.
 
 ## Ресурсы
 
-- [Документация по community-нодам n8n](https://docs.n8n.io/integrations/#community-nodes)
+- Документация сервиса: `README.md` в корне репозитория.
+- Документация по community-нодам n8n: https://docs.n8n.io/integrations/#community-nodes

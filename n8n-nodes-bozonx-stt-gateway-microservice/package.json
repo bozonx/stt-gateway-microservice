@@ -1,7 +1,7 @@
 {
-    "name": "n8n-nodes-bozonx-tmp-files",
+    "name": "n8n-nodes-bozonx-stt-gateway-microservice",
     "version": "0.2.0",
-    "description": "n8n node to upload a binary file or file URL to a temporary files microservice and return a temporary link",
+    "description": "n8n node for synchronous transcription via STT Gateway microservice (AssemblyAI)",
     "license": "MIT",
     "homepage": "",
     "keywords": [
@@ -13,7 +13,7 @@
     },
     "repository": {
         "type": "git",
-        "url": "https://github.com/bozonx/tmp-files-microservice"
+        "url": "https://github.com/bozonx/stt-gateway-microservice"
     },
    "scripts": {
 		"build": "n8n-node build",
@@ -31,10 +31,10 @@
       "n8nNodesApiVersion": 1,
       "strict": true,
       "nodes": [
-          "dist/nodes/TmpFiles/TmpFiles.node.js"
+          "dist/nodes/SttGateway/SttGateway.node.js"
       ],
       "credentials": [
-          "dist/credentials/TmpFilesApi.credentials.js"
+          "dist/credentials/SttGatewayApi.credentials.js"
       ]
   },
     "devDependencies": {
