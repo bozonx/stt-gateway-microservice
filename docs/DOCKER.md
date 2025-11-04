@@ -67,8 +67,7 @@ docker compose down
   - `STT_REQUEST_TIMEOUT_SEC` (по умолчанию `15`)
   - `STT_POLL_INTERVAL_MS` (по умолчанию `1500`)
   - `STT_MAX_SYNC_WAIT_MIN` (по умолчанию `3`)
-  - `ALLOW_CUSTOM_API_KEY` (`false|true`)
-  - `ASSEMBLYAI_API_KEY` (необязателен, но обязателен если `ALLOW_CUSTOM_API_KEY=false` и вы не передаёте `apiKey` в запросе)
+  - `ASSEMBLYAI_API_KEY` (необязателен; используется как fallback, если не передаёте `apiKey` в запросе)
 
 Примечание: переменных `AUTH_*` нет — встроенная авторизация удалена.
 
@@ -111,7 +110,7 @@ docker run -d \
   your-image:tag
 ```
 
-Если `ALLOW_CUSTOM_API_KEY=true`, можно не задавать `ASSEMBLYAI_API_KEY` и передавать ключ в теле запроса (`apiKey`).
+Вы можете либо передавать ключ в теле запроса (`apiKey`), либо задать `ASSEMBLYAI_API_KEY` в окружении контейнера — он будет использован по умолчанию, если `apiKey` не передан.
 
 ## Healthcheck
 
@@ -122,7 +121,7 @@ docker run -d \
 
 ## Troubleshooting
 
-- 401 при транскрибации: проверьте, что задан `ASSEMBLYAI_API_KEY` (или используете `ALLOW_CUSTOM_API_KEY=true` и передаёте `apiKey`).
+- 401 при транскрибации: проверьте, что вы передали `apiKey` в запросе или задали `ASSEMBLYAI_API_KEY` в окружении.
 - 400 `Private/loopback hosts are not allowed`: источник аудио должен быть доступным публично, приватные и loopback-хосты блокируются.
 - 400 `File too large`: превышен лимит `STT_MAX_FILE_SIZE_MB` (проверяется, если сервер источника отдаёт `Content-Length`).
 - Конфликт портов: измените маппинг порта в compose (`ports: ['8081:80']`).

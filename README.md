@@ -96,7 +96,7 @@ Notes:
 
 - `audioUrl` must be http(s); private/loopback hosts are rejected.
 - `provider` is optional, defaults to `assemblyai` if omitted and allowed.
-- `apiKey` is used only when `ALLOW_CUSTOM_API_KEY=true`; otherwise the service uses `ASSEMBLYAI_API_KEY` from the environment.
+- `apiKey` is optional; if provided, it is used. Otherwise the service falls back to `ASSEMBLYAI_API_KEY` from the environment.
 
 Sample response (200 OK)
 
@@ -118,7 +118,7 @@ Status codes:
 
 - `200 OK` — transcription succeeded
 - `400 Bad Request` — invalid params/URL, private hosts, file too large, unsupported provider
-- `401 Unauthorized` — missing provider API key (when `ALLOW_CUSTOM_API_KEY=false` and no `ASSEMBLYAI_API_KEY`)
+- `401 Unauthorized` — missing provider API key (no `apiKey` in request and no `ASSEMBLYAI_API_KEY` in environment)
 - `503 Service Unavailable` — provider error
 - `504 Gateway Timeout` — exceeded max synchronous waiting time
 
@@ -128,7 +128,7 @@ See `docs/dev.md` for development and testing instructions.
 ## Docker
 
 - Example Compose file — `docker/docker-compose.yml`
-- To use the provider, either set `ASSEMBLYAI_API_KEY` in the container environment or enable `ALLOW_CUSTOM_API_KEY=true` and supply `apiKey` in the request body.
+- To use the provider, either set `ASSEMBLYAI_API_KEY` in the container environment or supply `apiKey` in the request body.
 
 ```bash
 # Local run with compose (from repo root)
@@ -152,6 +152,7 @@ See `docs/LOGGING.md` for details.
 
 - No Swagger or GraphQL included
 - No built-in authorization
+ - See `docs/STT.md` for transcription behavior details (RU)
 
 ## License
 

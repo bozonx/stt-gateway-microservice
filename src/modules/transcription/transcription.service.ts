@@ -121,8 +121,7 @@ export class TranscriptionService {
 
     const provider = this.selectProvider(params.provider);
 
-    const apiKeyToUse =
-      this.cfg.allowCustomApiKey && params.apiKey ? params.apiKey : this.cfg.assemblyAiApiKey;
+    const apiKeyToUse = params.apiKey || this.cfg.assemblyAiApiKey;
     if (!apiKeyToUse) {
       this.logger.error('Missing provider API key');
       throw new UnauthorizedException('Missing provider API key');

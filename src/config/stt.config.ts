@@ -3,7 +3,6 @@ import {
   IsString,
   IsArray,
   IsInt,
-  IsBoolean,
   IsOptional,
   Min,
   Max,
@@ -41,9 +40,6 @@ export class SttConfig {
   @Max(60)
   public maxSyncWaitMin!: number;
 
-  @IsBoolean()
-  public allowCustomApiKey!: boolean;
-
   @IsOptional()
   @IsString()
   public assemblyAiApiKey?: string;
@@ -60,7 +56,6 @@ export default registerAs('stt', (): SttConfig => {
     requestTimeoutSec: parseInt(process.env.STT_REQUEST_TIMEOUT_SEC ?? '15', 10),
     pollIntervalMs: parseInt(process.env.STT_POLL_INTERVAL_MS ?? '1500', 10),
     maxSyncWaitMin: parseInt(process.env.STT_MAX_SYNC_WAIT_MIN ?? '3', 10),
-    allowCustomApiKey: (process.env.ALLOW_CUSTOM_API_KEY ?? 'false') === 'true',
     assemblyAiApiKey: process.env.ASSEMBLYAI_API_KEY,
   });
 
