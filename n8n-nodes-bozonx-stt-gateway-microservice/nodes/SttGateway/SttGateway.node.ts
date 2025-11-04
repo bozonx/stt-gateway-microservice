@@ -61,6 +61,13 @@ export class SttGateway implements INodeType {
 				description: 'Include word-level timestamps in provider request (if supported)',
 			},
 			{
+				displayName: 'Restore Punctuation',
+				name: 'restorePunctuation',
+				type: 'boolean',
+				default: true,
+				description: 'Request provider to restore punctuation (default true when supported)',
+			},
+			{
 				displayName: 'Provider API Key',
 				name: 'apiKey',
 				type: 'string',
@@ -79,6 +86,7 @@ export class SttGateway implements INodeType {
 				const audioUrl = this.getNodeParameter('audioUrl', i) as string;
 				const provider = this.getNodeParameter('provider', i) as string;
 				const timestamps = this.getNodeParameter('timestamps', i) as boolean;
+				const restorePunctuation = this.getNodeParameter('restorePunctuation', i) as boolean;
 				const apiKey = this.getNodeParameter('apiKey', i) as string;
 
 				if (!audioUrl) {
@@ -96,6 +104,7 @@ export class SttGateway implements INodeType {
 						audioUrl,
 						provider,
 						timestamps,
+						restorePunctuation,
 					} as IDataObject,
 				};
 

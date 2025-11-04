@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### API changes
+
+- Added optional request parameter `restorePunctuation` (default `true` when supported) to `/transcriptions/file`
+- Response now always includes `punctuationRestored` boolean
+- Removed `textFormatted` from documentation (not supported)
+
 - API_VERSION удалена из кода, тестов и документации; версия API зафиксирована как `v1`
 - AppConfig больше не содержит `apiVersion`; глобальный префикс формируется как `/{API_BASE_PATH}/v1`
 - README: переписан на английском и ориентирован на production; dev‑инструкции оставлены в `docs/dev.md`; примеры и эндпоинты верифицированы по коду

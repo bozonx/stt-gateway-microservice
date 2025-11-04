@@ -32,6 +32,7 @@ Request body:
   "audioUrl": "https://example.com/audio.mp3",
   "provider": "assemblyai",
   "timestamps": false,
+  "restorePunctuation": true,
   "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
 ```
@@ -47,6 +48,9 @@ Field details:
   - Defaults to `STT_DEFAULT_PROVIDER` if omitted; must be allowed by `STT_ALLOWED_PROVIDERS`.
 - `timestamps` (boolean, optional)
   - If true, provider is requested to include word-level timestamps (when supported).
+- `restorePunctuation` (boolean, optional)
+  - If true, provider is requested to restore/add punctuation in the transcript.
+  - Defaults to `true` when the service/provider supports it (e.g., AssemblyAI).
 - `apiKey` (string, optional)
   - If provided, used as the provider API key for this request (BYO key).
   - If omitted, the service will fall back to `ASSEMBLYAI_API_KEY` from environment.
@@ -61,6 +65,7 @@ curl -X POST \
     "audioUrl": "https://example.com/audio.mp3",
     "provider": "assemblyai",
     "timestamps": false,
+    "restorePunctuation": true,
     "apiKey": "YOUR_ASSEMBLYAI_KEY"
   }'
 ```
@@ -78,8 +83,7 @@ Successful response (200):
   "wordsCount": 204,
   "processingMs": 8421,
   "timestampsEnabled": false,
-  "punctuationRestored": true,
-  "textFormatted": true
+  "punctuationRestored": true
 }
 ```
 

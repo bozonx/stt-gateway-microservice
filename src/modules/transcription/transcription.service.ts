@@ -85,6 +85,7 @@ export class TranscriptionService {
     audioUrl: string;
     provider?: string;
     timestamps?: boolean;
+    restorePunctuation?: boolean;
     apiKey?: string;
   }): Promise<{
     text: string;
@@ -96,6 +97,7 @@ export class TranscriptionService {
     wordsCount?: number;
     processingMs: number;
     timestampsEnabled: boolean;
+    punctuationRestored: boolean;
   }> {
     this.logger.info(`Starting transcription for URL: ${params.audioUrl}`);
 
@@ -134,6 +136,8 @@ export class TranscriptionService {
       result = await provider.submitAndWaitByUrl({
         audioUrl: params.audioUrl,
         apiKey: apiKeyToUse,
+        restorePunctuation: params.restorePunctuation,
+        timestamps: params.timestamps,
       });
     } catch (err: unknown) {
       if (err instanceof HttpException) {
@@ -159,6 +163,7 @@ export class TranscriptionService {
       wordsCount: result.words?.length,
       processingMs,
       timestampsEnabled: Boolean(params.timestamps),
+      punctuationRestored: result.punctuationRestored ?? (params.restorePunctuation ?? true),
     };
   }
 }

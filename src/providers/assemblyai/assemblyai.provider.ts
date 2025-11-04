@@ -50,11 +50,18 @@ export class AssemblyAiProvider implements SttProvider {
 
     const headers = { Authorization: params.apiKey as string };
     const apiUrl = `${ASSEMBLYAI_API.BASE_URL}${ASSEMBLYAI_API.TRANSCRIPTS_ENDPOINT}`;
-    const create$ = this.http.post<AssemblyCreateResponse>(
-      apiUrl,
-      { audio_url: params.audioUrl },
-      { headers, validateStatus: () => true },
-    );
+    const payload: Record<string, any> = {
+      audio_url: params.audioUrl,
+      punctuate: params.restorePunctuation ?? true,
+    };
+    if (typeof params.timestamps === 'boolean') {
+      payload.words = Boolean(params.timestamps);
+    }
+
+    const create$ = this.http.post<AssemblyCreateResponse>(apiUrl, payload, {
+      headers,
+      validateStatus: () => true,
+    });
 
     const createRes = await lastValueFrom(create$.pipe(timeout(this.cfg.requestTimeoutSeconds * 1000)));
     if (createRes.status >= 400 || !createRes.data?.id) {
@@ -116,6 +123,7 @@ export class AssemblyAiProvider implements SttProvider {
               end: w.end,
               text: w.text,
             })) ?? undefined,
+          punctuationRestored: params.restorePunctuation ?? true,
         };
       }
 

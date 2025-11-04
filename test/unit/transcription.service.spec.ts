@@ -86,5 +86,6 @@ describe('TranscriptionService', () => {
     expect(res.provider).toBe('assemblyai');
     expect(res.requestId).toBe('id1');
     expect(res.wordsCount).toBe(1);
+    expect(res.punctuationRestored).toBe(true);
   });
 });

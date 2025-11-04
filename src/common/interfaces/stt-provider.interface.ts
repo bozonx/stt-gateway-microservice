@@ -1,6 +1,11 @@
 export interface TranscriptionRequestByUrl {
   audioUrl: string;
   apiKey?: string;
+  // If true/false is provided, provider should explicitly control punctuation restoration.
+  // When undefined, provider defaults apply (e.g., true for AssemblyAI).
+  restorePunctuation?: boolean;
+  // Request word-level timestamps when supported by provider
+  timestamps?: boolean;
 }
 
 export interface WordTiming {
@@ -16,6 +21,8 @@ export interface TranscriptionResult {
   language?: string;
   confidenceAvg?: number;
   words?: WordTiming[];
+  // Whether punctuation has been restored/kept by provider
+  punctuationRestored?: boolean;
 }
 
 export interface SttProvider {

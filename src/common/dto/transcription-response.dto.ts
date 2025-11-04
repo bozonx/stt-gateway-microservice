@@ -19,4 +19,6 @@ export class TranscriptionResponseDto {
   public processingMs!: number;
 
   public timestampsEnabled!: boolean;
+
+  public punctuationRestored!: boolean;
 }

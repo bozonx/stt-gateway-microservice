@@ -15,6 +15,10 @@ export class TranscribeFileDto {
   public readonly timestamps?: boolean;
 
   @IsOptional()
+  @IsBoolean()
+  public readonly restorePunctuation?: boolean;
+
+  @IsOptional()
   @IsString()
   public readonly apiKey?: string;
 }

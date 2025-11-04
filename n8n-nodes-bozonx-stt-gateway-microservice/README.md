@@ -30,6 +30,7 @@ Content-Type: application/json
   "audioUrl": "https://example.com/audio.mp3",
   "provider": "assemblyai",
   "timestamps": false,
+  "restorePunctuation": true,
   "apiKey": "YOUR_ASSEMBLYAI_KEY" // необязательно
 }
 ```
@@ -49,7 +50,8 @@ Content-Type: application/json
   "confidenceAvg": 0.92,
   "wordsCount": 204,
   "processingMs": 8421,
-  "timestampsEnabled": false
+  "timestampsEnabled": false,
+  "punctuationRestored": true
 }
 ```
 
@@ -58,6 +60,7 @@ Content-Type: application/json
 - **Audio URL** — обязательный. Публичный HTTPS URL на аудиофайл.
 - **Provider** — обязательный. Список со значением `assemblyai`.
 - **Timestamps** — чекбокс. По умолчанию выключен.
+- **Restore Punctuation** — чекбокс. По умолчанию включен (если поддерживается провайдером).
 - **Provider API Key** — строка, необязательно. Передаётся в провайдер, если политика сервиса позволяет кастомный ключ.
 
 ## Credentials

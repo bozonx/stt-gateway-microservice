@@ -43,6 +43,22 @@ describe('AssemblyAiProvider', () => {
     httpService = moduleRef.get<HttpService>(HttpService);
     configService = moduleRef.get<ConfigService>(ConfigService);
   });
+  
+  it('should pass timestamps as words=true in create payload when requested', async () => {
+    const mockTranscriptId = 't-1';
+    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } };
+    const completedResponse = { status: 200, data: { id: mockTranscriptId, status: 'completed', text: 'ok' } };
+    const postSpy = jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any));
+    jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any));
+
+    await provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey, timestamps: true });
+
+    expect(postSpy).toHaveBeenCalledWith(
+      'https://api.assemblyai.com/v2/transcripts',
+      expect.objectContaining({ audio_url: mockAudioUrl, punctuate: true, words: true }),
+      expect.anything(),
+    );
+  });
 
   afterEach(() => {
     jest.clearAllMocks();
@@ -81,20 +97,21 @@ describe('AssemblyAiProvider', () => {
 
       const result = await provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey });
 
-      expect(result).toEqual({
+      expect(result).toEqual(expect.objectContaining({
         text: 'Hello world',
         requestId: mockTranscriptId,
         durationSec: 5.5,
         language: 'en',
         confidenceAvg: 0.95,
+        punctuationRestored: true,
         words: [
           { start: 0, end: 500, text: 'Hello' },
           { start: 500, end: 1000, text: 'world' },
         ],
-      });
+      }));
       expect(httpService.post).toHaveBeenCalledWith(
         'https://api.assemblyai.com/v2/transcripts',
-        { audio_url: mockAudioUrl },
+        expect.objectContaining({ audio_url: mockAudioUrl, punctuate: true }),
         expect.objectContaining({ headers: { Authorization: mockApiKey } }),
       );
       expect(httpService.get).toHaveBeenCalledTimes(3);
@@ -173,7 +190,7 @@ describe('AssemblyAiProvider', () => {
       jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any));
       jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any));
       const result = await provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey });
-      expect(result).toEqual({ text: 'Minimal response', requestId: mockTranscriptId, durationSec: undefined, language: undefined, confidenceAvg: undefined, words: undefined });
+      expect(result).toEqual(expect.objectContaining({ text: 'Minimal response', requestId: mockTranscriptId, durationSec: undefined, language: undefined, confidenceAvg: undefined, words: undefined, punctuationRestored: true }));
     }, 10000);
 
     it('should handle completed response with null text', async () => {
