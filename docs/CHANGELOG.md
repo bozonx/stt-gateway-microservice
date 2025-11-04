@@ -4,7 +4,7 @@
 
 ### Configuration
 
-- Added environment variable `HTTP_REQUEST_BODY_LIMIT_MB` — max HTTP request body size (in megabytes) for Fastify body parser. Default: `10`.
+- Added environment variable `HTTP_REQUEST_BODY_LIMIT_MB` — max HTTP request body size (in megabytes) for Fastify body parser. Default: `100`.
 
 ### API changes
 
