@@ -22,14 +22,14 @@ export class SttGateway implements INodeType {
 		inputs: ['main'],
 		outputs: ['main'],
 		requestDefaults: {
-			baseURL: '={{$credentials.baseUrl}}',
+			baseURL: '={{$credentials.gatewayUrl}}',
 			headers: {
 				Accept: 'application/json',
 			},
 		},
 		credentials: [
 			{
-				name: 'sttGatewayApi',
+				name: 'bozonxMicroservicesApi',
 				required: true,
 			},
 		],
@@ -114,7 +114,7 @@ export class SttGateway implements INodeType {
 					(options.body as IDataObject).apiKey = apiKey;
 				}
 
-				const response = await this.helpers.httpRequestWithAuthentication.call(this, 'sttGatewayApi', options);
+				const response = await this.helpers.httpRequestWithAuthentication.call(this, 'bozonxMicroservicesApi', options);
 				returnData.push({ json: response as IDataObject, pairedItem: { item: i } });
 			} catch (error) {
 				if (this.continueOnFail()) {

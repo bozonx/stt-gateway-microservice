@@ -9,6 +9,7 @@ services:
       - '8080:80'
     environment:
       - TZ=UTC
+      - HTTP_REQUEST_BODY_LIMIT_MB=10
       - API_BASE_PATH=api
       - LOG_LEVEL=warn
       - STT_DEFAULT_PROVIDER=assemblyai

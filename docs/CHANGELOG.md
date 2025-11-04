@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Configuration
+
+- Added environment variable `HTTP_REQUEST_BODY_LIMIT_MB` — max HTTP request body size (in megabytes) for Fastify body parser. Default: `10`.
+
 ### API changes
 
 - Added optional request parameter `restorePunctuation` (default `true` when supported) to `/transcriptions/file`
