@@ -13,7 +13,7 @@ export class IndexController {
   @Get()
   public index() {
     const appConfig = this.configService.get<AppConfig>('app')!;
-    const base = `/${appConfig.apiBasePath}/${appConfig.apiVersion}`;
+    const base = `/${appConfig.apiBasePath}/v1`;
     return {
       name: SERVICE_METADATA.NAME,
       version: this.version,

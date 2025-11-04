@@ -4,7 +4,7 @@ High-performance microservice for synchronous speech-to-text by audio URL, built
 
 ## What's included
 
-- 🏥 Minimal health-check endpoint `/{API_BASE_PATH}/{API_VERSION}/health`
+- 🏥 Minimal health-check endpoint `/{API_BASE_PATH}/v1/health`
 - 📊 Structured logging via Pino (JSON in production)
 - 🛡️ Global error filter
 - ⚡ Fastify runtime
@@ -49,15 +49,14 @@ Key variables:
 - `LISTEN_HOST` — e.g. `0.0.0.0` or `localhost`
 - `LISTEN_PORT` — e.g. `80` or `3000`
 - `API_BASE_PATH` — API prefix (default `api`)
-- `API_VERSION` — API version (default `v1`)
 - `LOG_LEVEL` — `trace|debug|info|warn|error|fatal|silent`
 - `TZ` — timezone (default `UTC`)
 
 ## Endpoints
 
-- `GET /{API_BASE_PATH}/{API_VERSION}` — API index with service info and links
-- `GET /{API_BASE_PATH}/{API_VERSION}/health` — basic health check
-- `POST /{API_BASE_PATH}/{API_VERSION}/transcriptions/file` — synchronous transcription by audio URL
+- `GET /{API_BASE_PATH}/v1` — API index with service info and links
+- `GET /{API_BASE_PATH}/v1/health` — basic health check
+- `POST /{API_BASE_PATH}/v1/transcriptions/file` — synchronous transcription by audio URL
 
 Examples
 

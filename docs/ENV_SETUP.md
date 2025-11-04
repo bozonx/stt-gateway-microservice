@@ -14,7 +14,6 @@
 - `LISTEN_HOST` — хост, напр. `0.0.0.0` или `localhost`
 - `LISTEN_PORT` — порт, напр. `80` или `3000`
 - `API_BASE_PATH` — префикс API, напр. `api`
-- `API_VERSION` — версия API, напр. `v1`
 - `LOG_LEVEL` — `trace|debug|info|warn|error|fatal|silent`
 - `TZ` — таймзона, напр. `UTC`
 

@@ -2,7 +2,7 @@
 
 ## Поток запроса
 
-- POST /{API_BASE_PATH}/{API_VERSION}/transcriptions/file
+- POST /{API_BASE_PATH}/v1/transcriptions/file
 - Проверка входных данных
   - URL должен быть http(s).
   - Запрещены приватные и loopback-хосты (например, 127.0.0.1, localhost, 10.0.0.0/8 и т.д.).

@@ -57,7 +57,6 @@ docker compose down
   - `TZ` (например, `UTC`)
 - API:
   - `API_BASE_PATH` (по умолчанию `api`)
-  - `API_VERSION` (по умолчанию `v1`)
 - Логи:
   - `LOG_LEVEL` (`trace|debug|info|warn|error|fatal|silent`)
 - STT:
@@ -87,7 +86,6 @@ services:
       - "8080:80"
     environment:
       - API_BASE_PATH=api
-      - API_VERSION=v1
       - LOG_LEVEL=warn
       # Укажите ключ провайдера, если не используете custom apiKey в запросе
       - ASSEMBLYAI_API_KEY=your-assemblyai-key
@@ -103,7 +101,6 @@ docker run -d \
   -p 8080:80 \
   -e NODE_ENV=production \
   -e API_BASE_PATH=api \
-  -e API_VERSION=v1 \
   -e LOG_LEVEL=warn \
   -e ASSEMBLYAI_API_KEY=your-assemblyai-key \
   --name stt-gateway \
@@ -116,7 +113,7 @@ docker run -d \
 
 В docker-compose включён healthcheck, который:
 
-- Пингует `http://127.0.0.1:{LISTEN_PORT}/{API_BASE_PATH}/{API_VERSION}/health`
+- Пингует `http://127.0.0.1:{LISTEN_PORT}/{API_BASE_PATH}/v1/health`
 - Отмечает контейнер `unhealthy`, если ответ не `200`
 
 ## Troubleshooting
