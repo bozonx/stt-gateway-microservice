@@ -1,64 +1,64 @@
-# Руководство по разработке (dev)
+# Development guide (dev)
 
-## Требования
+## Requirements
 
 - Node.js 22+
 - pnpm 10+
 
-## Быстрый старт (dev)
+## Quick start (dev)
 
 ```bash
-# 1) Установка зависимостей
+# 1) Install dependencies
 pnpm install
 
-# 2) Окружение (dev)
+# 2) Environment (dev)
 cp env.development.example .env.development
 
-# 3) Запуск в режиме разработки (watch)
+# 3) Start in watch mode
 pnpm start:dev
 ```
 
-- URL по умолчанию (dev): `http://localhost:3000/api/v1`
+- Default URL (dev): `http://localhost:3000/api/v1`
 
-## Тесты
+## Tests
 
-Проекты Jest разделены на `unit` и `e2e`.
+Jest projects are split into `unit` and `e2e`.
 
 ```bash
-# Все тесты
+# All tests
 pnpm test
 
-# Unit-тесты
+# Unit tests
 pnpm test:unit
 
-# E2E-тесты
+# E2E tests
 pnpm test:e2e
 
-# Непрерывный прогон
+# Watch mode
 pnpm test:watch
 
-# Покрытие
+# Coverage
 pnpm test:cov
 
-# Отладка
+# Debug
 pnpm test:unit:debug
 pnpm test:e2e:debug
 ```
 
-## Качество кода
+## Code quality
 
 ```bash
-# Линт
+# Lint
 pnpm lint
 
-# Форматирование
+# Format
 pnpm format
 ```
 
-## Полезно знать
+## Good to know
 
-- Включена глобальная `ValidationPipe` (whitelist, forbidNonWhitelisted, transform).
-- В dev используется `pino-pretty` c более подробными логами.
-- В prod игнорируется автологирование `/health`; в dev — логируется.
-- Чувствительные заголовки редактируются в логах (`authorization`, `x-api-key`).
-- Аликсы путей TypeScript/Jest: `@/*`, `@common/*`, `@modules/*`, `@config/*`, `@test/*`.
+- Global `ValidationPipe` enabled (whitelist, forbidNonWhitelisted, transform).
+- `pino-pretty` for more readable logs in dev.
+- Autologging of `/health` is disabled in prod, enabled in dev.
+- Sensitive headers are redacted in logs (`authorization`, `x-api-key`).
+- TypeScript/Jest path aliases: `@/*`, `@common/*`, `@modules/*`, `@config/*`, `@test/*`.

@@ -14,6 +14,13 @@
  - Обновлены `env.production.example` и `env.development.example` (убраны `ALLOW_CUSTOM_API_KEY`, уточнён `ASSEMBLYAI_API_KEY` как fallback)
  - Обновлены `README.md`, `docs/ENV_SETUP.md`, `docs/DOCKER.md`, `docs/STT.md` в соответствии с новой логикой ключей
 
+### Documentation refactor (English)
+
+- Consolidated environment, logging, Docker, and STT behavior into `README.md` (English)
+- Added `docs/API.md` with endpoint reference, examples, and status codes (English)
+- Rewrote `docs/dev.md` in English and moved dev-only content out of `README.md`
+- Marked legacy docs for removal: `docs/STT.md`, `docs/LOGGING.md`, `docs/ENV_SETUP.md`, `docs/DOCKER.md`
+
 ## 0.15.0 — Refactor
 
 - Удалены GraphQL и Swagger

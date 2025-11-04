@@ -1,6 +1,11 @@
 # STT Gateway Microservice (NestJS + Fastify)
 
-High-performance microservice for synchronous speech-to-text by audio URL, built with NestJS + Fastify. Uses AssemblyAI by default. No built-in auth, Swagger, or GraphQL.
+High-performance microservice for synchronous speech-to-text by public audio URL. Built with NestJS + Fastify. Uses AssemblyAI by default. No built-in auth, Swagger, or GraphQL.
+
+Links:
+
+- API: see [API documentation](docs/API.md)
+- Dev guide: see [Development guide](docs/dev.md) (link duplicated at the bottom)
 
 ## What's included
 
@@ -12,11 +17,11 @@ High-performance microservice for synchronous speech-to-text by audio URL, built
 - 🐳 Docker-ready
 - 🎙️ Synchronous transcription endpoint via AssemblyAI
 
-## Production Quick Start
+## Quick Start (production)
 
 Choose one of the options below.
 
-- Docker Compose (recommended for quick run):
+- Docker Compose (recommended):
 
 ```bash
 docker compose -f docker/docker-compose.yml up -d --build
@@ -40,10 +45,10 @@ Default URLs:
 
 - Files:
   - `.env.production`
-  - `.env` (optional)
+  - `.env.development`
 - Source of truth: `.env.production.example`
 
-Key variables:
+Core variables:
 
 - `NODE_ENV` — `production|development|test`
 - `LISTEN_HOST` — e.g. `0.0.0.0` or `localhost`
@@ -52,106 +57,83 @@ Key variables:
 - `LOG_LEVEL` — `trace|debug|info|warn|error|fatal|silent`
 - `TZ` — timezone (default `UTC`)
 
-## Endpoints
+STT variables:
+
+- `STT_DEFAULT_PROVIDER` — default provider (e.g., `assemblyai`)
+- `STT_ALLOWED_PROVIDERS` — comma-separated allow list (e.g., `assemblyai`)
+- `STT_MAX_FILE_SIZE_MB` — file size limit in MB (checked via `Content-Length` on HEAD)
+- `STT_REQUEST_TIMEOUT_SECONDS` — single HTTP request timeout to provider
+- `STT_POLL_INTERVAL_MS` — polling interval when waiting for result
+- `STT_MAX_SYNC_WAIT_MINUTES` — max synchronous wait before returning `504`
+- `ASSEMBLYAI_API_KEY` — optional default provider key (used if request has no `apiKey`)
+
+## API
+
+- See [API documentation](docs/API.md) for complete endpoint reference, requests/responses, and status codes.
+
+Quick summary of available endpoints:
 
 - `GET /{API_BASE_PATH}/v1` — API index with service info and links
-- `GET /{API_BASE_PATH}/v1/health` — basic health check
+- `GET /{API_BASE_PATH}/v1/health` — health check
 - `POST /{API_BASE_PATH}/v1/transcriptions/file` — synchronous transcription by audio URL
 
-Examples
+### Transcription behavior (high level)
 
-- API index
-
-```bash
-curl http://localhost:80/api/v1
-```
-
-- Transcription by URL
-
-```bash
-curl -X POST \
-  http://localhost:80/api/v1/transcriptions/file \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "audioUrl": "https://example.com/audio.mp3",
-    "provider": "assemblyai",
-    "timestamps": false,
-    "apiKey": "YOUR_ASSEMBLYAI_KEY"
-  }'
-```
-
-Request body
-
-```json
-{
-  "audioUrl": "https://example.com/audio.mp3",
-  "provider": "assemblyai",
-  "timestamps": false,
-  "apiKey": "YOUR_ASSEMBLYAI_KEY"
-}
-```
-
-Notes:
-
-- `audioUrl` must be http(s); private/loopback hosts are rejected.
-- `provider` is optional, defaults to `assemblyai` if omitted and allowed.
-- `apiKey` is optional; if provided, it is used. Otherwise the service falls back to `ASSEMBLYAI_API_KEY` from the environment.
-
-Sample response (200 OK)
-
-```json
-{
-  "text": "Transcribed text...",
-  "provider": "assemblyai",
-  "requestId": "abc123",
-  "durationSec": 123.45,
-  "language": "en",
-  "confidenceAvg": 0.92,
-  "wordsCount": 204,
-  "processingMs": 8421,
-  "timestampsEnabled": false
-}
-```
-
-Status codes:
-
-- `200 OK` — transcription succeeded
-- `400 Bad Request` — invalid params/URL, private hosts, file too large, unsupported provider
-- `401 Unauthorized` — missing provider API key (no `apiKey` in request and no `ASSEMBLYAI_API_KEY` in environment)
-- `503 Service Unavailable` — provider error
-- `504 Gateway Timeout` — exceeded max synchronous waiting time
+- The service does not download audio files; it forwards the original URL to the provider.
+- Pre-flight HEAD may be performed to check size via `Content-Length`.
+  - If present and exceeds `STT_MAX_FILE_SIZE_MB` → `400 File too large`.
+  - If missing/unavailable → size check is skipped.
+- Timeouts and waiting:
+  - Request timeout: `STT_REQUEST_TIMEOUT_SECONDS`.
+  - Polling interval: `STT_POLL_INTERVAL_MS`.
+  - Max sync wait: `STT_MAX_SYNC_WAIT_MINUTES` → returns `504` if exceeded.
 
 ## Tests
+
 See `docs/dev.md` for development and testing instructions.
 
 ## Docker
 
-- Example Compose file — `docker/docker-compose.yml`
-- To use the provider, either set `ASSEMBLYAI_API_KEY` in the container environment or supply `apiKey` in the request body.
+- Image exposes internal port `80`; compose maps `8080:80` by default.
+- Minimal flow:
 
 ```bash
-# Local run with compose (from repo root)
+pnpm install && pnpm build
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-See `docs/DOCKER.md` for more details.
+`docker run` example:
+
+```bash
+docker run -d \
+  -p 8080:80 \
+  -e NODE_ENV=production \
+  -e API_BASE_PATH=api \
+  -e LOG_LEVEL=warn \
+  -e ASSEMBLYAI_API_KEY=your-assemblyai-key \
+  --name stt-gateway \
+  your-image:tag
+```
+
+Healthcheck in compose pings `/{API_BASE_PATH}/v1/health`.
 
 ## Logging
 
-The service uses `nestjs-pino`:
+`nestjs-pino` is used for structured logs.
 
-- Dev: human-readable format via `pino-pretty`
-- Prod: JSON logs with `@timestamp` and basic `service`/`environment` fields
-- Sensitive headers are redacted: `authorization`, `x-api-key`
-- `/health` requests are not logged in production
-
-See `docs/LOGGING.md` for details.
+- Dev: pretty output via `pino-pretty`
+- Prod: JSON logs with `@timestamp`, `service`, `environment`
+- Redaction: `authorization`, `x-api-key` headers
+- Auto-logging ignores `/health` in production
 
 ## Notes
 
 - No Swagger or GraphQL included
 - No built-in authorization
- - See `docs/STT.md` for transcription behavior details (RU)
+
+---
+
+See also: [Development guide](docs/dev.md).
 
 ## License
 

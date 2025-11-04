@@ -1,0 +1,132 @@
+# API Documentation
+
+Base URL format: `/{API_BASE_PATH}/v1`
+
+- Default in development: `http://localhost:3000/api/v1`
+- Default in Docker Compose: `http://localhost:8080/api/v1`
+
+## Index
+
+- `GET /` — Service index with metadata and links
+
+Example:
+
+```bash
+curl http://localhost:8080/api/v1
+```
+
+Response:
+
+```json
+{
+  "name": "stt-gateway-microservice",
+  "version": "0.16.0",
+  "status": "ok",
+  "time": "2025-11-04T12:34:56.789Z",
+  "links": {
+    "self": "/api/v1",
+    "health": "/api/v1/health",
+    "transcriptions": "/api/v1/transcriptions"
+  }
+}
+```
+
+Notes:
+
+- The exact `version` is taken from package.json.
+- `links.self` includes the resolved `API_BASE_PATH`.
+
+## Health
+
+- `GET /health` — Basic health check
+
+Example:
+
+```bash
+curl http://localhost:8080/api/v1/health
+```
+
+Response:
+
+```json
+{ "status": "ok" }
+```
+
+## Transcriptions
+
+- `POST /transcriptions/file` — Synchronous transcription by public audio URL
+
+Request body:
+
+```json
+{
+  "audioUrl": "https://example.com/audio.mp3",
+  "provider": "assemblyai",
+  "timestamps": false,
+  "apiKey": "YOUR_ASSEMBLYAI_KEY"
+}
+```
+
+Field details:
+
+- `audioUrl` (string, required)
+  - Must be `http(s)`.
+  - Private/loopback hosts are rejected (e.g., 127.0.0.1, localhost, 10.0.0.0/8).
+- `provider` (string, optional)
+  - Defaults to `STT_DEFAULT_PROVIDER` if omitted; must be allowed by `STT_ALLOWED_PROVIDERS`.
+- `timestamps` (boolean, optional)
+  - If true, provider is requested to include word-level timestamps (when supported).
+- `apiKey` (string, optional)
+  - If provided, used as the provider API key for this request (BYO key).
+  - If omitted, the service will fall back to `ASSEMBLYAI_API_KEY` from environment.
+
+Example (curl):
+
+```bash
+curl -X POST \
+  http://localhost:8080/api/v1/transcriptions/file \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "audioUrl": "https://example.com/audio.mp3",
+    "provider": "assemblyai",
+    "timestamps": false,
+    "apiKey": "YOUR_ASSEMBLYAI_KEY"
+  }'
+```
+
+Successful response (200):
+
+```json
+{
+  "text": "Transcribed text...",
+  "provider": "assemblyai",
+  "requestId": "abc123",
+  "durationSec": 123.45,
+  "language": "en",
+  "confidenceAvg": 0.92,
+  "wordsCount": 204,
+  "processingMs": 8421,
+  "timestampsEnabled": false
+}
+```
+
+### Processing model and limits
+
+- The service does NOT download audio files. It forwards the original URL to the provider (e.g., `audio_url` for AssemblyAI).
+- A pre-flight HEAD request may be performed to the `audioUrl`.
+  - If the server returns `Content-Length`, it's compared to `STT_MAX_FILE_SIZE_MB`.
+  - If size exceeds the limit → `400 File too large`.
+  - If `Content-Length` is missing or HEAD is unavailable → size check is skipped (request proceeds).
+- Request-level timeouts and polling:
+  - Single HTTP request timeout: `STT_REQUEST_TIMEOUT_SECONDS`.
+  - Poll interval: `STT_POLL_INTERVAL_MS`.
+  - Maximum synchronous wait: `STT_MAX_SYNC_WAIT_MINUTES` (after which the service returns `504 Gateway Timeout`).
+
+### Status codes
+
+- `200 OK` — Transcription finished successfully.
+- `400 Bad Request` — Invalid URL, private/loopback host, unsupported provider, or file too large (when `Content-Length` is known).
+- `401 Unauthorized` — No provider API key available (neither in body `apiKey` nor in env `ASSEMBLYAI_API_KEY`).
+- `503 Service Unavailable` — Provider error.
+- `504 Gateway Timeout` — Exceeded maximum synchronous waiting time.
+
