@@ -20,8 +20,8 @@ describe('AssemblyAiProvider', () => {
 
   beforeEach(async () => {
     process.env.STT_POLL_INTERVAL_MS = '100'; // Speed up tests
-    process.env.STT_MAX_SYNC_WAIT_MIN = '1'; // 1 minute minimum
-    process.env.STT_REQUEST_TIMEOUT_SEC = '5';
+    process.env.STT_MAX_SYNC_WAIT_MINUTES = '1'; // 1 minute minimum
+    process.env.STT_REQUEST_TIMEOUT_SECONDS = '5';
 
     const moduleRef = await Test.createTestingModule({
       imports: [
@@ -47,8 +47,8 @@ describe('AssemblyAiProvider', () => {
   afterEach(() => {
     jest.clearAllMocks();
     delete process.env.STT_POLL_INTERVAL_MS;
-    delete process.env.STT_MAX_SYNC_WAIT_MIN;
-    delete process.env.STT_REQUEST_TIMEOUT_SEC;
+    delete process.env.STT_MAX_SYNC_WAIT_MINUTES;
+    delete process.env.STT_REQUEST_TIMEOUT_SECONDS;
   });
 
   describe('submitAndWaitByUrl', () => {
@@ -145,7 +145,7 @@ describe('AssemblyAiProvider', () => {
       await expect(provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })).rejects.toThrow('Transcription failed');
     });
 
-    it.skip('should throw GatewayTimeoutException after maxSyncWaitMin', async () => {
+    it.skip('should throw GatewayTimeoutException after maxSyncWaitMinutes', async () => {
       const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } };
       const processingResponse = { status: 200, data: { id: mockTranscriptId, status: 'processing' } };
       jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any));

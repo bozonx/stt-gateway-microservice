@@ -58,7 +58,7 @@ export class TranscriptionService {
     this.logger.debug(`Checking file size for URL: ${audioUrl}`);
     try {
       const req$ = this.http.head(audioUrl, { validateStatus: () => true });
-      const res = await lastValueFrom(req$.pipe(timeout(this.cfg.requestTimeoutSec * 1000)));
+      const res = await lastValueFrom(req$.pipe(timeout(this.cfg.requestTimeoutSeconds * 1000)));
       const len = res.headers['content-length']
         ? parseInt(res.headers['content-length'] as string, 10)
         : undefined;

@@ -56,7 +56,7 @@ export class AssemblyAiProvider implements SttProvider {
       { headers, validateStatus: () => true },
     );
 
-    const createRes = await lastValueFrom(create$.pipe(timeout(this.cfg.requestTimeoutSec * 1000)));
+    const createRes = await lastValueFrom(create$.pipe(timeout(this.cfg.requestTimeoutSeconds * 1000)));
     if (createRes.status >= 400 || !createRes.data?.id) {
       this.logger.error(
         `Failed to create transcription. Status: ${createRes.status}, Response: ${JSON.stringify(createRes.data)}`,
@@ -68,14 +68,14 @@ export class AssemblyAiProvider implements SttProvider {
     this.logger.info(`Transcription request created with ID: ${id}`);
 
     const startedAt = Date.now();
-    const deadline = startedAt + this.cfg.maxSyncWaitMin * 60 * 1000;
+    const deadline = startedAt + this.cfg.maxSyncWaitMinutes * 60 * 1000;
 
     // Poll loop
     let pollCount = 0;
     for (;;) {
       if (Date.now() > deadline) {
         this.logger.error(
-          `Transcription timeout after ${this.cfg.maxSyncWaitMin} minutes for ID: ${id}`,
+          `Transcription timeout after ${this.cfg.maxSyncWaitMinutes} minutes for ID: ${id}`,
         );
         throw new GatewayTimeoutException('TRANSCRIPTION_TIMEOUT');
       }
@@ -90,7 +90,7 @@ export class AssemblyAiProvider implements SttProvider {
         headers,
         validateStatus: () => true,
       });
-      const getRes = await lastValueFrom(get$.pipe(timeout(this.cfg.requestTimeoutSec * 1000)));
+      const getRes = await lastValueFrom(get$.pipe(timeout(this.cfg.requestTimeoutSeconds * 1000)));
       const body = getRes.data;
 
       if (!body) {

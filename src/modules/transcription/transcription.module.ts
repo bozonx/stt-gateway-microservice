@@ -18,7 +18,7 @@ import { STT_PROVIDER } from '@common/constants/tokens';
     HttpModule.registerAsync({
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => {
-        const timeoutSec = cfg.get<number>('stt.requestTimeoutSec', 15);
+        const timeoutSec = cfg.get<number>('stt.requestTimeoutSeconds', 15);
         return {
           timeout: timeoutSec * 1000,
           maxRedirects: 3,

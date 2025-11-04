@@ -14,9 +14,9 @@ services:
       - STT_DEFAULT_PROVIDER=assemblyai
       - STT_ALLOWED_PROVIDERS=assemblyai
       - STT_MAX_FILE_SIZE_MB=100
-      - STT_REQUEST_TIMEOUT_SEC=15
+      - STT_REQUEST_TIMEOUT_SECONDS=15
       - STT_POLL_INTERVAL_MS=1500
-      - STT_MAX_SYNC_WAIT_MIN=3
+      - STT_MAX_SYNC_WAIT_MINUTES=3
       - ASSEMBLYAI_API_KEY=
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:80/api/v1/health || exit 1']
