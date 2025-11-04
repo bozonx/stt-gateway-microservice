@@ -45,7 +45,9 @@ Field details:
   - URL schemes like `webdav://` or `davs://` are not supported.
   - Private/loopback hosts are rejected (e.g., 127.0.0.1, localhost, 10.0.0.0/8).
 - `provider` (string, optional)
-  - Defaults to `STT_DEFAULT_PROVIDER` if omitted; must be allowed by `STT_ALLOWED_PROVIDERS`.
+  - Defaults to `STT_DEFAULT_PROVIDER` if omitted.
+  - If `STT_ALLOWED_PROVIDERS` is non-empty, the provider must be in this comma-separated list.
+  - If `STT_ALLOWED_PROVIDERS` is empty or unset, all supported providers are allowed (Рус: пусто/не задано — без ограничений).
 - `timestamps` (boolean, optional)
   - If true, provider is requested to include word-level timestamps (when supported).
 - `restorePunctuation` (boolean, optional)

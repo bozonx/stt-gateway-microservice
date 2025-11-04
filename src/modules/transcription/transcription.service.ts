@@ -36,9 +36,11 @@ export class TranscriptionService {
     const providerName = (name ?? this.cfg.defaultProvider).toLowerCase();
     this.logger.debug(`Using provider: ${providerName}`);
 
-    if (!this.cfg.allowedProviders.includes(providerName)) {
-      this.logger.warn(`Unsupported provider requested: ${providerName}`);
-      throw new BadRequestException('Unsupported provider');
+    if (this.cfg.allowedProviders && this.cfg.allowedProviders.length > 0) {
+      if (!this.cfg.allowedProviders.includes(providerName)) {
+        this.logger.warn(`Unsupported provider requested: ${providerName}`);
+        throw new BadRequestException('Unsupported provider');
+      }
     }
 
     const selected = this.registry?.get(providerName);

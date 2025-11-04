@@ -6,7 +6,6 @@ import {
   IsOptional,
   Min,
   Max,
-  ArrayMinSize,
   validateSync,
 } from 'class-validator';
 import { plainToClass } from 'class-transformer';
@@ -15,10 +14,10 @@ export class SttConfig {
   @IsString()
   public defaultProvider!: string;
 
+  @IsOptional()
   @IsArray()
-  @ArrayMinSize(1)
   @IsString({ each: true })
-  public allowedProviders!: string[];
+  public allowedProviders?: string[];
 
   @IsInt()
   @Min(1)
@@ -48,10 +47,15 @@ export class SttConfig {
 export default registerAs('stt', (): SttConfig => {
   const config = plainToClass(SttConfig, {
     defaultProvider: process.env.STT_DEFAULT_PROVIDER ?? 'assemblyai',
-    allowedProviders: (process.env.STT_ALLOWED_PROVIDERS ?? 'assemblyai')
-      .split(',')
-      .map(s => s.trim())
-      .filter(Boolean),
+    allowedProviders: (() => {
+      const raw = process.env.STT_ALLOWED_PROVIDERS;
+      if (!raw || raw.trim() === '') return undefined;
+      const list = raw
+        .split(',')
+        .map(s => s.trim().toLowerCase())
+        .filter(Boolean);
+      return list.length ? list : undefined;
+    })(),
     maxFileMb: parseInt(process.env.STT_MAX_FILE_SIZE_MB ?? '100', 10),
     requestTimeoutSeconds: parseInt(process.env.STT_REQUEST_TIMEOUT_SECONDS ?? '15', 10),
     pollIntervalMs: parseInt(process.env.STT_POLL_INTERVAL_MS ?? '1500', 10),
