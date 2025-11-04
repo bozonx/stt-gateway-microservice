@@ -1,44 +1,45 @@
-# n8n-nodes-bozonx-stt-gateway-microservice
+# n8n Node: Bozonx STT Gateway Microservice
 
-Community-нода для n8n, выполняющая синхронную транскрибацию аудио по URL через STT Gateway Microservice (по умолчанию провайдер AssemblyAI).
+Community node for n8n that performs synchronous speech-to-text transcription from a public audio URL via the STT Gateway microservice (default provider: AssemblyAI).
 
 [n8n](https://n8n.io/) is a [fair-code licensed](https://docs.n8n.io/sustainable-use-license/) workflow automation platform.
 
-Секции:
+Sections:
 
-- [Установка](#installation)
-- [Использование](#использование)
-- [Поля](#поля)
+- [Installation](#installation)
+- [How it works](#how-it-works)
+- [Parameters](#parameters)
 - [Credentials](#credentials)
-- [Продвинутое](#продвинутое)
-- [Совместимость](#совместимость)
-- [Ресурсы](#ресурсы)
+- [Advanced](#advanced)
+- [Compatibility](#compatibility)
+- [Resources](#resources)
 
 ## Installation
 
-Следуйте официальной инструкции по установке community-нод: [installation guide](https://docs.n8n.io/integrations/community-nodes/installation/).
+Follow the official community nodes installation guide: https://docs.n8n.io/integrations/community-nodes/installation/
 
-## Использование
+## How it works
 
-Нода отправляет запрос в эндпоинт микросервиса:
+The node sends a POST request to the microservice endpoint:
 
 ```
-POST {{gatewayUrl}}/api/v1/transcriptions/file
+POST {{gatewayUrl}}/{{basePath}}/transcriptions/file
 Content-Type: application/json
 
 {
   "audioUrl": "https://example.com/audio.mp3",
-  "provider": "assemblyai", // необязательно
+  "provider": "assemblyai",  
   "timestamps": false,
   "restorePunctuation": true,
-  "apiKey": "YOUR_ASSEMBLYAI_KEY" // необязательно
+  "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
 ```
 
-- `gatewayUrl` берётся из Credentials. Не включайте туда `/api/v1` — нода добавит путь сама.
-- Аутентификация выполняется через Bearer токен (заголовок `Authorization: Bearer <token>`), который задаётся в Credentials.
+- `gatewayUrl` comes from Credentials. It must include protocol (http/https) and have no trailing slash.
+- `basePath` is a node parameter. Leading/trailing slashes are ignored. Default: `stt/api/v1`.
+- Authentication is done via the `Authorization: Bearer <token>` header provided by Credentials.
 
-### Пример ответа (200 OK)
+### Example successful response (200)
 
 ```json
 {
@@ -55,36 +56,51 @@ Content-Type: application/json
 }
 ```
 
-## Поля
+## Parameters
 
-- **Audio URL** — обязательный. Публичный HTTPS URL на аудиофайл.
-- **Provider** — необязательный. Если не указан, будет использован `STT_DEFAULT_PROVIDER` (например, `assemblyai`).
-- **Timestamps** — чекбокс. По умолчанию выключен.
-- **Restore Punctuation** — чекбокс. По умолчанию включен (если поддерживается провайдером).
-- **Provider API Key** — строка, необязательно. Передаётся в провайдер, если политика сервиса позволяет кастомный ключ.
+- **Base Path** (string)
+  Default: `stt/api/v1`. Appended to the Gateway URL. Leading/trailing slashes are ignored.
+
+- **Audio URL** (string, required)
+  Public HTTPS URL to the audio file.
+
+- **Provider** (options, optional)
+  Speech-to-text provider. If omitted, the microservice uses its default provider. Available: `assemblyai`.
+
+- **Timestamps** (boolean)
+  Include word-level timestamps in provider request (if supported). Default: `false`.
+
+- **Restore Punctuation** (boolean)
+  Ask the provider to restore punctuation when supported. Default: `true`.
+
+- **Provider API Key** (string, optional)
+  Direct provider API key (BYO) when allowed by service policy.
 
 ## Credentials
 
-Креды `Bozonx Microservices API` (универсальные для всех микросервисов за API Gateway):
+Use the `Bozonx Microservices API` credentials:
 
-- **Gateway URL** — базовый URL API Gateway, без `/api/v1` (обязательное поле).
-- **API Token** — токен доступа, используемый как Bearer в заголовке `Authorization` (обязательное поле).
+- **Gateway URL** (required)
+  Base URL of your API Gateway, without the base path (no trailing slash). Example: `https://api.example.com`.
 
-Можно использовать выражения и переменные окружения, например:
+- **API Token** (required)
+  Bearer token added to the `Authorization` header.
+
+You can use expressions and environment variables, e.g.:
 
 - Gateway URL: `{{$env.API_GATEWAY_URL}}`
 - API Token: `{{$env.API_TOKEN}}`
 
-## Продвинутое
+## Advanced
 
-- Поддерживается настройка `Continue On Fail` в Settings ноды. При ошибке элемент вернётся с `json.error`, а выполнение продолжится для остальных элементов.
-- Заголовок `Accept: application/json` установлен по умолчанию. Тело запроса — JSON.
+- **Continue On Fail** is supported in the node Settings. On error the item will return `{ "error": "..." }` and processing will continue for other items.
+- Default headers include `Accept: application/json`. Request body is JSON.
 
-## Совместимость
+## Compatibility
 
-Разработано и проверено с n8n `1.60.0+`.
+Built and tested with n8n `1.60.0+`.
 
-## Ресурсы
+## Resources
 
-- Документация сервиса: `README.md` в корне репозитория.
-- Документация по community-нодам n8n: https://docs.n8n.io/integrations/#community-nodes
+- Service docs and API reference: see the repository root `README.md` and `docs/API.md`.
+- n8n community nodes docs: https://docs.n8n.io/integrations/#community-nodes
