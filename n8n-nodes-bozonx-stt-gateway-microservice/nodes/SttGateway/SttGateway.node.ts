@@ -35,6 +35,13 @@ export class SttGateway implements INodeType {
 		],
 		properties: [
 			{
+				displayName: 'Base Path',
+				name: 'basePath',
+				type: 'string',
+				default: 'stt/api/v1',
+				description: 'API base path appended to the Gateway URL (leading/trailing slashes are ignored)',
+			},
+			{
 				displayName: 'Audio URL',
 				name: 'audioUrl',
 				type: 'string',
@@ -88,14 +95,27 @@ export class SttGateway implements INodeType {
 				const timestamps = this.getNodeParameter('timestamps', i) as boolean;
 				const restorePunctuation = this.getNodeParameter('restorePunctuation', i) as boolean;
 				const apiKey = this.getNodeParameter('apiKey', i) as string;
+				const basePathParam = (this.getNodeParameter('basePath', i) as string) || '';
+				const normalizedBasePath = basePathParam.replace(/^\/+|\/+$/g, '');
+				const pathPrefix = normalizedBasePath ? `${normalizedBasePath}/` : '';
 
 				if (!audioUrl) {
 					throw new NodeOperationError(this.getNode(), 'Audio URL is required', { itemIndex: i });
 				}
 
+				const creds = await this.getCredentials('bozonxMicroservicesApi');
+				let baseURL = ((creds?.gatewayUrl as string) || '').trim();
+				if (!baseURL) {
+					throw new NodeOperationError(this.getNode(), 'Gateway URL is required in credentials', { itemIndex: i });
+				}
+				if (!/^https?:\/\//i.test(baseURL)) {
+					throw new NodeOperationError(this.getNode(), 'Gateway URL must include protocol (http:// or https://)', { itemIndex: i });
+				}
+				baseURL = baseURL.replace(/\/+$/g, '');
+
 				const options: IHttpRequestOptions = {
 					method: 'POST',
-					url: '/api/v1/transcriptions/file',
+					url: `${pathPrefix}transcriptions/file`,
 					json: true,
 					body: (() => {
 						const body: IDataObject = {
@@ -109,6 +129,7 @@ export class SttGateway implements INodeType {
 						return body;
 					})(),
 				};
+				(options as unknown as { baseURL?: string }).baseURL = baseURL;
 
 				if (apiKey) {
 					(options.body as IDataObject).apiKey = apiKey;
