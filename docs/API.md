@@ -107,3 +107,83 @@ Successful response (200):
 - `503 Service Unavailable` — Provider error.
 - `504 Gateway Timeout` — Exceeded maximum synchronous waiting time.
 
+
+### Примеры ошибок
+
+Глобальный фильтр ошибок возвращает единый формат ответа:
+
+```json
+{
+  "statusCode": 400,
+  "timestamp": "2025-01-01T12:00:00.000Z",
+  "path": "/api/v1/transcriptions/file",
+  "method": "POST",
+  "message": "...",
+  "error": { "statusCode": 400, "message": "...", "error": "Bad Request" }
+}
+```
+
+- 400 Invalid URL
+
+```json
+{
+  "statusCode": 400,
+  "timestamp": "2025-01-01T12:00:00.000Z",
+  "path": "/api/v1/transcriptions/file",
+  "method": "POST",
+  "message": "audioUrl must be a valid URL",
+  "error": { "statusCode": 400, "message": "audioUrl must be a valid URL", "error": "Bad Request" }
+}
+```
+
+- 400 Private/loopback host
+
+```json
+{
+  "statusCode": 400,
+  "timestamp": "2025-01-01T12:00:00.000Z",
+  "path": "/api/v1/transcriptions/file",
+  "method": "POST",
+  "message": "Private/loopback hosts are not allowed",
+  "error": { "statusCode": 400, "message": "Private/loopback hosts are not allowed", "error": "Bad Request" }
+}
+```
+
+- 401 Missing provider API key
+
+```json
+{
+  "statusCode": 401,
+  "timestamp": "2025-01-01T12:00:00.000Z",
+  "path": "/api/v1/transcriptions/file",
+  "method": "POST",
+  "message": "Missing provider API key",
+  "error": { "statusCode": 401, "message": "Missing provider API key", "error": "Unauthorized" }
+}
+```
+
+- 503 Provider error
+
+```json
+{
+  "statusCode": 503,
+  "timestamp": "2025-01-01T12:00:00.000Z",
+  "path": "/api/v1/transcriptions/file",
+  "method": "POST",
+  "message": "Failed to create transcription",
+  "error": { "statusCode": 503, "message": "Failed to create transcription", "error": "Service Unavailable" }
+}
+```
+
+- 504 Timeout ожидания
+
+```json
+{
+  "statusCode": 504,
+  "timestamp": "2025-01-01T12:00:00.000Z",
+  "path": "/api/v1/transcriptions/file",
+  "method": "POST",
+  "message": "TRANSCRIPTION_TIMEOUT",
+  "error": { "statusCode": 504, "message": "TRANSCRIPTION_TIMEOUT", "error": "Gateway Timeout" }
+}
+```

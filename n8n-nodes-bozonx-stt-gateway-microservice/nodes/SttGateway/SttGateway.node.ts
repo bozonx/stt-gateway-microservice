@@ -49,8 +49,8 @@ export class SttGateway implements INodeType {
 				options: [
 					{ name: 'AssemblyAI', value: 'assemblyai' },
 				],
-				default: 'assemblyai',
-				required: true,
+				default: '',
+				required: false,
 				description: 'Speech-to-text provider',
 			},
 			{
@@ -84,7 +84,7 @@ export class SttGateway implements INodeType {
 		for (let i = 0; i < items.length; i++) {
 			try {
 				const audioUrl = this.getNodeParameter('audioUrl', i) as string;
-				const provider = this.getNodeParameter('provider', i) as string;
+				const provider = this.getNodeParameter('provider', i, '') as string;
 				const timestamps = this.getNodeParameter('timestamps', i) as boolean;
 				const restorePunctuation = this.getNodeParameter('restorePunctuation', i) as boolean;
 				const apiKey = this.getNodeParameter('apiKey', i) as string;
@@ -92,20 +92,22 @@ export class SttGateway implements INodeType {
 				if (!audioUrl) {
 					throw new NodeOperationError(this.getNode(), 'Audio URL is required', { itemIndex: i });
 				}
-				if (!provider) {
-					throw new NodeOperationError(this.getNode(), 'Provider is required', { itemIndex: i });
-				}
 
 				const options: IHttpRequestOptions = {
 					method: 'POST',
 					url: '/api/v1/transcriptions/file',
 					json: true,
-					body: {
-						audioUrl,
-						provider,
-						timestamps,
-						restorePunctuation,
-					} as IDataObject,
+					body: (() => {
+						const body: IDataObject = {
+							audioUrl,
+							timestamps,
+							restorePunctuation,
+						};
+						if (provider) {
+							body.provider = provider;
+						}
+						return body;
+					})(),
 				};
 
 				if (apiKey) {

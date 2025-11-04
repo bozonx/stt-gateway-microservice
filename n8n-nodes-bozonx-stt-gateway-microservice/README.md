@@ -28,7 +28,7 @@ Content-Type: application/json
 
 {
   "audioUrl": "https://example.com/audio.mp3",
-  "provider": "assemblyai",
+  "provider": "assemblyai", // необязательно
   "timestamps": false,
   "restorePunctuation": true,
   "apiKey": "YOUR_ASSEMBLYAI_KEY" // необязательно
@@ -58,7 +58,7 @@ Content-Type: application/json
 ## Поля
 
 - **Audio URL** — обязательный. Публичный HTTPS URL на аудиофайл.
-- **Provider** — обязательный. Список со значением `assemblyai`.
+- **Provider** — необязательный. Если не указан, будет использован `STT_DEFAULT_PROVIDER` (например, `assemblyai`).
 - **Timestamps** — чекбокс. По умолчанию выключен.
 - **Restore Punctuation** — чекбокс. По умолчанию включен (если поддерживается провайдером).
 - **Provider API Key** — строка, необязательно. Передаётся в провайдер, если политика сервиса позволяет кастомный ключ.
