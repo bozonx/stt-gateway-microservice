@@ -5,37 +5,6 @@ Base URL format: `/{API_BASE_PATH}/v1`
 - Default in development: `http://localhost:3000/api/v1`
 - Default in Docker Compose: `http://localhost:8080/api/v1`
 
-## Index
-
-- `GET /` — Service index with metadata and links
-
-Example:
-
-```bash
-curl http://localhost:8080/api/v1
-```
-
-Response:
-
-```json
-{
-  "name": "stt-gateway-microservice",
-  "version": "0.16.0",
-  "status": "ok",
-  "time": "2025-11-04T12:34:56.789Z",
-  "links": {
-    "self": "/api/v1",
-    "health": "/api/v1/health",
-    "transcriptions": "/api/v1/transcriptions"
-  }
-}
-```
-
-Notes:
-
-- The exact `version` is taken from package.json.
-- `links.self` includes the resolved `API_BASE_PATH`.
-
 ## Health
 
 - `GET /health` — Basic health check
@@ -70,7 +39,9 @@ Request body:
 Field details:
 
 - `audioUrl` (string, required)
-  - Must be `http(s)`.
+  - Must be HTTP(S).
+  - WebDAV endpoints are supported when accessible via HTTP(S) paths (e.g., `https://example.com/remote.php/dav/files/...`).
+  - URL schemes like `webdav://` or `davs://` are not supported.
   - Private/loopback hosts are rejected (e.g., 127.0.0.1, localhost, 10.0.0.0/8).
 - `provider` (string, optional)
   - Defaults to `STT_DEFAULT_PROVIDER` if omitted; must be allowed by `STT_ALLOWED_PROVIDERS`.
@@ -106,7 +77,9 @@ Successful response (200):
   "confidenceAvg": 0.92,
   "wordsCount": 204,
   "processingMs": 8421,
-  "timestampsEnabled": false
+  "timestampsEnabled": false,
+  "punctuationRestored": true,
+  "textFormatted": true
 }
 ```
 

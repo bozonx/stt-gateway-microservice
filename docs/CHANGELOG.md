@@ -13,6 +13,7 @@
  - Удалён флаг `ALLOW_CUSTOM_API_KEY`; передача `apiKey` в запросе теперь всегда разрешена (BYO ключ по умолчанию)
  - Обновлены `env.production.example` и `env.development.example` (убраны `ALLOW_CUSTOM_API_KEY`, уточнён `ASSEMBLYAI_API_KEY` как fallback)
  - Обновлены `README.md`, `docs/ENV_SETUP.md`, `docs/DOCKER.md`, `docs/STT.md` в соответствии с новой логикой ключей
+- Удалён корневой эндпоинт индекса `GET /` (ранее `/{API_BASE_PATH}/v1`), обновлены тесты и документация
 
 ### Documentation refactor (English)
 

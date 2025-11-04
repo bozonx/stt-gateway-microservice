@@ -8,7 +8,6 @@ import appConfig from '@config/app.config';
 import type { AppConfig } from '@config/app.config';
 import sttConfig from '@config/stt.config';
 import { TranscriptionModule } from '@modules/transcription/transcription.module';
-import { IndexModule } from '@modules/index/index.module';
 import pkg from '../package.json';
 
 @Module({
@@ -92,7 +91,6 @@ import pkg from '../package.json';
       },
     }),
     HealthModule,
-    IndexModule,
     TranscriptionModule,
   ],
   controllers: [],

@@ -80,9 +80,7 @@ describe.skip('Authorization E2E Tests', () => {
   describe('Index endpoint should remain public', () => {
     it('GET /api/v1 should work without authorization', async () => {
       const response = await app.inject({ method: 'GET', url: '/api/v1' });
-      expect(response.statusCode).toBe(200);
-      const body = JSON.parse(response.body);
-      expect(body.name).toBe('micro-stt');
+      expect(response.statusCode).toBe(404);
     });
   });
 });

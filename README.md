@@ -63,7 +63,7 @@ STT variables:
 - `STT_ALLOWED_PROVIDERS` — comma-separated allow list (e.g., `assemblyai`)
 - `STT_MAX_FILE_SIZE_MB` — file size limit in MB (checked via `Content-Length` on HEAD)
 - `STT_REQUEST_TIMEOUT_SECONDS` — single HTTP request timeout to provider
-- `STT_POLL_INTERVAL_MS` — polling interval when waiting for result
+- `STT_POLL_INTERVAL_MS` — polling interval in milliseconds when waiting for result
 - `STT_MAX_SYNC_WAIT_MINUTES` — max synchronous wait before returning `504`
 - `ASSEMBLYAI_API_KEY` — optional default provider key (used if request has no `apiKey`)
 
@@ -73,7 +73,6 @@ STT variables:
 
 Quick summary of available endpoints:
 
-- `GET /{API_BASE_PATH}/v1` — API index with service info and links
 - `GET /{API_BASE_PATH}/v1/health` — health check
 - `POST /{API_BASE_PATH}/v1/transcriptions/file` — synchronous transcription by audio URL
 
@@ -87,10 +86,6 @@ Quick summary of available endpoints:
   - Request timeout: `STT_REQUEST_TIMEOUT_SECONDS`.
   - Polling interval: `STT_POLL_INTERVAL_MS`.
   - Max sync wait: `STT_MAX_SYNC_WAIT_MINUTES` → returns `504` if exceeded.
-
-## Tests
-
-See `docs/dev.md` for development and testing instructions.
 
 ## Docker
 
