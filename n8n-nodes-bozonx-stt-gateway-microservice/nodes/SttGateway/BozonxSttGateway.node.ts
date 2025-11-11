@@ -55,8 +55,7 @@ export class SttGateway implements INodeType {
 				options: [
 					{ name: 'AssemblyAI', value: 'assemblyai' },
 				],
-				default: '',
-				required: false,
+				default: 'assemblyai',
 				description: 'Speech-to-text provider',
 			},
 			{
@@ -64,19 +63,20 @@ export class SttGateway implements INodeType {
 				name: 'timestamps',
 				type: 'boolean',
 				default: false,
-				description: 'Include word-level timestamps in provider request (if supported)',
+				description: 'Whether to include word-level timestamps in provider request (if supported)',
 			},
 			{
 				displayName: 'Restore Punctuation',
 				name: 'restorePunctuation',
 				type: 'boolean',
 				default: true,
-				description: 'Request provider to restore punctuation (default true when supported)',
+				description: 'Whether to request the provider to restore punctuation (default true when supported)',
 			},
 			{
 				displayName: 'Provider API Key',
 				name: 'apiKey',
 				type: 'string',
+				typeOptions: { password: true },
 				default: '',
 				description: 'Optional direct provider API key (when allowed by service policy)',
 			},

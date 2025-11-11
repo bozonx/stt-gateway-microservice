@@ -1,9 +1,10 @@
-import type { ICredentialType, INodeProperties } from 'n8n-workflow';
+import type { ICredentialTestRequest, ICredentialType, INodeProperties } from 'n8n-workflow';
 
 export class BozonxMicroservicesApi implements ICredentialType {
 	name = 'bozonxMicroservicesApi';
 	displayName = 'Bozonx Microservices API';
 	documentationUrl = 'https://github.com/bozonx/stt-gateway-microservice/tree/main/n8n-nodes-bozonx-stt-gateway-microservice#readme';
+	icon = 'file:nodes/SttGateway/stt-gateway.svg' as unknown as ICredentialType['icon'];
 	properties: INodeProperties[] = [
 		{
 			displayName: 'Gateway URL',
@@ -31,6 +32,13 @@ export class BozonxMicroservicesApi implements ICredentialType {
 			headers: {
 				Authorization: '={{$credentials.apiToken ? ("Bearer " + $credentials.apiToken) : undefined}}',
 			},
+		},
+	};
+
+	test: ICredentialTestRequest = {
+		request: {
+			baseURL: '={{$credentials.gatewayUrl}}',
+			url: '/',
 		},
 	};
 }
