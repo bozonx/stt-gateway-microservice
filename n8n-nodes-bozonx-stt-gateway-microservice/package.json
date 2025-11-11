@@ -34,7 +34,7 @@
           "dist/nodes/SttGateway/SttGateway.node.js"
       ],
       "credentials": [
-          "dist/credentials/SttGatewayApi.credentials.js"
+          "dist/credentials/BozonxMicroservicesApi.credentials.js"
       ]
   },
     "devDependencies": {
