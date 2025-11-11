@@ -37,7 +37,7 @@ Content-Type: application/json
 
 - `gatewayUrl` comes from Credentials. It must include protocol (http/https) and have no trailing slash.
 - `basePath` is a node parameter. Leading/trailing slashes are ignored. Default: `stt/api/v1`.
-- Authentication is done via the `Authorization: Bearer <token>` header provided by Credentials.
+- If an API Token is provided in Credentials, the node will send `Authorization: Bearer <token>`. If not provided, no Authorization header is added.
 
 ### Example successful response (200)
 
@@ -83,8 +83,8 @@ Use the `Bozonx Microservices API` credentials:
 - **Gateway URL** (required)
   Base URL of your API Gateway, without the base path (no trailing slash). Example: `https://api.example.com`.
 
-- **API Token** (required)
-  Bearer token added to the `Authorization` header.
+- **API Token** (optional)
+  When set, it is added as `Authorization: Bearer <token>`. If empty, no Authorization header is sent.
 
 You can use expressions and environment variables, e.g.:
 

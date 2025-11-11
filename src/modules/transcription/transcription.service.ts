@@ -57,7 +57,16 @@ export class TranscriptionService {
   }
 
   private async enforceSizeLimitIfKnown(audioUrl: string) {
-    this.logger.debug(`Checking file size for URL: ${audioUrl}`);
+    const hostForLog = (() => {
+      try {
+        return new URL(audioUrl).hostname;
+      } catch {
+        return undefined;
+      }
+    })();
+    this.logger.debug(
+      hostForLog ? `Checking file size for host: ${hostForLog}` : 'Checking file size',
+    );
     try {
       const req$ = this.http.head(audioUrl, { validateStatus: () => true });
       const res = await lastValueFrom(req$.pipe(timeout(this.cfg.requestTimeoutSeconds * 1000)));
@@ -78,7 +87,8 @@ export class TranscriptionService {
       if (error instanceof BadRequestException) {
         throw error;
       }
-      this.logger.debug('HEAD request failed, skipping size check', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      this.logger.debug(`HEAD request failed, skipping size check: ${msg}`);
       // HEAD may fail or be blocked; we ignore unless explicit oversized length was detected
     }
   }
@@ -101,13 +111,22 @@ export class TranscriptionService {
     timestampsEnabled: boolean;
     punctuationRestored: boolean;
   }> {
-    this.logger.info(`Starting transcription for URL: ${params.audioUrl}`);
+    const hostForLog = (() => {
+      try {
+        return new URL(params.audioUrl).hostname;
+      } catch {
+        return undefined;
+      }
+    })();
+    this.logger.info(
+      hostForLog ? `Starting transcription for host: ${hostForLog}` : 'Starting transcription request',
+    );
 
     let parsed: URL;
     try {
       parsed = new URL(params.audioUrl);
     } catch {
-      this.logger.error(`Invalid URL provided: ${params.audioUrl}`);
+      this.logger.error('Invalid URL provided');
       throw new BadRequestException('audioUrl must be a valid URL');
     }
 
@@ -146,7 +165,8 @@ export class TranscriptionService {
         this.logger.error(`Transcription failed with HTTP error: ${err.message}`);
         throw err;
       }
-      this.logger.error('Transcription timeout or unknown error', err);
+      const em = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Transcription timeout or unknown error: ${em}`);
       throw new GatewayTimeoutException('TRANSCRIPTION_TIMEOUT');
     }
     const processingMs = Date.now() - start;

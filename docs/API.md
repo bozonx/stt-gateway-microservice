@@ -5,6 +5,18 @@ Base URL format: `/{API_BASE_PATH}/v1`
 - Default in development: `http://localhost:3000/api/v1`
 - Default in Docker Compose: `http://localhost:8080/api/v1`
 
+## Authentication
+
+- No service-level authentication is implemented.
+- The provider API key is supplied per request via body field `apiKey`.
+- If `apiKey` is omitted, the service falls back to environment variable `ASSEMBLYAI_API_KEY` for the AssemblyAI provider.
+- Requests with HTTP `Authorization` header are not used by the service.
+
+## Request headers
+
+- `Content-Type: application/json` is required for POST requests.
+- The service may perform a HEAD request to the `audioUrl` to read `Content-Length` for size checks. This is transparent to clients.
+
 ## Health
 
 - `GET /health` — Basic health check
@@ -47,7 +59,7 @@ Field details:
 - `provider` (string, optional)
   - Defaults to `STT_DEFAULT_PROVIDER` if omitted.
   - If `STT_ALLOWED_PROVIDERS` is non-empty, the provider must be in this comma-separated list.
-  - If `STT_ALLOWED_PROVIDERS` is empty or unset, all supported providers are allowed (Рус: пусто/не задано — без ограничений).
+  - If `STT_ALLOWED_PROVIDERS` is empty or unset, all registered providers are allowed.
 - `timestamps` (boolean, optional)
   - If true, provider is requested to include word-level timestamps (when supported).
 - `restorePunctuation` (boolean, optional)
@@ -110,9 +122,9 @@ Successful response (200):
 - `504 Gateway Timeout` — Exceeded maximum synchronous waiting time.
 
 
-### Примеры ошибок
+### Error examples
 
-Глобальный фильтр ошибок возвращает единый формат ответа:
+The global error filter returns a consistent response shape:
 
 ```json
 {
@@ -177,7 +189,7 @@ Successful response (200):
 }
 ```
 
-- 504 Timeout ожидания
+- 504 Timeout
 
 ```json
 {

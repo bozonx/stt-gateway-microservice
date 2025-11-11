@@ -20,8 +20,8 @@ export class BozonxMicroservicesApi implements ICredentialType {
 			type: 'string',
 			typeOptions: { password: true },
 			default: '',
-			required: true,
-			description: 'Bearer token for Authorization header',
+			required: false,
+			description: 'Optional Bearer token for Authorization header',
 		},
 	];
 
@@ -29,7 +29,7 @@ export class BozonxMicroservicesApi implements ICredentialType {
 		type: 'generic',
 		properties: {
 			headers: {
-				Authorization: '={{"Bearer " + $credentials.apiToken}}',
+				Authorization: '={{$credentials.apiToken ? ("Bearer " + $credentials.apiToken) : undefined}}',
 			},
 		},
 	};

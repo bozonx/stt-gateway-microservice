@@ -1,11 +1,27 @@
 # STT Gateway Microservice (NestJS + Fastify)
 
-High-performance microservice for synchronous speech-to-text by public audio URL. Built with NestJS + Fastify. Uses AssemblyAI by default. No built-in auth, Swagger, or GraphQL.
+High-performance microservice for synchronous speech-to-text from a public audio URL.
+Built with NestJS + Fastify. Uses AssemblyAI by default. No built-in auth, Swagger, or GraphQL.
 
 Links:
 
 - API: see [API documentation](docs/API.md)
 - Dev guide: see [Development guide](docs/dev.md) (link duplicated at the bottom)
+
+## Table of contents
+
+- [What's included](#whats-included)
+- [Quick Start (production)](#quick-start-production)
+- [Quick Start (development)](#quick-start-development)
+- [Environment](#environment)
+- [API](#api)
+- [Usage examples](#usage-examples)
+- [Security](#security)
+- [Docker](#docker)
+- [Logging](#logging)
+- [n8n integration](#n8n-integration)
+- [Notes](#notes)
+- [License](#license)
 
 ## What's included
 
@@ -41,6 +57,17 @@ Default URLs:
 - Service: `http://localhost:80/api/v1`
 - Docker Compose: `http://localhost:8080/api/v1`
 
+## Quick Start (development)
+
+```bash
+pnpm install
+cp env.development.example .env.development
+pnpm start:dev
+```
+
+- Default dev URL: `http://localhost:3000/api/v1`
+- See [Development guide](docs/dev.md) for scripts, debugging, tests, and structure.
+
 ## Environment
 
 - Files:
@@ -56,12 +83,13 @@ Core variables:
 - `API_BASE_PATH` — API prefix (default `api`)
 - `LOG_LEVEL` — `trace|debug|info|warn|error|fatal|silent`
 - `TZ` — timezone (default `UTC`)
-- `HTTP_REQUEST_BODY_LIMIT_MB` — max HTTP request body size (MB) for Fastify body parser (default `100`)
+- `HTTP_REQUEST_BODY_LIMIT_MB` — Fastify body parser max request body size in MB (default `100`)
 
 STT variables:
 
 - `STT_DEFAULT_PROVIDER` — default provider (e.g., `assemblyai`)
-- `STT_ALLOWED_PROVIDERS` — comma-separated allow list (e.g., `assemblyai`)
+- `STT_ALLOWED_PROVIDERS` — comma-separated allow list (e.g., `assemblyai`).
+  If empty or unset, all registered providers are allowed.
 - `STT_MAX_FILE_SIZE_MB` — file size limit in MB (checked via `Content-Length` on HEAD)
 - `STT_REQUEST_TIMEOUT_SECONDS` — single HTTP request timeout to provider
 - `STT_POLL_INTERVAL_MS` — polling interval in milliseconds when waiting for result
@@ -87,6 +115,38 @@ Quick summary of available endpoints:
   - Request timeout: `STT_REQUEST_TIMEOUT_SECONDS`.
   - Polling interval: `STT_POLL_INTERVAL_MS`.
   - Max sync wait: `STT_MAX_SYNC_WAIT_MINUTES` → returns `504` if exceeded.
+
+## Usage examples
+
+- Health check
+
+```bash
+curl http://localhost:8080/api/v1/health
+```
+
+- Transcription request
+
+```bash
+curl -X POST \
+  http://localhost:8080/api/v1/transcriptions/file \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "audioUrl": "https://example.com/audio.mp3",
+    "provider": "assemblyai",
+    "timestamps": false,
+    "restorePunctuation": true,
+    "apiKey": "YOUR_ASSEMBLYAI_KEY"
+  }'
+```
+
+See [API documentation](docs/API.md) for full details.
+
+## Security
+
+- SSRF protection: private and loopback hosts are rejected (`localhost`, `127.0.0.1`, `10.0.0.0/8`, `172.16/12`, `192.168/16`, link-local, IPv6 loopback/link-local).
+- Only HTTP(S) `audioUrl` are allowed.
+- Optional pre-flight HEAD checks `Content-Length` and rejects files larger than `STT_MAX_FILE_SIZE_MB` (when header is present).
+- The service has no built-in authentication; provider API key is supplied in request body as `apiKey` or via `ASSEMBLYAI_API_KEY`.
 
 ## Docker
 
@@ -122,10 +182,29 @@ Healthcheck in compose pings `/{API_BASE_PATH}/v1/health`.
 - Redaction: `authorization`, `x-api-key` headers
 - Auto-logging ignores `/health` in production
 
+Adjust verbosity with `LOG_LEVEL`.
+
+## n8n integration
+
+- Community node: `n8n-nodes-bozonx-stt-gateway-microservice` (see package in this repo).
+- Use `Bozonx Microservices API` credentials with:
+  - Gateway URL (without trailing slash), e.g., `https://api.example.com`
+  - Optional API Token: adds `Authorization: Bearer <token>` if provided
+- The node calls `POST {{gatewayUrl}}/{{basePath}}/transcriptions/file` with the same JSON body as the REST API.
+- See the node’s [README](n8n-nodes-bozonx-stt-gateway-microservice/README.md) for details.
+
 ## Notes
 
 - No Swagger or GraphQL included
 - No built-in authorization
+
+## Troubleshooting
+
+- 400 Invalid URL — Ensure `audioUrl` starts with `http` or `https`.
+- 400 Private/loopback host — Use only public hosts.
+- 400 File too large — The origin returned `Content-Length` above `STT_MAX_FILE_SIZE_MB`.
+- 401 Missing provider API key — Pass `apiKey` or set `ASSEMBLYAI_API_KEY`.
+- 504 Gateway Timeout — Increase `STT_MAX_SYNC_WAIT_MINUTES` or check provider availability.
 
 ---
 

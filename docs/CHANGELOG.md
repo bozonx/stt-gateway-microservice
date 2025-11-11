@@ -15,22 +15,31 @@
 - API_VERSION удалена из кода, тестов и документации; версия API зафиксирована как `v1`
 - AppConfig больше не содержит `apiVersion`; глобальный префикс формируется как `/{API_BASE_PATH}/v1`
 - README: переписан на английском и ориентирован на production; dev‑инструкции оставлены в `docs/dev.md`; примеры и эндпоинты верифицированы по коду
-- Документация: добавлены `docs/DOCKER.md` и `docs/LOGGING.md` (адаптация под текущий код)
-- Документация: `docs/ENV_SETUP.md` и `docs/dev.md` вычитаны и оставлены актуальными
-- Docker Compose: пример использует внешний образ, инструкции по локальной сборке перенесены в `docs/DOCKER.md`
-- package.json: имя пакета — `stt-gateway-microservice`; версии зависимостей оставлены без изменений
 - Источник истины env: подтверждено `.env.production.example`; добавлено упоминание `TZ`
- - Удалён флаг `ALLOW_CUSTOM_API_KEY`; передача `apiKey` в запросе теперь всегда разрешена (BYO ключ по умолчанию)
- - Обновлены `env.production.example` и `env.development.example` (убраны `ALLOW_CUSTOM_API_KEY`, уточнён `ASSEMBLYAI_API_KEY` как fallback)
- - Обновлены `README.md`, `docs/ENV_SETUP.md`, `docs/DOCKER.md`, `docs/STT.md` в соответствии с новой логикой ключей
+- Удалён флаг `ALLOW_CUSTOM_API_KEY`; передача `apiKey` в запросе теперь всегда разрешена (BYO ключ по умолчанию)
+- Обновлены `env.production.example` и `env.development.example` (убраны `ALLOW_CUSTOM_API_KEY`, уточнён `ASSEMBLYAI_API_KEY` как fallback)
 - Удалён корневой эндпоинт индекса `GET /` (ранее `/{API_BASE_PATH}/v1`), обновлены тесты и документация
+
+### Security & Logging
+
+- Masked sensitive data in logs: the service and provider no longer log full `audioUrl`; only `hostname` is recorded where applicable.
+- Improved error logging to include concise error messages instead of full objects; HEAD‑size check failures now log only the error message.
+
+### n8n Nodes
+
+- Credentials `Bozonx Microservices API`: `API Token` is now optional. `Authorization: Bearer <token>` header is sent only when token is provided.
+- Updated n8n package README to reflect optional token behavior.
+
+### Cleanup
+
+- Removed legacy `AuthGuard` and its unit/E2E tests. The service does not include built‑in authorization.
 
 ### Documentation refactor (English)
 
 - Consolidated environment, logging, Docker, and STT behavior into `README.md` (English)
 - Added `docs/API.md` with endpoint reference, examples, and status codes (English)
 - Rewrote `docs/dev.md` in English and moved dev-only content out of `README.md`
-- Marked legacy docs for removal: `docs/STT.md`, `docs/LOGGING.md`, `docs/ENV_SETUP.md`, `docs/DOCKER.md`
+  
 
 ## 0.15.0 — Refactor
 

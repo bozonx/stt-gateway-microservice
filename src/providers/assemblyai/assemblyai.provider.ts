@@ -46,7 +46,18 @@ export class AssemblyAiProvider implements SttProvider {
   }
 
   public async submitAndWaitByUrl(params: TranscriptionRequestByUrl): Promise<TranscriptionResult> {
-    this.logger.debug(`Submitting transcription request to AssemblyAI for URL: ${params.audioUrl}`);
+    const hostForLog = (() => {
+      try {
+        return new URL(params.audioUrl).hostname;
+      } catch {
+        return undefined;
+      }
+    })();
+    this.logger.debug(
+      hostForLog
+        ? `Submitting transcription request to AssemblyAI for host: ${hostForLog}`
+        : 'Submitting transcription request to AssemblyAI',
+    );
 
     const headers = { Authorization: params.apiKey as string };
     const apiUrl = `${ASSEMBLYAI_API.BASE_URL}${ASSEMBLYAI_API.TRANSCRIPTS_ENDPOINT}`;
@@ -65,9 +76,7 @@ export class AssemblyAiProvider implements SttProvider {
 
     const createRes = await lastValueFrom(create$.pipe(timeout(this.cfg.requestTimeoutSeconds * 1000)));
     if (createRes.status >= 400 || !createRes.data?.id) {
-      this.logger.error(
-        `Failed to create transcription. Status: ${createRes.status}, Response: ${JSON.stringify(createRes.data)}`,
-      );
+      this.logger.error(`Failed to create transcription. Status: ${createRes.status}`);
       throw new ServiceUnavailableException('Failed to create transcription');
     }
 
@@ -128,7 +137,7 @@ export class AssemblyAiProvider implements SttProvider {
       }
 
       if (body.status === 'error') {
-        this.logger.error(`Transcription failed for ID: ${id}. Error: ${body.error}`);
+        this.logger.error(`Transcription failed for ID: ${id}. Error: ${body.error ?? 'Unknown error'}`);
         throw new ServiceUnavailableException(body.error ?? 'Transcription failed');
       }
     }
