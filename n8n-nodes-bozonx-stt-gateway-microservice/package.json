@@ -1,11 +1,16 @@
 {
     "name": "n8n-nodes-bozonx-stt-gateway-microservice",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "description": "n8n node for synchronous transcription via STT Gateway microservice (AssemblyAI)",
     "license": "MIT",
-    "homepage": "",
+    "homepage": "https://github.com/bozonx/stt-gateway-microservice/tree/main/n8n-nodes-bozonx-stt-gateway-microservice#readme",
     "keywords": [
-        "n8n-community-node-package"
+        "n8n-community-node-package",
+        "n8n-nodes",
+        "speech-to-text",
+        "stt",
+        "assemblyai",
+        "bozonx"
     ],
     "author": {
         "name": "Ivan",

@@ -8,11 +8,8 @@ import { AppModule } from '@/app.module';
 import type { AppConfig } from '@config/app.config';
 
 async function bootstrap() {
-  // Determine Fastify bodyLimit from env (in bytes)
-  const bodyLimitMbRaw = process.env.HTTP_REQUEST_BODY_LIMIT_MB ?? '100';
-  const bodyLimitMb = Number.parseInt(bodyLimitMbRaw, 10);
-  const bodyLimitBytes =
-    Number.isFinite(bodyLimitMb) && bodyLimitMb > 0 ? bodyLimitMb * 1024 * 1024 : 10 * 1024 * 1024;
+  // Set Fastify bodyLimit to 100 MB (in bytes)
+  const bodyLimitBytes = 100 * 1024 * 1024;
 
   // Create app with bufferLogs enabled to capture early logs
   const app = await NestFactory.create<NestFastifyApplication>(

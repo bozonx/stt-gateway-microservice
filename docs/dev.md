@@ -113,8 +113,9 @@ test/
 - Key variables used during development:
   - `API_BASE_PATH` — API prefix (`api` by default). The actual base URL is `/{API_BASE_PATH}/v1`.
   - `LOG_LEVEL` — Set to `trace|debug|info|warn|error|fatal|silent`. For local debugging use `debug`.
-  - `HTTP_REQUEST_BODY_LIMIT_MB` — Fastify body parser limit in MB. Defaults to `100`.
   - `STT_*` — Provider selection and limits. See README for details.
+
+Note: Fastify body parser limit is fixed to 100 MB.
 
 ## Debugging
 

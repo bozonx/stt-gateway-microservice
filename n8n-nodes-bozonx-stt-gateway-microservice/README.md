@@ -59,7 +59,7 @@ Content-Type: application/json
 ## Parameters
 
 - **Base Path** (string)
-  Default: `stt/api/v1`. Appended to the Gateway URL. Leading/trailing slashes are ignored.
+  Default: `api/v1`. Appended to the Gateway URL. Leading/trailing slashes are ignored.
 
 - **Audio URL** (string, required)
   Public HTTPS URL to the audio file.

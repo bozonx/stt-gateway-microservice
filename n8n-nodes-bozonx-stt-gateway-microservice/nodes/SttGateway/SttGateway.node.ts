@@ -22,7 +22,6 @@ export class SttGateway implements INodeType {
 		inputs: ['main'],
 		outputs: ['main'],
 		requestDefaults: {
-			baseURL: '={{$credentials.gatewayUrl}}',
 			headers: {
 				Accept: 'application/json',
 			},
@@ -47,7 +46,7 @@ export class SttGateway implements INodeType {
 				type: 'string',
 				default: '',
 				required: true,
-				description: 'Public HTTPS URL to the audio file',
+				description: 'Public HTTP(S) URL to the audio file',
 			},
 			{
 				displayName: 'Provider',
@@ -115,7 +114,7 @@ export class SttGateway implements INodeType {
 
 				const options: IHttpRequestOptions = {
 					method: 'POST',
-					url: `${pathPrefix}transcriptions/file`,
+					url: `${baseURL}/${pathPrefix}transcriptions/file`,
 					json: true,
 					body: (() => {
 						const body: IDataObject = {
@@ -129,7 +128,6 @@ export class SttGateway implements INodeType {
 						return body;
 					})(),
 				};
-				(options as unknown as { baseURL?: string }).baseURL = baseURL;
 
 				if (apiKey) {
 					(options.body as IDataObject).apiKey = apiKey;

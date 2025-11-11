@@ -4,7 +4,7 @@
 
 ### Configuration
 
-- Added environment variable `HTTP_REQUEST_BODY_LIMIT_MB` — max HTTP request body size (in megabytes) for Fastify body parser. Default: `100`.
+- Removed environment variable `HTTP_REQUEST_BODY_LIMIT_MB`. Fastify body parser limit is now fixed to `100 MB`.
 - Unified default HTTP port to `8080` across development and production:
   - Default `LISTEN_PORT` is now `8080` in config
   - `.env.production.example` and `.env.development.example` set to `8080`
@@ -35,6 +35,7 @@
 
 - Credentials `Bozonx Microservices API`: `API Token` is now optional. `Authorization: Bearer <token>` header is sent only when token is provided.
 - Updated n8n package README to reflect optional token behavior.
+- STT Gateway node: default `basePath` set to `api/v1` to match microservice defaults; request URL now built as absolute (no `baseURL` cast workaround). README updated accordingly.
 
 ### Cleanup
 

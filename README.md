@@ -83,7 +83,6 @@ Core variables:
 - `API_BASE_PATH` — API prefix (default `api`)
 - `LOG_LEVEL` — `trace|debug|info|warn|error|fatal|silent`
 - `TZ` — timezone (default `UTC`)
-- `HTTP_REQUEST_BODY_LIMIT_MB` — Fastify body parser max request body size in MB (default `100`)
 
 STT variables:
 
