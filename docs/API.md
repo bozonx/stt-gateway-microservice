@@ -2,7 +2,7 @@
 
 Base URL format: `/{API_BASE_PATH}/v1`
 
-- Default in development: `http://localhost:3000/api/v1`
+- Default in development: `http://localhost:8080/api/v1`
 - Default in Docker Compose: `http://localhost:8080/api/v1`
 
 ## Authentication

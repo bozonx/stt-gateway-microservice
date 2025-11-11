@@ -6,9 +6,10 @@ services:
     restart: unless-stopped
     user: '1000:1000'
     ports:
-      - '8080:80'
+      - '8080:8080'
     environment:
       - TZ=UTC
+      - LISTEN_PORT=8080
       - HTTP_REQUEST_BODY_LIMIT_MB=100
       - API_BASE_PATH=api
       - LOG_LEVEL=warn
@@ -20,7 +21,7 @@ services:
       - STT_MAX_SYNC_WAIT_MINUTES=3
       - ASSEMBLYAI_API_KEY=
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:80/api/v1/health || exit 1']
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/v1/health || exit 1']
       interval: 30s
       timeout: 3s
       retries: 3

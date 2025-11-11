@@ -54,7 +54,7 @@ pnpm start:prod
 
 Default URLs:
 
-- Service: `http://localhost:80/api/v1`
+- Service: `http://localhost:8080/api/v1`
 - Docker Compose: `http://localhost:8080/api/v1`
 
 ## Quick Start (development)
@@ -65,7 +65,7 @@ cp env.development.example .env.development
 pnpm start:dev
 ```
 
-- Default dev URL: `http://localhost:3000/api/v1`
+- Default dev URL: `http://localhost:8080/api/v1`
 - See [Development guide](docs/dev.md) for scripts, debugging, tests, and structure.
 
 ## Environment
@@ -79,7 +79,7 @@ Core variables:
 
 - `NODE_ENV` — `production|development|test`
 - `LISTEN_HOST` — e.g. `0.0.0.0` or `localhost`
-- `LISTEN_PORT` — e.g. `80` or `3000`
+- `LISTEN_PORT` — e.g. `8080`
 - `API_BASE_PATH` — API prefix (default `api`)
 - `LOG_LEVEL` — `trace|debug|info|warn|error|fatal|silent`
 - `TZ` — timezone (default `UTC`)
@@ -150,7 +150,7 @@ See [API documentation](docs/API.md) for full details.
 
 ## Docker
 
-- Image exposes internal port `80`; compose maps `8080:80` by default.
+- Image exposes internal port `8080`; compose maps `8080:8080` by default.
 - Minimal flow:
 
 ```bash
@@ -162,7 +162,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 ```bash
 docker run -d \
-  -p 8080:80 \
+  -p 8080:8080 \
   -e NODE_ENV=production \
   -e API_BASE_PATH=api \
   -e LOG_LEVEL=warn \

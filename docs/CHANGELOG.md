@@ -5,6 +5,12 @@
 ### Configuration
 
 - Added environment variable `HTTP_REQUEST_BODY_LIMIT_MB` — max HTTP request body size (in megabytes) for Fastify body parser. Default: `100`.
+- Unified default HTTP port to `8080` across development and production:
+  - Default `LISTEN_PORT` is now `8080` in config
+  - `.env.production.example` and `.env.development.example` set to `8080`
+  - Dockerfile `EXPOSE 8080` and `ENV LISTEN_PORT=8080`
+  - docker-compose maps `8080:8080` and healthcheck targets `:8080`
+  - Documentation updated (README, docs/API.md, docs/dev.md)
 
 ### API changes
 
