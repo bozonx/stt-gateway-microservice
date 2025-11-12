@@ -17,7 +17,8 @@ export class SttGateway implements INodeType {
 		description: 'Synchronous transcription via STT Gateway microservice',
 		defaults: { name: 'STT Gateway' },
 		icon: 'file:stt-gateway.svg',
-		documentationUrl: 'https://github.com/bozonx/stt-gateway-microservice/tree/main/n8n-nodes-bozonx-stt-gateway-microservice#readme',
+		documentationUrl:
+			'https://github.com/bozonx/stt-gateway-microservice/tree/main/n8n-nodes-bozonx-stt-gateway-microservice#readme',
 		usableAsTool: true,
 		inputs: ['main'],
 		outputs: ['main'],
@@ -38,7 +39,8 @@ export class SttGateway implements INodeType {
 				name: 'basePath',
 				type: 'string',
 				default: 'stt/api/v1',
-				description: 'API base path appended to the Gateway URL (leading/trailing slashes are ignored)',
+				description:
+					'API base path appended to the Gateway URL (leading/trailing slashes are ignored)',
 			},
 			{
 				displayName: 'Audio URL',
@@ -53,9 +55,10 @@ export class SttGateway implements INodeType {
 				name: 'provider',
 				type: 'options',
 				options: [
+					{ name: '(Use service default)', value: '' },
 					{ name: 'AssemblyAI', value: 'assemblyai' },
 				],
-				default: 'assemblyai',
+				default: '',
 				description: 'Speech-to-text provider',
 			},
 			{
@@ -70,7 +73,8 @@ export class SttGateway implements INodeType {
 				name: 'restorePunctuation',
 				type: 'boolean',
 				default: true,
-				description: 'Whether to request the provider to restore punctuation (default true when supported)',
+				description:
+					'Whether to request the provider to restore punctuation (default true when supported)',
 			},
 			{
 				displayName: 'Provider API Key',
@@ -105,10 +109,16 @@ export class SttGateway implements INodeType {
 				const creds = await this.getCredentials('bozonxMicroservicesApi');
 				let baseURL = ((creds?.gatewayUrl as string) || '').trim();
 				if (!baseURL) {
-					throw new NodeOperationError(this.getNode(), 'Gateway URL is required in credentials', { itemIndex: i });
+					throw new NodeOperationError(this.getNode(), 'Gateway URL is required in credentials', {
+						itemIndex: i,
+					});
 				}
 				if (!/^https?:\/\//i.test(baseURL)) {
-					throw new NodeOperationError(this.getNode(), 'Gateway URL must include protocol (http:// or https://)', { itemIndex: i });
+					throw new NodeOperationError(
+						this.getNode(),
+						'Gateway URL must include protocol (http:// or https://)',
+						{ itemIndex: i },
+					);
 				}
 				baseURL = baseURL.replace(/\/+$/g, '');
 
@@ -133,11 +143,18 @@ export class SttGateway implements INodeType {
 					(options.body as IDataObject).apiKey = apiKey;
 				}
 
-				const response = await this.helpers.httpRequestWithAuthentication.call(this, 'bozonxMicroservicesApi', options);
+				const response = await this.helpers.httpRequestWithAuthentication.call(
+					this,
+					'bozonxMicroservicesApi',
+					options,
+				);
 				returnData.push({ json: response as IDataObject, pairedItem: { item: i } });
 			} catch (error) {
 				if (this.continueOnFail()) {
-					returnData.push({ json: { error: (error as Error).message } as IDataObject, pairedItem: { item: i } });
+					returnData.push({
+						json: { error: (error as Error).message } as IDataObject,
+						pairedItem: { item: i },
+					});
 					continue;
 				}
 				throw error;

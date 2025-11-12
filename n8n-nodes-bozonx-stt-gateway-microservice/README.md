@@ -62,7 +62,7 @@ Content-Type: application/json
   Default: `api/v1`. Appended to the Gateway URL. Leading/trailing slashes are ignored.
 
 - **Audio URL** (string, required)
-  Public HTTPS URL to the audio file.
+  Public HTTP(S) URL to the audio file.
 
 - **Provider** (options, optional)
   Speech-to-text provider. If omitted, the microservice uses its default provider. Available: `assemblyai`.
