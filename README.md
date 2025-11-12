@@ -102,7 +102,7 @@ STT variables:
 Quick summary of available endpoints:
 
 - `GET /{API_BASE_PATH}/v1/health` — health check
-- `POST /{API_BASE_PATH}/v1/transcriptions/file` — synchronous transcription by audio URL
+- `POST /{API_BASE_PATH}/v1/transcribe` — synchronous transcription by audio URL
 
 ### Transcription behavior (high level)
 
@@ -127,7 +127,7 @@ curl http://localhost:8080/api/v1/health
 
 ```bash
 curl -X POST \
-  http://localhost:8080/api/v1/transcriptions/file \
+  http://localhost:8080/api/v1/transcribe \
   -H 'Content-Type: application/json' \
   -d '{
     "audioUrl": "https://example.com/audio.mp3",
@@ -189,7 +189,7 @@ Adjust verbosity with `LOG_LEVEL`.
 - Use `Bozonx Microservices API` credentials with:
   - Gateway URL (without trailing slash), e.g., `https://api.example.com`
   - Optional API Token: adds `Authorization: Bearer <token>` if provided
-- The node calls `POST {{gatewayUrl}}/{{basePath}}/transcriptions/file` with the same JSON body as the REST API.
+- The node calls `POST {{gatewayUrl}}/{{basePath}}/transcribe` with the same JSON body as the REST API.
 - See the node’s [README](n8n-nodes-bozonx-stt-gateway-microservice/README.md) for details.
 
 ## Notes

@@ -23,7 +23,7 @@ Follow the official community nodes installation guide: https://docs.n8n.io/inte
 The node sends a POST request to the microservice endpoint:
 
 ```
-POST {{gatewayUrl}}/{{basePath}}/transcriptions/file
+POST {{gatewayUrl}}/{{basePath}}/transcribe
 Content-Type: application/json
 
 {

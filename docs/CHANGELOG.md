@@ -14,7 +14,7 @@
 
 ### API changes
 
-- Added optional request parameter `restorePunctuation` (default `true` when supported) to `/transcriptions/file`
+- Added optional request parameter `restorePunctuation` (default `true` when supported) to `/transcribe`
 - Response now always includes `punctuationRestored` boolean
 - Removed `textFormatted` from documentation (not supported)
 

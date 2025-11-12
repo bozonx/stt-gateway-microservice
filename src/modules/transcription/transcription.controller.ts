@@ -4,7 +4,7 @@ import { TranscribeFileDto } from '@common/dto/transcribe-file.dto';
 import { TranscriptionResponseDto } from '@common/dto/transcription-response.dto';
 import { TranscriptionService } from './transcription.service';
 
-@Controller('transcriptions')
+@Controller()
 export class TranscriptionController {
   constructor(
     private readonly service: TranscriptionService,
@@ -13,7 +13,7 @@ export class TranscriptionController {
     logger.setContext(TranscriptionController.name);
   }
 
-  @Post('file')
+  @Post('transcribe')
   @HttpCode(HttpStatus.OK)
   public async transcribe(@Body() dto: TranscribeFileDto): Promise<TranscriptionResponseDto> {
     const host = (() => {

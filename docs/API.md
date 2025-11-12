@@ -35,7 +35,7 @@ Response:
 
 ## Transcriptions
 
-- `POST /transcriptions/file` — Synchronous transcription by public audio URL
+- `POST /transcribe` — Synchronous transcription by public audio URL
 
 Request body:
 
@@ -73,7 +73,7 @@ Example (curl):
 
 ```bash
 curl -X POST \
-  http://localhost:8080/api/v1/transcriptions/file \
+  http://localhost:8080/api/v1/transcribe \
   -H 'Content-Type: application/json' \
   -d '{
     "audioUrl": "https://example.com/audio.mp3",
@@ -130,7 +130,7 @@ The global error filter returns a consistent response shape:
 {
   "statusCode": 400,
   "timestamp": "2025-01-01T12:00:00.000Z",
-  "path": "/api/v1/transcriptions/file",
+  "path": "/api/v1/transcribe",
   "method": "POST",
   "message": "...",
   "error": { "statusCode": 400, "message": "...", "error": "Bad Request" }
@@ -143,7 +143,7 @@ The global error filter returns a consistent response shape:
 {
   "statusCode": 400,
   "timestamp": "2025-01-01T12:00:00.000Z",
-  "path": "/api/v1/transcriptions/file",
+  "path": "/api/v1/transcribe",
   "method": "POST",
   "message": "audioUrl must be a valid URL",
   "error": { "statusCode": 400, "message": "audioUrl must be a valid URL", "error": "Bad Request" }
@@ -156,7 +156,7 @@ The global error filter returns a consistent response shape:
 {
   "statusCode": 400,
   "timestamp": "2025-01-01T12:00:00.000Z",
-  "path": "/api/v1/transcriptions/file",
+  "path": "/api/v1/transcribe",
   "method": "POST",
   "message": "Private/loopback hosts are not allowed",
   "error": { "statusCode": 400, "message": "Private/loopback hosts are not allowed", "error": "Bad Request" }
@@ -169,7 +169,7 @@ The global error filter returns a consistent response shape:
 {
   "statusCode": 401,
   "timestamp": "2025-01-01T12:00:00.000Z",
-  "path": "/api/v1/transcriptions/file",
+  "path": "/api/v1/transcribe",
   "method": "POST",
   "message": "Missing provider API key",
   "error": { "statusCode": 401, "message": "Missing provider API key", "error": "Unauthorized" }
@@ -182,7 +182,7 @@ The global error filter returns a consistent response shape:
 {
   "statusCode": 503,
   "timestamp": "2025-01-01T12:00:00.000Z",
-  "path": "/api/v1/transcriptions/file",
+  "path": "/api/v1/transcribe",
   "method": "POST",
   "message": "Failed to create transcription",
   "error": { "statusCode": 503, "message": "Failed to create transcription", "error": "Service Unavailable" }
@@ -195,7 +195,7 @@ The global error filter returns a consistent response shape:
 {
   "statusCode": 504,
   "timestamp": "2025-01-01T12:00:00.000Z",
-  "path": "/api/v1/transcriptions/file",
+  "path": "/api/v1/transcribe",
   "method": "POST",
   "message": "TRANSCRIPTION_TIMEOUT",
   "error": { "statusCode": 504, "message": "TRANSCRIPTION_TIMEOUT", "error": "Gateway Timeout" }
