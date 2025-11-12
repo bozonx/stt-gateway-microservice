@@ -8,7 +8,7 @@ import {
 	type IHttpRequestOptions,
 } from 'n8n-workflow';
 
-export class SttGateway implements INodeType {
+export class BozonxSttGateway implements INodeType {
 	description: INodeTypeDescription = {
 		displayName: 'STT Gateway',
 		name: 'bozonxSttGateway',
