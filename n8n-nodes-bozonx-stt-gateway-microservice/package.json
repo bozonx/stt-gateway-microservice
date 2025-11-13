@@ -1,6 +1,6 @@
 {
     "name": "n8n-nodes-bozonx-stt-gateway-microservice",
-    "version": "0.2.1",
+    "version": "1.0.0",
     "description": "n8n node for synchronous transcription via STT Gateway microservice (AssemblyAI)",
     "license": "MIT",
     "homepage": "https://github.com/bozonx/stt-gateway-microservice/tree/main/n8n-nodes-bozonx-stt-gateway-microservice#readme",
