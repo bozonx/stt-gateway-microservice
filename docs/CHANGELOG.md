@@ -1,6 +1,6 @@
 # CHANGELOG
 
-## Unreleased
+## 0.16.0 — Release
 
 ### Configuration
 
@@ -26,13 +26,13 @@
 - Added optional request parameter `formatText` (default `true`) to `/transcribe` to control text formatting (punctuation, capitalization).
 - Removed request parameter `disfluencies` from `/transcribe`; AssemblyAI provider now always uses its default behavior for filler words.
 
-- API_VERSION удалена из кода, тестов и документации; версия API зафиксирована как `v1`
-- AppConfig больше не содержит `apiVersion`; глобальный префикс формируется как `/{API_BASE_PATH}/v1`
-- README: переписан на английском и ориентирован на production; dev‑инструкции оставлены в `docs/dev.md`; примеры и эндпоинты верифицированы по коду
-- Источник истины env: подтверждено `.env.production.example`; добавлено упоминание `TZ`
-- Удалён флаг `ALLOW_CUSTOM_API_KEY`; передача `apiKey` в запросе теперь всегда разрешена (BYO ключ по умолчанию)
-- Обновлены `env.production.example` и `env.development.example` (убраны `ALLOW_CUSTOM_API_KEY`, уточнён `ASSEMBLYAI_API_KEY` как fallback)
-- Удалён корневой эндпоинт индекса `GET /` (ранее `/{API_BASE_PATH}/v1`), обновлены тесты и документация
+- Removed `API_VERSION` from code, tests, and documentation; API version is fixed to `v1`.
+- AppConfig no longer contains `apiVersion`; the global prefix is `/{API_BASE_PATH}/v1`.
+- README rewritten in English and focused on production; dev instructions kept in `docs/dev.md`; examples and endpoints verified against code.
+- Source of truth for env confirmed as `.env.production.example`; added mention of `TZ`.
+- Removed `ALLOW_CUSTOM_API_KEY`; passing `apiKey` in requests is now always allowed (BYO key by default).
+- Updated `env.production.example` and `env.development.example` (removed `ALLOW_CUSTOM_API_KEY`, clarified `ASSEMBLYAI_API_KEY` as fallback).
+- Removed root index endpoint `GET /` (formerly `/{API_BASE_PATH}/v1`); tests and documentation updated.
 
 ### Security & Logging
 
@@ -60,12 +60,12 @@
 
 ## 0.15.0 — Refactor
 
-- Удалены GraphQL и Swagger
-- Удалена встроенная авторизация (Bearer Auth)
-- Сохранён функционал STT (модуль транскрипции и провайдер AssemblyAI)
-- Упрощены конфиги окружения (`.env.*`)
-- Обновлён `AppModule` и логирование
-- Тесты пересобраны; auth-тесты отключены
-- Переработан `docker-compose.yml` до минимального примера (локальная сборка)
-- Обновлён `README.md` (рус.)
-- Актуализирована документация в `docs/` (ENV, dev)
+- Removed GraphQL and Swagger
+- Removed built-in authorization (Bearer Auth)
+- Kept STT functionality (transcription module and AssemblyAI provider)
+- Simplified environment configs (`.env.*`)
+- Updated `AppModule` and logging
+- Rebuilt tests; auth tests removed
+- Simplified `docker-compose.yml` to a minimal example (local build)
+- Updated `README.md` (ru)
+- Updated documentation in `docs/` (ENV, dev)

@@ -134,6 +134,7 @@ curl -X POST \
     "provider": "assemblyai",
     "restorePunctuation": true,
     "language": "en",
+    "formatText": true,
     "apiKey": "YOUR_ASSEMBLYAI_KEY"
   }'
 ```
