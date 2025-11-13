@@ -132,7 +132,6 @@ curl -X POST \
   -d '{
     "audioUrl": "https://example.com/audio.mp3",
     "provider": "assemblyai",
-    "timestamps": false,
     "restorePunctuation": true,
     "language": "en",
     "apiKey": "YOUR_ASSEMBLYAI_KEY"

@@ -29,7 +29,6 @@ Content-Type: application/json
 {
   "audioUrl": "https://example.com/audio.mp3",
   "provider": "assemblyai",  
-  "timestamps": false,
   "restorePunctuation": true,
   "language": "en",
   "formatText": true,
@@ -53,7 +52,6 @@ Content-Type: application/json
   "confidenceAvg": 0.92,
   "wordsCount": 204,
   "processingMs": 8421,
-  "timestampsEnabled": false,
   "punctuationRestored": true
 }
 ```
@@ -68,9 +66,6 @@ Content-Type: application/json
 
 - **Provider** (options, optional)
   Speech-to-text provider. If omitted, the microservice uses its default provider. Available: `assemblyai`.
-
-- **Timestamps** (boolean)
-  Include word-level timestamps in provider request (if supported). Default: `false`.
 
 - **Restore Punctuation** (boolean)
   Ask the provider to restore punctuation when supported. Default: `true`.

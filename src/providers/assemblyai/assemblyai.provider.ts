@@ -65,10 +65,6 @@ export class AssemblyAiProvider implements SttProvider {
       audio_url: params.audioUrl,
     };
     payload.punctuate = params.restorePunctuation === false ? false : true;
-    // Only include words when timestamps are explicitly requested
-    if (params.timestamps === true) {
-      payload.words = true;
-    }
     // Explicit language when provided
     if (params.language) {
       const trimmed = params.language.trim();
@@ -81,7 +77,7 @@ export class AssemblyAiProvider implements SttProvider {
     this.logger.debug(
       `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
         headers.Authorization,
-      )}, words=${payload.words === true}, punctuate=${Boolean(payload.punctuate)}, language_code=${
+      )}, punctuate=${Boolean(payload.punctuate)}, language_code=${
         payload.language_code ?? 'auto'
       }, format_text=${Boolean(payload.format_text)}`,
     );

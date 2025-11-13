@@ -130,7 +130,7 @@ Note: Fastify body parser limit is fixed to 100 MB.
 
 2) Create a provider implementation under `src/providers/<provider-name>/` that implements:
 
-   - `submitAndWaitByUrl({ audioUrl, apiKey, restorePunctuation, timestamps })`
+   - `submitAndWaitByUrl({ audioUrl, apiKey, restorePunctuation })`
    - Return `TranscriptionResult` fields used by the service.
 
 3) Register the provider in `src/providers/stt-provider.registry.ts` so it is discoverable by name.

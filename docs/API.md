@@ -43,7 +43,6 @@ Request body:
 {
   "audioUrl": "https://example.com/audio.mp3",
   "provider": "assemblyai",
-  "timestamps": false,
   "restorePunctuation": true,
   "language": "en",
   "formatText": true,
@@ -62,8 +61,6 @@ Field details:
   - Defaults to `STT_DEFAULT_PROVIDER` if omitted.
   - If `STT_ALLOWED_PROVIDERS` is non-empty, the provider must be in this comma-separated list.
   - If `STT_ALLOWED_PROVIDERS` is empty or unset, all registered providers are allowed.
-- `timestamps` (boolean, optional)
-  - If true, provider is requested to include word-level timestamps (when supported).
 - `restorePunctuation` (boolean, optional)
   - If true, provider is requested to restore/add punctuation in the transcript.
   - Defaults to `true` when the service/provider supports it (e.g., AssemblyAI).
@@ -88,7 +85,6 @@ curl -X POST \
   -d '{
     "audioUrl": "https://example.com/audio.mp3",
     "provider": "assemblyai",
-    "timestamps": false,
     "restorePunctuation": true,
     "language": "en",
     "formatText": true,
@@ -108,7 +104,6 @@ Successful response (200):
   "confidenceAvg": 0.92,
   "wordsCount": 204,
   "processingMs": 8421,
-  "timestampsEnabled": false,
   "punctuationRestored": true
 }
 ```

@@ -96,7 +96,6 @@ export class TranscriptionService {
   public async transcribeByUrl(params: {
     audioUrl: string;
     provider?: string;
-    timestamps?: boolean;
     restorePunctuation?: boolean;
     apiKey?: string;
     language?: string;
@@ -110,7 +109,6 @@ export class TranscriptionService {
     confidenceAvg?: number;
     wordsCount?: number;
     processingMs: number;
-    timestampsEnabled: boolean;
     punctuationRestored: boolean;
     raw: unknown;
   }> {
@@ -163,7 +161,6 @@ export class TranscriptionService {
         audioUrl: params.audioUrl,
         apiKey: apiKeyToUse,
         restorePunctuation: params.restorePunctuation,
-        timestamps: params.timestamps,
         language: trimmedLanguage,
         formatText: params.formatText,
       });
@@ -191,7 +188,6 @@ export class TranscriptionService {
       confidenceAvg: result.confidenceAvg,
       wordsCount: result.words?.length,
       processingMs,
-      timestampsEnabled: Boolean(params.timestamps),
       punctuationRestored: result.punctuationRestored ?? (params.restorePunctuation ?? true),
       raw: result.raw,
     };

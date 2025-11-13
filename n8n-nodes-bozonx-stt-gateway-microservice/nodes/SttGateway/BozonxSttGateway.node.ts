@@ -62,11 +62,12 @@ export class BozonxSttGateway implements INodeType {
 				description: 'Speech-to-text provider',
 			},
 			{
-				displayName: 'Timestamps',
-				name: 'timestamps',
-				type: 'boolean',
-				default: false,
-				description: 'Whether to include word-level timestamps in provider request (if supported)',
+				displayName: 'Language',
+				name: 'language',
+				type: 'string',
+				default: '',
+				description:
+					"Explicit language code for the audio (e.g., 'en', 'ru', 'en-US'). Leave empty for auto-detect when supported.",
 			},
 			{
 				displayName: 'Restore Punctuation',
@@ -75,14 +76,6 @@ export class BozonxSttGateway implements INodeType {
 				default: true,
 				description:
 					'Whether to request the provider to restore punctuation (default true when supported)',
-			},
-			{
-				displayName: 'Language',
-				name: 'language',
-				type: 'string',
-				default: '',
-				description:
-					"Explicit language code for the audio (e.g., 'en', 'ru', 'en-US'). Leave empty for auto-detect when supported.",
 			},
 			{
 				displayName: 'Format Text',
@@ -110,7 +103,6 @@ export class BozonxSttGateway implements INodeType {
 			try {
 				const audioUrl = this.getNodeParameter('audioUrl', i) as string;
 				const provider = this.getNodeParameter('provider', i, '') as string;
-				const timestamps = this.getNodeParameter('timestamps', i) as boolean;
 				const restorePunctuation = this.getNodeParameter('restorePunctuation', i) as boolean;
 				const language = (this.getNodeParameter('language', i, '') as string).trim();
 				const formatText = this.getNodeParameter('formatText', i) as boolean;
@@ -146,7 +138,6 @@ export class BozonxSttGateway implements INodeType {
 					body: (() => {
 						const body: IDataObject = { audioUrl };
 						if (provider) body.provider = provider;
-						if (timestamps === true) body.timestamps = true;
 						if (restorePunctuation === false) body.restorePunctuation = false;
 						if (language) body.language = language;
 						if (formatText === false) body.formatText = false;

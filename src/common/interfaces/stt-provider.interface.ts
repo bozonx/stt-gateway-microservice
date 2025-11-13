@@ -4,8 +4,6 @@ export interface TranscriptionRequestByUrl {
   // If true/false is provided, provider should explicitly control punctuation restoration.
   // When undefined, provider defaults apply (e.g., true for AssemblyAI).
   restorePunctuation?: boolean;
-  // Request word-level timestamps when supported by provider
-  timestamps?: boolean;
   // Explicit language code (e.g., 'en', 'ru', 'en-US') when supported
   language?: string;
   // Format text output (e.g., punctuation, capitalization)

@@ -12,10 +12,6 @@ export class TranscribeFileDto {
 
   @IsOptional()
   @IsBoolean()
-  public readonly timestamps?: boolean;
-
-  @IsOptional()
-  @IsBoolean()
   public readonly restorePunctuation?: boolean;
 
   @IsOptional()

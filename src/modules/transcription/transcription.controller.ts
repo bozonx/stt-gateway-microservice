@@ -16,14 +16,7 @@ export class TranscriptionController {
   @Post('transcribe')
   @HttpCode(HttpStatus.OK)
   public async transcribe(@Body() dto: TranscribeFileDto): Promise<TranscriptionResponseDto> {
-    const host = (() => {
-      try {
-        return new URL(dto.audioUrl).hostname;
-      } catch {
-        return undefined;
-      }
-    })();
-    this.logger.info(host ? `Transcription request received for host: ${host}` : 'Transcription request received');
+    this.logger.info(`Received transcription request for URL: ${dto.audioUrl}`);
     const result = await this.service.transcribeByUrl(dto);
     this.logger.info(
       `Transcription request completed. Provider: ${result.provider}, Processing time: ${result.processingMs}ms`,

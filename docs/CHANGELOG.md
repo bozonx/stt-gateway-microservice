@@ -14,6 +14,7 @@
 
 ### API changes
 
+- Removed request parameter `timestamps` from `/transcribe`; word-level data is always available from provider defaults.
 - Added optional request parameter `restorePunctuation` (default `true` when supported) to `/transcribe`
 - Response now always includes `punctuationRestored` boolean
 - Removed `textFormatted` from documentation (not supported)
@@ -40,6 +41,7 @@
 
 ### n8n Nodes
 
+- Removed `Timestamps` option from STT Gateway node; AssemblyAI words are returned by default.
 - Credentials `Bozonx Microservices API`: `API Token` is now optional. `Authorization: Bearer <token>` header is sent only when token is provided.
 - Updated n8n package README to reflect optional token behavior.
 - STT Gateway node: default `basePath` set to `api/v1` to match microservice defaults; request URL now built as absolute (no `baseURL` cast workaround). README updated accordingly.

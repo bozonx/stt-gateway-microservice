@@ -72,34 +72,6 @@ describe('AssemblyAiProvider', () => {
     )
   })
 
-  it('should pass timestamps as words=true in create payload when requested', async () => {
-    const mockTranscriptId = 't-1'
-    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-    const completedResponse = {
-      status: 200,
-      data: { id: mockTranscriptId, status: 'completed', text: 'ok' },
-    }
-    const postSpy = jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-    jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
-
-    await provider.submitAndWaitByUrl({
-      audioUrl: mockAudioUrl,
-      apiKey: mockApiKey,
-      timestamps: true,
-    })
-
-    expect(postSpy).toHaveBeenCalledWith(
-      'https://api.assemblyai.com/v2/transcript',
-      expect.objectContaining({
-        audio_url: mockAudioUrl,
-        punctuate: true,
-        words: true,
-        format_text: true,
-      }),
-      expect.anything()
-    )
-  })
-
   afterEach(() => {
     jest.clearAllMocks()
     delete process.env.STT_POLL_INTERVAL_MS
