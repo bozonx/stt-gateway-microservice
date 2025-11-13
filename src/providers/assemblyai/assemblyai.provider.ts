@@ -63,15 +63,21 @@ export class AssemblyAiProvider implements SttProvider {
     const apiUrl = `${ASSEMBLYAI_API.BASE_URL}${ASSEMBLYAI_API.TRANSCRIPTS_ENDPOINT}`;
     const payload: Record<string, any> = {
       audio_url: params.audioUrl,
-      punctuate: params.restorePunctuation ?? true,
     };
-    if (typeof params.timestamps === 'boolean') {
-      payload.words = Boolean(params.timestamps);
+    // Preserve provider default (true) unless caller explicitly sets it
+    if (typeof params.restorePunctuation === 'boolean') {
+      payload.punctuate = params.restorePunctuation;
+    } else {
+      payload.punctuate = true;
+    }
+    // Only include words when timestamps are explicitly requested
+    if (params.timestamps === true) {
+      payload.words = true;
     }
     this.logger.debug(
       `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
         headers.Authorization,
-      )}, words=${Boolean(payload.words)}, punctuate=${Boolean(payload.punctuate)}`,
+      )}, words=${payload.words === true}, punctuate=${Boolean(payload.punctuate)}`,
     );
     const create$ = this.http.post<AssemblyCreateResponse>(apiUrl, payload, {
       headers,

@@ -127,21 +127,14 @@ export class BozonxSttGateway implements INodeType {
 					url: `${baseURL}/${pathPrefix}transcribe`,
 					json: true,
 					body: (() => {
-						const body: IDataObject = {
-							audioUrl,
-							timestamps,
-							restorePunctuation,
-						};
-						if (provider) {
-							body.provider = provider;
-						}
+						const body: IDataObject = { audioUrl };
+						if (provider) body.provider = provider;
+						if (timestamps === true) body.timestamps = true;
+						if (restorePunctuation === false) body.restorePunctuation = false;
+						if (apiKey) body.apiKey = apiKey;
 						return body;
 					})(),
 				};
-
-				if (apiKey) {
-					(options.body as IDataObject).apiKey = apiKey;
-				}
 
 				const response = await this.helpers.httpRequestWithAuthentication.call(
 					this,
