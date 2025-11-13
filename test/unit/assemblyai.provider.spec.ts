@@ -66,9 +66,8 @@ describe('AssemblyAiProvider', () => {
         audio_url: mockAudioUrl,
         punctuate: true,
         language_code: 'ru',
-        speech_model: 'best',
         format_text: true,
-        disfluency_filter: true,
+        disfluencies: true,
       }),
       expect.anything()
     )
@@ -96,9 +95,8 @@ describe('AssemblyAiProvider', () => {
         audio_url: mockAudioUrl,
         punctuate: true,
         words: true,
-        speech_model: 'best',
         format_text: true,
-        disfluency_filter: true,
+        disfluencies: true,
       }),
       expect.anything()
     )
@@ -166,9 +164,8 @@ describe('AssemblyAiProvider', () => {
         expect.objectContaining({
           audio_url: mockAudioUrl,
           punctuate: true,
-          speech_model: 'best',
           format_text: true,
-          disfluency_filter: true,
+          disfluencies: true,
         }),
         expect.objectContaining({ headers: { Authorization: mockApiKey } })
       )

@@ -8,8 +8,6 @@ export interface TranscriptionRequestByUrl {
   timestamps?: boolean;
   // Explicit language code (e.g., 'en', 'ru', 'en-US') when supported
   language?: string;
-  // Speech model selection (e.g., 'best', 'universal', 'slam-1' for AssemblyAI)
-  speechModel?: string;
   // Format text output (e.g., punctuation, capitalization)
   formatText?: boolean;
   // Include filler words like "umm" in transcription

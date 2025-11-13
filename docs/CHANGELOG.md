@@ -20,7 +20,7 @@
 
 - Added optional request parameter `language` to `/transcribe` to explicitly set audio language (e.g., `en`, `ru`, `en-US`). Providers use auto-detect when omitted and supported. Value is now trimmed and forwarded to providers without microservice-side validation. See AssemblyAI's supported languages: https://www.assemblyai.com/docs/pre-recorded-audio/supported-languages.
 
-- Added optional request parameter `speechModel` to `/transcribe` for AssemblyAI model selection: `best` (default), `universal`, or `slam-1`.
+- Removed request parameter `speechModel` from `/transcribe`; AssemblyAI now uses its default model.
 
 - Added optional request parameter `formatText` (default `true`) to `/transcribe` to control text formatting (punctuation, capitalization).
 

@@ -25,8 +25,3 @@ export const SERVICE_METADATA = {
   NAME: 'micro-stt',
   DESCRIPTION: 'Speech-to-Text microservice',
 } as const
-
-/**
- * AssemblyAI speech models
- */
-export const ASSEMBLYAI_SPEECH_MODELS = ['best', 'universal', 'slam-1'] as const

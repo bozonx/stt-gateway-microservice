@@ -64,44 +64,28 @@ export class AssemblyAiProvider implements SttProvider {
     const payload: Record<string, any> = {
       audio_url: params.audioUrl,
     };
-    // Preserve provider default (true) unless caller explicitly sets it
-    if (typeof params.restorePunctuation === 'boolean') {
-      payload.punctuate = params.restorePunctuation;
-    } else {
-      payload.punctuate = true;
-    }
+    payload.punctuate = params.restorePunctuation === false ? false : true;
     // Only include words when timestamps are explicitly requested
     if (params.timestamps === true) {
       payload.words = true;
     }
     // Explicit language when provided
     if (params.language) {
-      payload.language_code = params.language;
-    }
-    // Speech model selection (default: best)
-    if (params.speechModel) {
-      payload.speech_model = params.speechModel;
-    } else {
-      payload.speech_model = 'best';
+      const trimmed = params.language.trim();
+      if (trimmed.length > 0) {
+        payload.language_code = trimmed;
+      }
     }
     // Format text output (default: true)
-    if (typeof params.formatText === 'boolean') {
-      payload.format_text = params.formatText;
-    } else {
-      payload.format_text = true;
-    }
+    payload.format_text = params.formatText === false ? false : true;
     // Include disfluencies (default: true)
-    if (typeof params.disfluencies === 'boolean') {
-      payload.disfluency_filter = params.disfluencies;
-    } else {
-      payload.disfluency_filter = true;
-    }
+    payload.disfluencies = params.disfluencies === false ? false : true;
     this.logger.debug(
       `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
         headers.Authorization,
       )}, words=${payload.words === true}, punctuate=${Boolean(payload.punctuate)}, language_code=${
         payload.language_code ?? 'auto'
-      }, speech_model=${payload.speech_model}, format_text=${Boolean(payload.format_text)}, disfluency_filter=${Boolean(payload.disfluency_filter)}`,
+      }, format_text=${Boolean(payload.format_text)}, disfluencies=${Boolean(payload.disfluencies)}`,
     );
     const create$ = this.http.post<AssemblyCreateResponse>(apiUrl, payload, {
       headers,

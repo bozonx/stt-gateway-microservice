@@ -85,23 +85,6 @@ export class BozonxSttGateway implements INodeType {
 					"Explicit language code for the audio (e.g., 'en', 'ru', 'en-US'). Leave empty for auto-detect when supported.",
 			},
 			{
-				displayName: 'Speech Model',
-				name: 'speechModel',
-				type: 'options',
-				options: [
-					{ name: 'Best (default)', value: 'best' },
-					{ name: 'Universal', value: 'universal' },
-					{ name: 'SLAM-1', value: 'slam-1' },
-				],
-				default: 'best',
-				displayOptions: {
-					show: {
-						provider: ['assemblyai'],
-					},
-				},
-				description: 'Speech model for AssemblyAI transcription',
-			},
-			{
 				displayName: 'Format Text',
 				name: 'formatText',
 				type: 'boolean',
@@ -137,7 +120,6 @@ export class BozonxSttGateway implements INodeType {
 				const timestamps = this.getNodeParameter('timestamps', i) as boolean;
 				const restorePunctuation = this.getNodeParameter('restorePunctuation', i) as boolean;
 				const language = (this.getNodeParameter('language', i, '') as string).trim();
-				const speechModel = this.getNodeParameter('speechModel', i, 'best') as string;
 				const formatText = this.getNodeParameter('formatText', i) as boolean;
 				const disfluencies = this.getNodeParameter('disfluencies', i) as boolean;
 				const apiKey = this.getNodeParameter('apiKey', i) as string;
@@ -175,7 +157,6 @@ export class BozonxSttGateway implements INodeType {
 						if (timestamps === true) body.timestamps = true;
 						if (restorePunctuation === false) body.restorePunctuation = false;
 						if (language) body.language = language;
-						if (speechModel) body.speechModel = speechModel;
 						if (formatText === false) body.formatText = false;
 						if (disfluencies === false) body.disfluencies = false;
 						if (apiKey) body.apiKey = apiKey;

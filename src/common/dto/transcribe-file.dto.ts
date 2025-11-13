@@ -23,10 +23,6 @@ export class TranscribeFileDto {
   public readonly language?: string;
 
   @IsOptional()
-  @IsString()
-  public readonly speechModel?: string;
-
-  @IsOptional()
   @IsBoolean()
   public readonly formatText?: boolean;
 

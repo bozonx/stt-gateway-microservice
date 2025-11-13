@@ -136,42 +136,4 @@ describe('TranscriptionService', () => {
     );
   });
 
-  it('rejects unsupported speech model for AssemblyAI', async () => {
-    process.env.ASSEMBLYAI_API_KEY = 'x';
-
-    const mockProvider = { submitAndWaitByUrl: jest.fn() };
-
-    const moduleRef = await Test.createTestingModule({
-      imports: [
-        HttpModule,
-        ConfigModule.forRoot({
-          load: [appConfig, sttConfig],
-        }),
-      ],
-      providers: [
-        TranscriptionService,
-        AssemblyAiProvider,
-        {
-          provide: STT_PROVIDER,
-          useValue: mockProvider,
-        },
-        {
-          provide: PinoLogger,
-          useValue: createMockLogger(),
-        },
-      ],
-    })
-      .overrideProvider(HttpService)
-      .useValue({ head: () => of({ headers: {} }) })
-      .compile();
-
-    const svc = moduleRef.get(TranscriptionService);
-    await expect(
-      svc.transcribeByUrl({
-        audioUrl: 'https://example.com/a.mp3',
-        provider: 'assemblyai',
-        speechModel: 'invalid-model',
-      }),
-    ).rejects.toThrow('not supported');
-  });
 });
