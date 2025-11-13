@@ -99,6 +99,7 @@ export class TranscriptionService {
     timestamps?: boolean;
     restorePunctuation?: boolean;
     apiKey?: string;
+    language?: string;
   }): Promise<{
     text: string;
     provider: string;
@@ -159,6 +160,7 @@ export class TranscriptionService {
         apiKey: apiKeyToUse,
         restorePunctuation: params.restorePunctuation,
         timestamps: params.timestamps,
+        language: params.language,
       });
     } catch (err: unknown) {
       if (err instanceof HttpException) {

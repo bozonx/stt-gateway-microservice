@@ -6,6 +6,8 @@ export interface TranscriptionRequestByUrl {
   restorePunctuation?: boolean;
   // Request word-level timestamps when supported by provider
   timestamps?: boolean;
+  // Explicit language code (e.g., 'en', 'ru', 'en-US') when supported
+  language?: string;
 }
 
 export interface WordTiming {

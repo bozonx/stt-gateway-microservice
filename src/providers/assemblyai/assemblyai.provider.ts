@@ -74,10 +74,16 @@ export class AssemblyAiProvider implements SttProvider {
     if (params.timestamps === true) {
       payload.words = true;
     }
+    // Explicit language when provided
+    if (params.language) {
+      payload.language_code = params.language;
+    }
     this.logger.debug(
       `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
         headers.Authorization,
-      )}, words=${payload.words === true}, punctuate=${Boolean(payload.punctuate)}`,
+      )}, words=${payload.words === true}, punctuate=${Boolean(payload.punctuate)}, language_code=${
+        payload.language_code ?? 'auto'
+      }`,
     );
     const create$ = this.http.post<AssemblyCreateResponse>(apiUrl, payload, {
       headers,

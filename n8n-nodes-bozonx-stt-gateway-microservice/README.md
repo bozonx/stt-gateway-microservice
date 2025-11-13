@@ -31,6 +31,7 @@ Content-Type: application/json
   "provider": "assemblyai",  
   "timestamps": false,
   "restorePunctuation": true,
+  "language": "en",
   "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
 ```
@@ -72,6 +73,9 @@ Content-Type: application/json
 
 - **Restore Punctuation** (boolean)
   Ask the provider to restore punctuation when supported. Default: `true`.
+
+- **Language** (string, optional)
+  Explicit language code for the audio, e.g., `en`, `ru`, `en-US`. Leave empty to let the provider auto-detect when supported.
 
 - **Provider API Key** (string, optional)
   Direct provider API key (BYO) when allowed by service policy.

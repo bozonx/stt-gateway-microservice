@@ -44,6 +44,29 @@ describe('AssemblyAiProvider', () => {
     configService = moduleRef.get<ConfigService>(ConfigService)
   })
 
+  it('should pass language_code in create payload when language is provided', async () => {
+    const mockTranscriptId = 't-2'
+    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
+    const completedResponse = {
+      status: 200,
+      data: { id: mockTranscriptId, status: 'completed', text: 'ok' },
+    }
+    const postSpy = jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
+    jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
+
+    await provider.submitAndWaitByUrl({
+      audioUrl: mockAudioUrl,
+      apiKey: mockApiKey,
+      language: 'ru',
+    })
+
+    expect(postSpy).toHaveBeenCalledWith(
+      'https://api.assemblyai.com/v2/transcript',
+      expect.objectContaining({ audio_url: mockAudioUrl, punctuate: true, language_code: 'ru' }),
+      expect.anything()
+    )
+  })
+
   it('should pass timestamps as words=true in create payload when requested', async () => {
     const mockTranscriptId = 't-1'
     const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }

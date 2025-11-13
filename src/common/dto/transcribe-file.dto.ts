@@ -20,5 +20,9 @@ export class TranscribeFileDto {
 
   @IsOptional()
   @IsString()
+  public readonly language?: string;
+
+  @IsOptional()
+  @IsString()
   public readonly apiKey?: string;
 }

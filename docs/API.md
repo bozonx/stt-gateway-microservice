@@ -45,6 +45,7 @@ Request body:
   "provider": "assemblyai",
   "timestamps": false,
   "restorePunctuation": true,
+  "language": "en",
   "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
 ```
@@ -65,6 +66,9 @@ Field details:
 - `restorePunctuation` (boolean, optional)
   - If true, provider is requested to restore/add punctuation in the transcript.
   - Defaults to `true` when the service/provider supports it (e.g., AssemblyAI).
+- `language` (string, optional)
+  - Explicit language code for the audio, e.g., `en`, `ru`, `en-US`.
+  - When omitted, provider auto-detection may be used if supported by the provider.
 - `apiKey` (string, optional)
   - If provided, used as the provider API key for this request (BYO key).
   - If omitted, the service will fall back to `ASSEMBLYAI_API_KEY` from environment.
@@ -80,6 +84,7 @@ curl -X POST \
     "provider": "assemblyai",
     "timestamps": false,
     "restorePunctuation": true,
+    "language": "en",
     "apiKey": "YOUR_ASSEMBLYAI_KEY"
   }'
 ```

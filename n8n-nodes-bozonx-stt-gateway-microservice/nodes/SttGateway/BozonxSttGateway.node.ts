@@ -77,6 +77,14 @@ export class BozonxSttGateway implements INodeType {
 					'Whether to request the provider to restore punctuation (default true when supported)',
 			},
 			{
+				displayName: 'Language',
+				name: 'language',
+				type: 'string',
+				default: '',
+				description:
+					"Explicit language code for the audio (e.g., 'en', 'ru', 'en-US'). Leave empty for auto-detect when supported.",
+			},
+			{
 				displayName: 'Provider API Key',
 				name: 'apiKey',
 				type: 'string',
@@ -97,6 +105,7 @@ export class BozonxSttGateway implements INodeType {
 				const provider = this.getNodeParameter('provider', i, '') as string;
 				const timestamps = this.getNodeParameter('timestamps', i) as boolean;
 				const restorePunctuation = this.getNodeParameter('restorePunctuation', i) as boolean;
+				const language = (this.getNodeParameter('language', i, '') as string).trim();
 				const apiKey = this.getNodeParameter('apiKey', i) as string;
 				const basePathParam = (this.getNodeParameter('basePath', i) as string) || '';
 				const normalizedBasePath = basePathParam.replace(/^\/+|\/+$/g, '');
@@ -131,6 +140,7 @@ export class BozonxSttGateway implements INodeType {
 						if (provider) body.provider = provider;
 						if (timestamps === true) body.timestamps = true;
 						if (restorePunctuation === false) body.restorePunctuation = false;
+						if (language) body.language = language;
 						if (apiKey) body.apiKey = apiKey;
 						return body;
 					})(),

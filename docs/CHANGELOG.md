@@ -18,6 +18,8 @@
 - Response now always includes `punctuationRestored` boolean
 - Removed `textFormatted` from documentation (not supported)
 
+- Added optional request parameter `language` to `/transcribe` to explicitly set audio language (e.g., `en`, `ru`, `en-US`). Providers use auto-detect when omitted and supported.
+
 - API_VERSION удалена из кода, тестов и документации; версия API зафиксирована как `v1`
 - AppConfig больше не содержит `apiVersion`; глобальный префикс формируется как `/{API_BASE_PATH}/v1`
 - README: переписан на английском и ориентирован на production; dev‑инструкции оставлены в `docs/dev.md`; примеры и эндпоинты верифицированы по коду
@@ -36,6 +38,7 @@
 - Credentials `Bozonx Microservices API`: `API Token` is now optional. `Authorization: Bearer <token>` header is sent only when token is provided.
 - Updated n8n package README to reflect optional token behavior.
 - STT Gateway node: default `basePath` set to `api/v1` to match microservice defaults; request URL now built as absolute (no `baseURL` cast workaround). README updated accordingly.
+- STT Gateway node: added optional `Language` parameter that passes `language` to the microservice request body.
 
 ### Cleanup
 
