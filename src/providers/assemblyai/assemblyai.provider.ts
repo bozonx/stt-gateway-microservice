@@ -68,13 +68,22 @@ export class AssemblyAiProvider implements SttProvider {
     if (typeof params.timestamps === 'boolean') {
       payload.words = Boolean(params.timestamps);
     }
-
+    this.logger.debug(
+      `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
+        headers.Authorization,
+      )}, words=${Boolean(payload.words)}, punctuate=${Boolean(payload.punctuate)}`,
+    );
     const create$ = this.http.post<AssemblyCreateResponse>(apiUrl, payload, {
       headers,
       validateStatus: () => true,
     });
 
     const createRes = await lastValueFrom(create$.pipe(timeout(this.cfg.requestTimeoutSeconds * 1000)));
+    this.logger.debug(
+      `AssemblyAI create response: status=${createRes.status}, hasId=${Boolean(
+        createRes.data?.id,
+      )}`,
+    );
     if (createRes.status >= 400 || !createRes.data?.id) {
       this.logger.error(`Failed to create transcription. Status: ${createRes.status}`);
       throw new ServiceUnavailableException('Failed to create transcription');
@@ -108,6 +117,9 @@ export class AssemblyAiProvider implements SttProvider {
       });
       const getRes = await lastValueFrom(get$.pipe(timeout(this.cfg.requestTimeoutSeconds * 1000)));
       const body = getRes.data;
+      this.logger.debug(
+        `AssemblyAI poll response: status=${getRes.status}, bodyStatus=${body?.status ?? 'n/a'}`,
+      );
 
       if (!body) {
         this.logger.debug(`No response body for ID: ${id}, continuing...`);
