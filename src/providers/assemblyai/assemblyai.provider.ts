@@ -85,7 +85,10 @@ export class AssemblyAiProvider implements SttProvider {
       )}`,
     );
     if (createRes.status >= 400 || !createRes.data?.id) {
-      this.logger.error(`Failed to create transcription. Status: ${createRes.status}`);
+      const errorDetail = createRes.data ? JSON.stringify(createRes.data) : 'no response body';
+      this.logger.error(
+        `Failed to create transcription. Status: ${createRes.status}, Response: ${errorDetail}`,
+      );
       throw new ServiceUnavailableException('Failed to create transcription');
     }
 
