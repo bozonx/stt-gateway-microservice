@@ -7,8 +7,8 @@
  */
 export const ASSEMBLYAI_API = {
   BASE_URL: 'https://api.assemblyai.com/v2',
-  TRANSCRIPTS_ENDPOINT: '/transcripts',
-} as const;
+  TRANSCRIPTS_ENDPOINT: '/transcript',
+} as const
 
 /**
  * HTTP timeout defaults (in milliseconds)
@@ -16,7 +16,7 @@ export const ASSEMBLYAI_API = {
 export const HTTP_TIMEOUTS = {
   DEFAULT_REQUEST: 15000,
   HEAD_REQUEST: 5000,
-} as const;
+} as const
 
 /**
  * Service metadata
@@ -24,4 +24,4 @@ export const HTTP_TIMEOUTS = {
 export const SERVICE_METADATA = {
   NAME: 'micro-stt',
   DESCRIPTION: 'Speech-to-Text microservice',
-} as const;
+} as const
