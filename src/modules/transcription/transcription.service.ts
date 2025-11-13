@@ -101,7 +101,6 @@ export class TranscriptionService {
     apiKey?: string;
     language?: string;
     formatText?: boolean;
-    disfluencies?: boolean;
   }): Promise<{
     text: string;
     provider: string;
@@ -113,6 +112,7 @@ export class TranscriptionService {
     processingMs: number;
     timestampsEnabled: boolean;
     punctuationRestored: boolean;
+    raw: unknown;
   }> {
     const hostForLog = (() => {
       try {
@@ -166,7 +166,6 @@ export class TranscriptionService {
         timestamps: params.timestamps,
         language: trimmedLanguage,
         formatText: params.formatText,
-        disfluencies: params.disfluencies,
       });
     } catch (err: unknown) {
       if (err instanceof HttpException) {
@@ -194,6 +193,7 @@ export class TranscriptionService {
       processingMs,
       timestampsEnabled: Boolean(params.timestamps),
       punctuationRestored: result.punctuationRestored ?? (params.restorePunctuation ?? true),
+      raw: result.raw,
     };
   }
 }

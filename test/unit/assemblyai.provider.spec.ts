@@ -67,7 +67,6 @@ describe('AssemblyAiProvider', () => {
         punctuate: true,
         language_code: 'ru',
         format_text: true,
-        disfluencies: true,
       }),
       expect.anything()
     )
@@ -96,7 +95,6 @@ describe('AssemblyAiProvider', () => {
         punctuate: true,
         words: true,
         format_text: true,
-        disfluencies: true,
       }),
       expect.anything()
     )
@@ -165,7 +163,6 @@ describe('AssemblyAiProvider', () => {
           audio_url: mockAudioUrl,
           punctuate: true,
           format_text: true,
-          disfluencies: true,
         }),
         expect.objectContaining({ headers: { Authorization: mockApiKey } })
       )

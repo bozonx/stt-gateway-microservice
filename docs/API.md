@@ -47,7 +47,6 @@ Request body:
   "restorePunctuation": true,
   "language": "en",
   "formatText": true,
-  "disfluencies": true,
   "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
 ```
@@ -76,9 +75,6 @@ Field details:
 - `formatText` (boolean, optional)
   - Whether to format text output (punctuation, capitalization).
   - Defaults to `true`. If omitted, the service still sends `format_text: true` to AssemblyAI.
-- `disfluencies` (boolean, optional)
-  - Whether to include filler words like "umm" in transcription.
-  - Defaults to `true`. If omitted, the service still sends `disfluencies: true` to AssemblyAI.
 - `apiKey` (string, optional)
   - If provided, used as the provider API key for this request (BYO key).
   - If omitted, the service will fall back to `ASSEMBLYAI_API_KEY` from environment.
@@ -96,7 +92,6 @@ curl -X POST \
     "restorePunctuation": true,
     "language": "en",
     "formatText": true,
-    "disfluencies": true,
     "apiKey": "YOUR_ASSEMBLYAI_KEY"
   }'
 ```

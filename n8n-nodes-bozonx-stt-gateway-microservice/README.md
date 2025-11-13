@@ -33,7 +33,6 @@ Content-Type: application/json
   "restorePunctuation": true,
   "language": "en",
   "formatText": true,
-  "disfluencies": true,
   "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
 ```
@@ -81,9 +80,6 @@ Content-Type: application/json
 
 - **Format Text** (boolean)
   Whether to format text output (punctuation, capitalization). Default: `true`. When omitted the service still sends `format_text: true` to AssemblyAI.
-
-- **Include Disfluencies** (boolean)
-  Whether to include filler words like "umm" in transcription. Default: `true`. When omitted the service still sends `disfluencies: true` to AssemblyAI.
 
 - **Provider API Key** (string, optional)
   Direct provider API key (BYO) when allowed by service policy.

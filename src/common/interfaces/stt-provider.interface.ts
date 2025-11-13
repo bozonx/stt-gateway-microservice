@@ -10,8 +10,6 @@ export interface TranscriptionRequestByUrl {
   language?: string;
   // Format text output (e.g., punctuation, capitalization)
   formatText?: boolean;
-  // Include filler words like "umm" in transcription
-  disfluencies?: boolean;
 }
 
 export interface WordTiming {
@@ -29,6 +27,8 @@ export interface TranscriptionResult {
   words?: WordTiming[];
   // Whether punctuation has been restored/kept by provider
   punctuationRestored?: boolean;
+  // Raw provider payload
+  raw: unknown;
 }
 
 export interface SttProvider {

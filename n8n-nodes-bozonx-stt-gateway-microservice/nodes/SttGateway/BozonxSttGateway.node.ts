@@ -92,13 +92,6 @@ export class BozonxSttGateway implements INodeType {
 				description: 'Format text output (punctuation, capitalization)',
 			},
 			{
-				displayName: 'Include Disfluencies',
-				name: 'disfluencies',
-				type: 'boolean',
-				default: true,
-				description: 'Include filler words like "umm" in transcription',
-			},
-			{
 				displayName: 'Provider API Key',
 				name: 'apiKey',
 				type: 'string',
@@ -121,7 +114,6 @@ export class BozonxSttGateway implements INodeType {
 				const restorePunctuation = this.getNodeParameter('restorePunctuation', i) as boolean;
 				const language = (this.getNodeParameter('language', i, '') as string).trim();
 				const formatText = this.getNodeParameter('formatText', i) as boolean;
-				const disfluencies = this.getNodeParameter('disfluencies', i) as boolean;
 				const apiKey = this.getNodeParameter('apiKey', i) as string;
 				const basePathParam = (this.getNodeParameter('basePath', i) as string) || '';
 				const normalizedBasePath = basePathParam.replace(/^\/+|\/+$/g, '');
@@ -158,7 +150,6 @@ export class BozonxSttGateway implements INodeType {
 						if (restorePunctuation === false) body.restorePunctuation = false;
 						if (language) body.language = language;
 						if (formatText === false) body.formatText = false;
-						if (disfluencies === false) body.disfluencies = false;
 						if (apiKey) body.apiKey = apiKey;
 						return body;
 					})(),

@@ -27,10 +27,6 @@ export class TranscribeFileDto {
   public readonly formatText?: boolean;
 
   @IsOptional()
-  @IsBoolean()
-  public readonly disfluencies?: boolean;
-
-  @IsOptional()
   @IsString()
   public readonly apiKey?: string;
 }

@@ -78,14 +78,12 @@ export class AssemblyAiProvider implements SttProvider {
     }
     // Format text output (default: true)
     payload.format_text = params.formatText === false ? false : true;
-    // Include disfluencies (default: true)
-    payload.disfluencies = params.disfluencies === false ? false : true;
     this.logger.debug(
       `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
         headers.Authorization,
       )}, words=${payload.words === true}, punctuate=${Boolean(payload.punctuate)}, language_code=${
         payload.language_code ?? 'auto'
-      }, format_text=${Boolean(payload.format_text)}, disfluencies=${Boolean(payload.disfluencies)}`,
+      }, format_text=${Boolean(payload.format_text)}`,
     );
     const create$ = this.http.post<AssemblyCreateResponse>(apiUrl, payload, {
       headers,
@@ -162,6 +160,7 @@ export class AssemblyAiProvider implements SttProvider {
               text: w.text,
             })) ?? undefined,
           punctuationRestored: params.restorePunctuation ?? true,
+          raw: body,
         };
       }
 

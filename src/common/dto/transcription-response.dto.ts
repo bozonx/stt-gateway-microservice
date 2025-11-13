@@ -21,4 +21,6 @@ export class TranscriptionResponseDto {
   public timestampsEnabled!: boolean;
 
   public punctuationRestored!: boolean;
+
+  public raw!: unknown;
 }

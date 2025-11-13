@@ -23,8 +23,7 @@
 - Removed request parameter `speechModel` from `/transcribe`; AssemblyAI now uses its default model.
 
 - Added optional request parameter `formatText` (default `true`) to `/transcribe` to control text formatting (punctuation, capitalization).
-
-- Added optional request parameter `disfluencies` (default `true`) to `/transcribe` to include/exclude filler words like "umm" in transcription.
+- Removed request parameter `disfluencies` from `/transcribe`; AssemblyAI provider now always uses its default behavior for filler words.
 
 - API_VERSION удалена из кода, тестов и документации; версия API зафиксирована как `v1`
 - AppConfig больше не содержит `apiVersion`; глобальный префикс формируется как `/{API_BASE_PATH}/v1`
