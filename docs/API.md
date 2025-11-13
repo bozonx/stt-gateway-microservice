@@ -46,6 +46,9 @@ Request body:
   "timestamps": false,
   "restorePunctuation": true,
   "language": "en",
+  "speechModel": "best",
+  "formatText": true,
+  "disfluencies": true,
   "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
 ```
@@ -69,6 +72,17 @@ Field details:
 - `language` (string, optional)
   - Explicit language code for the audio, e.g., `en`, `ru`, `en-US`.
   - When omitted, provider auto-detection may be used if supported by the provider.
+  - For AssemblyAI, must be one of the supported Universal model languages (e.g., `en`, `es`, `fr`, `de`, `ru`, etc.).
+  - If an unsupported language is provided, the service returns `400 Bad Request`.
+- `speechModel` (string, optional)
+  - Speech model selection for AssemblyAI: `best` (default), `universal`, or `slam-1`.
+  - Defaults to `best` when omitted.
+- `formatText` (boolean, optional)
+  - Whether to format text output (punctuation, capitalization).
+  - Defaults to `true` when omitted.
+- `disfluencies` (boolean, optional)
+  - Whether to include filler words like "umm" in transcription.
+  - Defaults to `true` when omitted.
 - `apiKey` (string, optional)
   - If provided, used as the provider API key for this request (BYO key).
   - If omitted, the service will fall back to `ASSEMBLYAI_API_KEY` from environment.
@@ -85,6 +99,9 @@ curl -X POST \
     "timestamps": false,
     "restorePunctuation": true,
     "language": "en",
+    "speechModel": "best",
+    "formatText": true,
+    "disfluencies": true,
     "apiKey": "YOUR_ASSEMBLYAI_KEY"
   }'
 ```

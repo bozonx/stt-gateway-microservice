@@ -32,6 +32,9 @@ Content-Type: application/json
   "timestamps": false,
   "restorePunctuation": true,
   "language": "en",
+  "speechModel": "best",
+  "formatText": true,
+  "disfluencies": true,
   "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
 ```
@@ -75,7 +78,16 @@ Content-Type: application/json
   Ask the provider to restore punctuation when supported. Default: `true`.
 
 - **Language** (string, optional)
-  Explicit language code for the audio, e.g., `en`, `ru`, `en-US`. Leave empty to let the provider auto-detect when supported.
+  Explicit language code for the audio, e.g., `en`, `ru`, `en-US`. Leave empty to let the provider auto-detect when supported. For AssemblyAI, must be one of the supported Universal model languages.
+
+- **Speech Model** (options, optional)
+  Speech model for AssemblyAI transcription: `best` (default), `universal`, or `slam-1`. Only shown when provider is set to `assemblyai`.
+
+- **Format Text** (boolean)
+  Whether to format text output (punctuation, capitalization). Default: `true`.
+
+- **Include Disfluencies** (boolean)
+  Whether to include filler words like "umm" in transcription. Default: `true`.
 
 - **Provider API Key** (string, optional)
   Direct provider API key (BYO) when allowed by service policy.

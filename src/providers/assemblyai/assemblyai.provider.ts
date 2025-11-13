@@ -14,7 +14,7 @@ import type {
   TranscriptionResult,
 } from '@common/interfaces/stt-provider.interface';
 import type { SttConfig } from '@config/stt.config';
-import { ASSEMBLYAI_API } from '@common/constants/app.constants';
+import { ASSEMBLYAI_API, ASSEMBLYAI_UNIVERSAL_LANGUAGES } from '@common/constants/app.constants';
 
 interface AssemblyCreateResponse {
   id: string;
@@ -78,12 +78,30 @@ export class AssemblyAiProvider implements SttProvider {
     if (params.language) {
       payload.language_code = params.language;
     }
+    // Speech model selection (default: best)
+    if (params.speechModel) {
+      payload.speech_model = params.speechModel;
+    } else {
+      payload.speech_model = 'best';
+    }
+    // Format text output (default: true)
+    if (typeof params.formatText === 'boolean') {
+      payload.format_text = params.formatText;
+    } else {
+      payload.format_text = true;
+    }
+    // Include disfluencies (default: true)
+    if (typeof params.disfluencies === 'boolean') {
+      payload.disfluency_filter = params.disfluencies;
+    } else {
+      payload.disfluency_filter = true;
+    }
     this.logger.debug(
       `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
         headers.Authorization,
       )}, words=${payload.words === true}, punctuate=${Boolean(payload.punctuate)}, language_code=${
         payload.language_code ?? 'auto'
-      }`,
+      }, speech_model=${payload.speech_model}, format_text=${Boolean(payload.format_text)}, disfluency_filter=${Boolean(payload.disfluency_filter)}`,
     );
     const create$ = this.http.post<AssemblyCreateResponse>(apiUrl, payload, {
       headers,

@@ -24,5 +24,17 @@ export class TranscribeFileDto {
 
   @IsOptional()
   @IsString()
+  public readonly speechModel?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  public readonly formatText?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  public readonly disfluencies?: boolean;
+
+  @IsOptional()
+  @IsString()
   public readonly apiKey?: string;
 }

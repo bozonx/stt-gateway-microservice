@@ -62,7 +62,14 @@ describe('AssemblyAiProvider', () => {
 
     expect(postSpy).toHaveBeenCalledWith(
       'https://api.assemblyai.com/v2/transcript',
-      expect.objectContaining({ audio_url: mockAudioUrl, punctuate: true, language_code: 'ru' }),
+      expect.objectContaining({
+        audio_url: mockAudioUrl,
+        punctuate: true,
+        language_code: 'ru',
+        speech_model: 'best',
+        format_text: true,
+        disfluency_filter: true,
+      }),
       expect.anything()
     )
   })
@@ -85,7 +92,14 @@ describe('AssemblyAiProvider', () => {
 
     expect(postSpy).toHaveBeenCalledWith(
       'https://api.assemblyai.com/v2/transcript',
-      expect.objectContaining({ audio_url: mockAudioUrl, punctuate: true, words: true }),
+      expect.objectContaining({
+        audio_url: mockAudioUrl,
+        punctuate: true,
+        words: true,
+        speech_model: 'best',
+        format_text: true,
+        disfluency_filter: true,
+      }),
       expect.anything()
     )
   })
@@ -149,7 +163,13 @@ describe('AssemblyAiProvider', () => {
       )
       expect(httpService.post).toHaveBeenCalledWith(
         'https://api.assemblyai.com/v2/transcript',
-        expect.objectContaining({ audio_url: mockAudioUrl, punctuate: true }),
+        expect.objectContaining({
+          audio_url: mockAudioUrl,
+          punctuate: true,
+          speech_model: 'best',
+          format_text: true,
+          disfluency_filter: true,
+        }),
         expect.objectContaining({ headers: { Authorization: mockApiKey } })
       )
       expect(httpService.get).toHaveBeenCalledTimes(3)

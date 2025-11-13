@@ -19,6 +19,13 @@
 - Removed `textFormatted` from documentation (not supported)
 
 - Added optional request parameter `language` to `/transcribe` to explicitly set audio language (e.g., `en`, `ru`, `en-US`). Providers use auto-detect when omitted and supported.
+  - For AssemblyAI, language must be one of the supported Universal model languages; validation is performed on the microservice side.
+
+- Added optional request parameter `speechModel` to `/transcribe` for AssemblyAI model selection: `best` (default), `universal`, or `slam-1`.
+
+- Added optional request parameter `formatText` (default `true`) to `/transcribe` to control text formatting (punctuation, capitalization).
+
+- Added optional request parameter `disfluencies` (default `true`) to `/transcribe` to include/exclude filler words like "umm" in transcription.
 
 - API_VERSION удалена из кода, тестов и документации; версия API зафиксирована как `v1`
 - AppConfig больше не содержит `apiVersion`; глобальный префикс формируется как `/{API_BASE_PATH}/v1`
