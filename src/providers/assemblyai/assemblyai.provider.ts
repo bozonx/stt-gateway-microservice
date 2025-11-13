@@ -14,7 +14,7 @@ import type {
   TranscriptionResult,
 } from '@common/interfaces/stt-provider.interface';
 import type { SttConfig } from '@config/stt.config';
-import { ASSEMBLYAI_API, ASSEMBLYAI_UNIVERSAL_LANGUAGES } from '@common/constants/app.constants';
+import { ASSEMBLYAI_API } from '@common/constants/app.constants';
 
 interface AssemblyCreateResponse {
   id: string;

@@ -89,10 +89,16 @@ describe('TranscriptionService', () => {
     expect(res.punctuationRestored).toBe(true);
   });
 
-  it('rejects unsupported language for AssemblyAI', async () => {
+  it('trims language before forwarding to provider', async () => {
     process.env.ASSEMBLYAI_API_KEY = 'x';
 
-    const mockProvider = { submitAndWaitByUrl: jest.fn() };
+    const mockProvider = {
+      submitAndWaitByUrl: jest.fn().mockResolvedValue({
+        text: 'ok',
+        requestId: 'id2',
+        punctuationRestored: true,
+      }),
+    };
 
     const moduleRef = await Test.createTestingModule({
       imports: [
@@ -119,13 +125,15 @@ describe('TranscriptionService', () => {
       .compile();
 
     const svc = moduleRef.get(TranscriptionService);
-    await expect(
-      svc.transcribeByUrl({
-        audioUrl: 'https://example.com/a.mp3',
-        provider: 'assemblyai',
-        language: 'xyz',
-      }),
-    ).rejects.toThrow('not supported by AssemblyAI Universal model');
+    await svc.transcribeByUrl({
+      audioUrl: 'https://example.com/a.mp3',
+      provider: 'assemblyai',
+      language: '  en  ',
+    });
+
+    expect(mockProvider.submitAndWaitByUrl).toHaveBeenCalledWith(
+      expect.objectContaining({ language: 'en' }),
+    );
   });
 
   it('rejects unsupported speech model for AssemblyAI', async () => {

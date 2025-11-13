@@ -78,7 +78,7 @@ Content-Type: application/json
   Ask the provider to restore punctuation when supported. Default: `true`.
 
 - **Language** (string, optional)
-  Explicit language code for the audio, e.g., `en`, `ru`, `en-US`. Leave empty to let the provider auto-detect when supported. For AssemblyAI, must be one of the supported Universal model languages.
+  Explicit language code for the audio, e.g., `en`, `ru`, `en-US`. Value is trimmed and forwarded to the provider as-is. Leave empty to let the provider auto-detect when supported. See AssemblyAI's supported languages: https://www.assemblyai.com/docs/pre-recorded-audio/supported-languages.
 
 - **Speech Model** (options, optional)
   Speech model for AssemblyAI transcription: `best` (default), `universal`, or `slam-1`. Only shown when provider is set to `assemblyai`.

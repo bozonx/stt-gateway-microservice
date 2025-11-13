@@ -139,6 +139,9 @@ curl -X POST \
   }'
 ```
 
+Notes:
+- The `language` value is trimmed and sent to the provider as-is. See AssemblyAI's supported languages: https://www.assemblyai.com/docs/pre-recorded-audio/supported-languages.
+
 See [API documentation](docs/API.md) for full details.
 
 ## Security

@@ -71,9 +71,9 @@ Field details:
   - Defaults to `true` when the service/provider supports it (e.g., AssemblyAI).
 - `language` (string, optional)
   - Explicit language code for the audio, e.g., `en`, `ru`, `en-US`.
+  - Value is trimmed and forwarded to the provider as-is (no server-side validation).
+  - See AssemblyAI's supported languages: https://www.assemblyai.com/docs/pre-recorded-audio/supported-languages.
   - When omitted, provider auto-detection may be used if supported by the provider.
-  - For AssemblyAI, must be one of the supported Universal model languages (e.g., `en`, `es`, `fr`, `de`, `ru`, etc.).
-  - If an unsupported language is provided, the service returns `400 Bad Request`.
 - `speechModel` (string, optional)
   - Speech model selection for AssemblyAI: `best` (default), `universal`, or `slam-1`.
   - Defaults to `best` when omitted.

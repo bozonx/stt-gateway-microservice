@@ -16,7 +16,7 @@ import type { SttConfig } from '@config/stt.config';
 import { isPrivateHost } from '@/utils/network.utils';
 import { SttProviderRegistry } from '@/providers/stt-provider.registry';
 import { STT_PROVIDER } from '@common/constants/tokens';
-import { ASSEMBLYAI_UNIVERSAL_LANGUAGES, ASSEMBLYAI_SPEECH_MODELS } from '@common/constants/app.constants';
+import { ASSEMBLYAI_SPEECH_MODELS } from '@common/constants/app.constants';
 
 @Injectable()
 export class TranscriptionService {
@@ -145,16 +145,6 @@ export class TranscriptionService {
       throw new BadRequestException('Private/loopback hosts are not allowed');
     }
 
-    // Validate language code for AssemblyAI Universal model
-    if (params.language && params.provider?.toLowerCase() === 'assemblyai') {
-      if (!ASSEMBLYAI_UNIVERSAL_LANGUAGES.includes(params.language as any)) {
-        this.logger.warn(`Unsupported language for AssemblyAI Universal: ${params.language}`);
-        throw new BadRequestException(
-          `Language "${params.language}" is not supported by AssemblyAI Universal model. Supported languages: ${ASSEMBLYAI_UNIVERSAL_LANGUAGES.join(', ')}`,
-        );
-      }
-    }
-
     // Validate speech model for AssemblyAI
     if (params.speechModel && params.provider?.toLowerCase() === 'assemblyai') {
       if (!ASSEMBLYAI_SPEECH_MODELS.includes(params.speechModel as any)) {
@@ -179,12 +169,14 @@ export class TranscriptionService {
     let result: TranscriptionResult;
     try {
       this.logger.debug('Submitting transcription request to provider');
+      const trimmedLanguage = params.language?.trim();
+
       result = await provider.submitAndWaitByUrl({
         audioUrl: params.audioUrl,
         apiKey: apiKeyToUse,
         restorePunctuation: params.restorePunctuation,
         timestamps: params.timestamps,
-        language: params.language,
+        language: trimmedLanguage,
         speechModel: params.speechModel,
         formatText: params.formatText,
         disfluencies: params.disfluencies,
