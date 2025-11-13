@@ -90,6 +90,11 @@ export class BozonxSttGateway implements INodeType {
 				type: 'string',
 				typeOptions: { password: true },
 				default: '',
+				displayOptions: {
+					show: {
+						provider: ['assemblyai'],
+					},
+				},
 				description: 'Optional direct provider API key (when allowed by service policy)',
 			},
 		],
@@ -106,7 +111,7 @@ export class BozonxSttGateway implements INodeType {
 				const restorePunctuation = this.getNodeParameter('restorePunctuation', i) as boolean;
 				const language = (this.getNodeParameter('language', i, '') as string).trim();
 				const formatText = this.getNodeParameter('formatText', i) as boolean;
-				const apiKey = this.getNodeParameter('apiKey', i) as string;
+				const apiKey = provider ? this.getNodeParameter('apiKey', i) as string : '';
 				const basePathParam = (this.getNodeParameter('basePath', i) as string) || '';
 				const normalizedBasePath = basePathParam.replace(/^\/+|\/+$/g, '');
 				const pathPrefix = normalizedBasePath ? `${normalizedBasePath}/` : '';
