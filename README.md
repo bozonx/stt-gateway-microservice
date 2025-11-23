@@ -209,9 +209,20 @@ Adjust verbosity with `LOG_LEVEL`.
 - 401 Missing provider API key — Pass `apiKey` or set `ASSEMBLYAI_API_KEY`.
 - 504 Gateway Timeout — Increase `STT_MAX_SYNC_WAIT_MINUTES` or check provider availability.
 
----
+## Development
 
-See also: [Development guide](docs/dev.md).
+- Requirements: Node.js 22+, pnpm 10+
+- Dev quick start:
+
+```bash
+pnpm install
+cp env.development.example .env.development
+pnpm start:dev
+```
+
+- Tests: `pnpm test`, `pnpm test:unit`, `pnpm test:e2e`
+- Code quality: `pnpm lint`, `pnpm format`
+- For project structure, debugging tips, and provider extension details, see the full [Development guide](docs/dev.md).
 
 ## License
 
