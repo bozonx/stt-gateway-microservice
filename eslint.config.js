@@ -1,4 +1,10 @@
-module.exports = {
+const { FlatCompat } = require('@eslint/eslintrc');
+
+const compat = new FlatCompat({
+  baseDirectory: __dirname,
+});
+
+module.exports = compat.config({
   parser: '@typescript-eslint/parser',
   parserOptions: {
     project: ['tsconfig.eslint.json', 'tsconfig.json'],
@@ -19,9 +25,14 @@ module.exports = {
     jest: true,
     es2022: true,
   },
-  ignorePatterns: ['.eslintrc.js', 'dist/', 'node_modules/', 'coverage/'],
+  ignorePatterns: [
+    '.eslintrc.js',
+    'dist/',
+    'node_modules/',
+    'coverage/',
+    'n8n-nodes-bozonx-stt-gateway-microservice/**',
+  ],
   rules: {
-    // TypeScript specific rules
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
     '@typescript-eslint/no-explicit-any': 'warn',
@@ -48,8 +59,6 @@ module.exports = {
     ],
     '@typescript-eslint/consistent-type-exports': 'error',
     '@typescript-eslint/no-import-type-side-effects': 'error',
-
-    // NestJS specific rules
     '@typescript-eslint/explicit-member-accessibility': [
       'error',
       {
@@ -63,11 +72,7 @@ module.exports = {
         },
       },
     ],
-
-    // Prettier integration
     'prettier/prettier': 'error',
-
-    // Jest specific rules
     'jest/no-disabled-tests': 'warn',
     'jest/no-focused-tests': 'error',
     'jest/no-identical-title': 'error',
@@ -76,8 +81,6 @@ module.exports = {
     'jest/expect-expect': 'error',
     'jest/no-done-callback': 'error',
     'jest/valid-describe-callback': 'error',
-
-    // General rules
     'no-console': 'warn',
     'no-debugger': 'error',
     'prefer-const': 'error',
@@ -98,4 +101,4 @@ module.exports = {
       },
     },
   ],
-};
+});
