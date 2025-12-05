@@ -11,7 +11,7 @@ export class SttGatewayApi implements ICredentialType {
 			displayName: 'Base URL',
 			name: 'baseUrl',
 			type: 'string',
-			default: 'https://stt-gateway.example.com/api/v1',
+			default: 'https://stt-gateway-microservice:8080/api/v1',
 			placeholder: 'https://stt-gateway.example.com/api/v1',
 			required: true,
 			description:
