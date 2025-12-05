@@ -35,14 +35,6 @@ export class BozonxSttGateway implements INodeType {
 		],
 		properties: [
 			{
-				displayName: 'Base Path',
-				name: 'basePath',
-				type: 'string',
-				default: 'stt/api/v1',
-				description:
-					'API base path appended to the Gateway URL (leading/trailing slashes are ignored)',
-			},
-			{
 				displayName: 'Audio URL',
 				name: 'audioUrl',
 				type: 'string',
@@ -111,26 +103,23 @@ export class BozonxSttGateway implements INodeType {
 				const restorePunctuation = this.getNodeParameter('restorePunctuation', i) as boolean;
 				const language = (this.getNodeParameter('language', i, '') as string).trim();
 				const formatText = this.getNodeParameter('formatText', i) as boolean;
-				const apiKey = provider ? this.getNodeParameter('apiKey', i) as string : '';
-				const basePathParam = (this.getNodeParameter('basePath', i) as string) || '';
-				const normalizedBasePath = basePathParam.replace(/^\/+|\/+$/g, '');
-				const pathPrefix = normalizedBasePath ? `${normalizedBasePath}/` : '';
+				const apiKey = provider ? (this.getNodeParameter('apiKey', i) as string) : '';
 
 				if (!audioUrl) {
 					throw new NodeOperationError(this.getNode(), 'Audio URL is required', { itemIndex: i });
 				}
 
 				const creds = await this.getCredentials('bozonxMicroservicesApi');
-				let baseURL = ((creds?.gatewayUrl as string) || '').trim();
+				let baseURL = ((creds?.baseUrl as string) || '').trim();
 				if (!baseURL) {
-					throw new NodeOperationError(this.getNode(), 'Gateway URL is required in credentials', {
+					throw new NodeOperationError(this.getNode(), 'Base URL is required in credentials', {
 						itemIndex: i,
 					});
 				}
 				if (!/^https?:\/\//i.test(baseURL)) {
 					throw new NodeOperationError(
 						this.getNode(),
-						'Gateway URL must include protocol (http:// or https://)',
+						'Base URL must include protocol (http:// or https://)',
 						{ itemIndex: i },
 					);
 				}
@@ -138,7 +127,7 @@ export class BozonxSttGateway implements INodeType {
 
 				const options: IHttpRequestOptions = {
 					method: 'POST',
-					url: `${baseURL}/${pathPrefix}transcribe`,
+					url: `${baseURL}/transcribe`,
 					json: true,
 					body: (() => {
 						const body: IDataObject = { audioUrl };
