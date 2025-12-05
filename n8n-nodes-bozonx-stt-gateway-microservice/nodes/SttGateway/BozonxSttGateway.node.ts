@@ -29,7 +29,7 @@ export class BozonxSttGateway implements INodeType {
 		},
 		credentials: [
 			{
-				name: 'bozonxMicroservicesApi',
+				name: 'sttGatewayApi',
 				required: true,
 			},
 		],
@@ -47,7 +47,7 @@ export class BozonxSttGateway implements INodeType {
 				name: 'provider',
 				type: 'options',
 				options: [
-					{ name: '(Use service default)', value: '' },
+					{ name: '(Use Service Default)', value: '' },
 					{ name: 'AssemblyAI', value: 'assemblyai' },
 				],
 				default: '',
@@ -74,7 +74,7 @@ export class BozonxSttGateway implements INodeType {
 				name: 'formatText',
 				type: 'boolean',
 				default: true,
-				description: 'Format text output (punctuation, capitalization)',
+				description: 'Whether to format text output (punctuation, capitalization)',
 			},
 			{
 				displayName: 'Provider API Key',
@@ -109,7 +109,7 @@ export class BozonxSttGateway implements INodeType {
 					throw new NodeOperationError(this.getNode(), 'Audio URL is required', { itemIndex: i });
 				}
 
-				const creds = await this.getCredentials('bozonxMicroservicesApi');
+				const creds = await this.getCredentials('sttGatewayApi');
 				let baseURL = ((creds?.baseUrl as string) || '').trim();
 				if (!baseURL) {
 					throw new NodeOperationError(this.getNode(), 'Base URL is required in credentials', {
@@ -142,7 +142,7 @@ export class BozonxSttGateway implements INodeType {
 
 				const response = await this.helpers.httpRequestWithAuthentication.call(
 					this,
-					'bozonxMicroservicesApi',
+					'sttGatewayApi',
 					options,
 				);
 				returnData.push({ json: response as IDataObject, pairedItem: { item: i } });

@@ -23,7 +23,7 @@ Follow the official community nodes installation guide: https://docs.n8n.io/inte
 The node sends a POST request to the microservice endpoint:
 
 ```
-POST {{gatewayUrl}}/{{basePath}}/transcribe
+POST {{baseUrl}}/transcribe
 Content-Type: application/json
 
 {
@@ -36,9 +36,8 @@ Content-Type: application/json
 }
 ```
 
-- `gatewayUrl` comes from Credentials. It must include protocol (http/https) and have no trailing slash.
-- `basePath` is a node parameter. Leading/trailing slashes are ignored. Default: `stt/api/v1`.
-- If an API Token is provided in Credentials, the node will send `Authorization: Bearer <token>`. If not provided, no Authorization header is added.
+- Base URL comes from Credentials. It must include protocol (http/https) and the full path including `/api/v1`.
+- Authentication is configured in Credentials and supports None, Basic Auth, or Bearer Token.
 
 ### Example successful response (200)
 
@@ -57,9 +56,6 @@ Content-Type: application/json
 ```
 
 ## Parameters
-
-- **Base Path** (string)
-  Default: `api/v1`. Appended to the Gateway URL. Leading/trailing slashes are ignored.
 
 - **Audio URL** (string, required)
   Public HTTP(S) URL to the audio file.
@@ -81,18 +77,24 @@ Content-Type: application/json
 
 ## Credentials
 
-Use the `Bozonx Microservices API` credentials:
+Use the `STT Gateway API` credentials:
 
-- **Gateway URL** (required)
-  Base URL of your API Gateway, without the base path (no trailing slash). Example: `https://api.example.com`.
+- **Base URL** (required)
+  Full base URL of the STT Gateway microservice API (including `/api/v1` or custom path). Example: `https://stt-gateway.example.com/api/v1`.
 
-- **API Token** (optional)
-  When set, it is added as `Authorization: Bearer <token>`. If empty, no Authorization header is sent.
+- **Authentication** (options: None, Basic Auth, Bearer Token)
+  Authentication method to use. Default: None.
+
+- **Username** and **Password** (for Basic Auth)
+  Credentials for Basic authentication when selected.
+
+- **Token** (for Bearer Token)
+  Bearer token for Authorization header when selected.
 
 You can use expressions and environment variables, e.g.:
 
-- Gateway URL: `{{$env.API_GATEWAY_URL}}`
-- API Token: `{{$env.API_TOKEN}}`
+- Base URL: `{{$env.STT_GATEWAY_URL}}`
+- Token: `{{$env.STT_GATEWAY_TOKEN}}`
 
 ## Advanced
 
