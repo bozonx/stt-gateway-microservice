@@ -19,7 +19,7 @@ async function bootstrap() {
       logger: false,
       bodyLimit: bodyLimitBytes,
       forceCloseConnections: true,
-      requestTimeout: 30000,
+      requestTimeout: 0,
     }),
     {
       bufferLogs: true,
@@ -54,48 +54,83 @@ async function bootstrap() {
   logger.log(`📊 Environment: ${appConfig.nodeEnv}`, 'Bootstrap')
   logger.log(`📝 Log level: ${appConfig.logLevel}`, 'Bootstrap')
 
-  setupFatalProcessHandlers(app, logger)
+  setupProcessHandlers(app, logger)
 }
 
-function setupFatalProcessHandlers(app: NestFastifyApplication, logger: Logger) {
+function setupProcessHandlers(app: NestFastifyApplication, logger: Logger) {
   let isShuttingDown = false
+  let activeRequests = 0
 
-  const shutdown = async (reason: string, err?: unknown) => {
+  const httpAdapter = app.getHttpAdapter()
+  const fastify = httpAdapter.getInstance()
+
+  fastify.addHook('onRequest', (_req: unknown, _reply: unknown, done: () => void) => {
+    activeRequests++
+    done()
+  })
+  fastify.addHook('onResponse', (_req: unknown, _reply: unknown, done: () => void) => {
+    activeRequests = Math.max(0, activeRequests - 1)
+    done()
+  })
+
+  const shutdown = async (reason: string, exitCode: number, err?: unknown) => {
     if (isShuttingDown) return
     isShuttingDown = true
+
+    const startedAt = Date.now()
 
     if (err instanceof Error) {
       logger.error({ err }, `Fatal process event: ${reason}`)
     } else if (err !== undefined) {
       logger.error({ err }, `Fatal process event: ${reason}`)
     } else {
-      logger.error(`Fatal process event: ${reason}`)
+      logger.warn(`Process signal: ${reason}`)
     }
+
+    logger.warn(
+      { activeRequests, gracefulShutdownTimeoutMs: GRACEFUL_SHUTDOWN_TIMEOUT_MS },
+      'Graceful shutdown started'
+    )
 
     const forceShutdownTimer = setTimeout(() => {
       logger.fatal(
-        `Shutdown timeout (${GRACEFUL_SHUTDOWN_TIMEOUT_MS}ms) exceeded after ${reason}, forcing exit`
+        {
+          reason,
+          activeRequests,
+          gracefulShutdownTimeoutMs: GRACEFUL_SHUTDOWN_TIMEOUT_MS,
+        },
+        'Shutdown timeout exceeded, forcing exit'
       )
-      process.exit(1)
+      process.exit(exitCode === 0 ? 1 : exitCode)
     }, GRACEFUL_SHUTDOWN_TIMEOUT_MS)
 
     try {
       await app.close()
       clearTimeout(forceShutdownTimer)
-      process.exitCode = 1
+      const shutdownMs = Date.now() - startedAt
+      logger.warn({ reason, shutdownMs }, 'Graceful shutdown completed')
+      process.exitCode = exitCode
     } catch (closeErr) {
       clearTimeout(forceShutdownTimer)
       logger.fatal({ err: closeErr }, `Error during shutdown after ${reason}`)
-      process.exit(1)
+      process.exit(exitCode === 0 ? 1 : exitCode)
     }
   }
 
   process.on('unhandledRejection', (reason: unknown) => {
-    void shutdown('unhandledRejection', reason)
+    void shutdown('unhandledRejection', 1, reason)
   })
 
   process.on('uncaughtException', (error: Error) => {
-    void shutdown('uncaughtException', error)
+    void shutdown('uncaughtException', 1, error)
+  })
+
+  process.on('SIGTERM', () => {
+    void shutdown('SIGTERM', 0)
+  })
+
+  process.on('SIGINT', () => {
+    void shutdown('SIGINT', 0)
   })
 }
 

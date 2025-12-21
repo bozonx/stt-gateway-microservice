@@ -4,7 +4,7 @@
 - Implemented proper graceful shutdown handling for SIGTERM and SIGINT signals
 - Added `GRACEFUL_SHUTDOWN_TIMEOUT_MS` constant (25 seconds) in `app.constants.ts`
 - Configured FastifyAdapter with `forceCloseConnections: true` to prevent hanging connections
-- Added `requestTimeout: 30000` (30 seconds) to FastifyAdapter for request-level timeout
+- Disabled Fastify `requestTimeout` (`requestTimeout: 0`) to support long-running synchronous `/transcribe` requests
 - Added explicit signal handlers in `main.ts` with timeout-based forced shutdown
 - Updated `docker-compose.yml` with explicit `stop_signal: SIGTERM`
 - Server now stops accepting new connections on shutdown signal and waits for active requests to complete
