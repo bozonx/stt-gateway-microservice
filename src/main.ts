@@ -54,24 +54,27 @@ async function bootstrap() {
   logger.log(`📊 Environment: ${appConfig.nodeEnv}`, 'Bootstrap')
   logger.log(`📝 Log level: ${appConfig.logLevel}`, 'Bootstrap')
 
-  setupGracefulShutdown(app, logger)
+  setupFatalProcessHandlers(app, logger)
 }
 
-function setupGracefulShutdown(app: NestFastifyApplication, logger: Logger) {
+function setupFatalProcessHandlers(app: NestFastifyApplication, logger: Logger) {
   let isShuttingDown = false
 
-  const shutdown = async (signal: string) => {
-    if (isShuttingDown) {
-      return
-    }
+  const shutdown = async (reason: string, err?: unknown) => {
+    if (isShuttingDown) return
     isShuttingDown = true
 
-    logger.log(`Received ${signal}, starting graceful shutdown...`, 'Shutdown')
+    if (err instanceof Error) {
+      logger.error({ err }, `Fatal process event: ${reason}`)
+    } else if (err !== undefined) {
+      logger.error({ err }, `Fatal process event: ${reason}`)
+    } else {
+      logger.error(`Fatal process event: ${reason}`)
+    }
 
     const forceShutdownTimer = setTimeout(() => {
-      logger.error(
-        `Graceful shutdown timeout (${GRACEFUL_SHUTDOWN_TIMEOUT_MS}ms) exceeded, forcing exit`,
-        'Shutdown'
+      logger.fatal(
+        `Shutdown timeout (${GRACEFUL_SHUTDOWN_TIMEOUT_MS}ms) exceeded after ${reason}, forcing exit`
       )
       process.exit(1)
     }, GRACEFUL_SHUTDOWN_TIMEOUT_MS)
@@ -79,17 +82,21 @@ function setupGracefulShutdown(app: NestFastifyApplication, logger: Logger) {
     try {
       await app.close()
       clearTimeout(forceShutdownTimer)
-      logger.log('Graceful shutdown completed successfully', 'Shutdown')
-      process.exit(0)
-    } catch (err) {
+      process.exitCode = 1
+    } catch (closeErr) {
       clearTimeout(forceShutdownTimer)
-      logger.error(`Error during graceful shutdown: ${err}`, 'Shutdown')
+      logger.fatal({ err: closeErr }, `Error during shutdown after ${reason}`)
       process.exit(1)
     }
   }
 
-  process.on('SIGTERM', () => void shutdown('SIGTERM'))
-  process.on('SIGINT', () => void shutdown('SIGINT'))
+  process.on('unhandledRejection', (reason: unknown) => {
+    void shutdown('unhandledRejection', reason)
+  })
+
+  process.on('uncaughtException', (error: Error) => {
+    void shutdown('uncaughtException', error)
+  })
 }
 
 void bootstrap()
