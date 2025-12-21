@@ -11,11 +11,11 @@ import { ConfigService } from '@nestjs/config';
 import { PinoLogger } from 'nestjs-pino';
 import { lastValueFrom, timeout } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
-import type { SttProvider, TranscriptionResult } from '@common/interfaces/stt-provider.interface';
-import type { SttConfig } from '@config/stt.config';
-import { isPrivateHost } from '@/utils/network.utils';
-import { SttProviderRegistry } from '@/providers/stt-provider.registry';
-import { STT_PROVIDER } from '@common/constants/tokens';
+import type { SttProvider, TranscriptionResult } from '../../common/interfaces/stt-provider.interface.js';
+import type { SttConfig } from '../../config/stt.config.js';
+import { isPrivateHost } from '../../utils/network.utils.js';
+import { SttProviderRegistry } from '../../providers/stt-provider.registry.js';
+import { STT_PROVIDER } from '../../common/constants/tokens.js';
 
 @Injectable()
 export class TranscriptionService {

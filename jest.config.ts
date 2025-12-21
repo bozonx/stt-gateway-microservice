@@ -7,6 +7,8 @@ const moduleNameMapper = {
   '^@modules/(.*)$': '<rootDir>/src/modules/$1',
   '^@config/(.*)$': '<rootDir>/src/config/$1',
   '^@test/(.*)$': '<rootDir>/test/$1',
+  // Handle .js extensions in imports (ESM) by mapping them to .ts files
+  '^(\\.{1,2}/.*)\\.js$': '$1',
 };
 
 // Common module file extensions

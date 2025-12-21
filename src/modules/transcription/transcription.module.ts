@@ -1,12 +1,12 @@
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TranscriptionService } from './transcription.service';
-import { TranscriptionController } from './transcription.controller';
-import { AssemblyAiProvider } from '@/providers/assemblyai/assemblyai.provider';
-import type { SttConfig } from '@config/stt.config';
-import { SttProviderRegistry } from '@/providers/stt-provider.registry';
-import { STT_PROVIDER } from '@common/constants/tokens';
+import { TranscriptionService } from './transcription.service.js';
+import { TranscriptionController } from './transcription.controller.js';
+import { AssemblyAiProvider } from '../../providers/assemblyai/assemblyai.provider.js';
+import type { SttConfig } from '../../config/stt.config.js';
+import { SttProviderRegistry } from '../../providers/stt-provider.registry.js';
+import { STT_PROVIDER } from '../../common/constants/tokens.js';
 
 /**
  * Transcription module
@@ -48,4 +48,4 @@ import { STT_PROVIDER } from '@common/constants/tokens';
   ],
   exports: [TranscriptionService],
 })
-export class TranscriptionModule {}
+export class TranscriptionModule { }

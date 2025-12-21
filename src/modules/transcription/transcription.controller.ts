@@ -1,8 +1,8 @@
 import { Body, Controller, Post, HttpCode, HttpStatus, Inject } from '@nestjs/common';
 import { PinoLogger } from 'nestjs-pino';
-import { TranscribeFileDto } from '@common/dto/transcribe-file.dto';
-import { TranscriptionResponseDto } from '@common/dto/transcription-response.dto';
-import { TranscriptionService } from './transcription.service';
+import { TranscribeFileDto } from '../../common/dto/transcribe-file.dto.js';
+import { TranscriptionResponseDto } from '../../common/dto/transcription-response.dto.js';
+import { TranscriptionService } from './transcription.service.js';
 
 @Controller()
 export class TranscriptionController {

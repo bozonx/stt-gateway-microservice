@@ -12,9 +12,9 @@ import type {
   SttProvider,
   TranscriptionRequestByUrl,
   TranscriptionResult,
-} from '@common/interfaces/stt-provider.interface';
-import type { SttConfig } from '@config/stt.config';
-import { ASSEMBLYAI_API } from '@common/constants/app.constants';
+} from '../../common/interfaces/stt-provider.interface.js';
+import type { SttConfig } from '../../config/stt.config.js';
+import { ASSEMBLYAI_API } from '../../common/constants/app.constants.js';
 
 interface AssemblyCreateResponse {
   id: string;
@@ -77,8 +77,7 @@ export class AssemblyAiProvider implements SttProvider {
     this.logger.debug(
       `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
         headers.Authorization,
-      )}, punctuate=${Boolean(payload.punctuate)}, language_code=${
-        payload.language_code ?? 'auto'
+      )}, punctuate=${Boolean(payload.punctuate)}, language_code=${payload.language_code ?? 'auto'
       }, format_text=${Boolean(payload.format_text)}`,
     );
     const create$ = this.http.post<AssemblyCreateResponse>(apiUrl, payload, {
@@ -108,7 +107,7 @@ export class AssemblyAiProvider implements SttProvider {
 
     // Poll loop
     let pollCount = 0;
-    for (;;) {
+    for (; ;) {
       if (Date.now() > deadline) {
         this.logger.error(
           `Transcription timeout after ${this.cfg.maxSyncWaitMinutes} minutes for ID: ${id}`,
