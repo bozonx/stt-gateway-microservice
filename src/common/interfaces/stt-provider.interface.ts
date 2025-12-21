@@ -1,34 +1,35 @@
 export interface TranscriptionRequestByUrl {
-  audioUrl: string;
-  apiKey?: string;
+  audioUrl: string
+  apiKey?: string
+  signal?: AbortSignal
   // If true/false is provided, provider should explicitly control punctuation restoration.
   // When undefined, provider defaults apply (e.g., true for AssemblyAI).
-  restorePunctuation?: boolean;
+  restorePunctuation?: boolean
   // Explicit language code (e.g., 'en', 'ru', 'en-US') when supported
-  language?: string;
+  language?: string
   // Format text output (e.g., punctuation, capitalization)
-  formatText?: boolean;
+  formatText?: boolean
 }
 
 export interface WordTiming {
-  start: number;
-  end: number;
-  text: string;
+  start: number
+  end: number
+  text: string
 }
 
 export interface TranscriptionResult {
-  text: string;
-  requestId: string;
-  durationSec?: number;
-  language?: string;
-  confidenceAvg?: number;
-  words?: WordTiming[];
+  text: string
+  requestId: string
+  durationSec?: number
+  language?: string
+  confidenceAvg?: number
+  words?: WordTiming[]
   // Whether punctuation has been restored/kept by provider
-  punctuationRestored?: boolean;
+  punctuationRestored?: boolean
   // Raw provider payload
-  raw: unknown;
+  raw: unknown
 }
 
 export interface SttProvider {
-  submitAndWaitByUrl(params: TranscriptionRequestByUrl): Promise<TranscriptionResult>;
+  submitAndWaitByUrl(params: TranscriptionRequestByUrl): Promise<TranscriptionResult>
 }

@@ -45,6 +45,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.warn(`${request.method} ${request.url} - ${status} - ${message}`)
     }
 
+    if (response.sent || request.raw.destroyed) {
+      return
+    }
+
     void response.status(status).send({
       statusCode: status,
       timestamp: new Date().toISOString(),

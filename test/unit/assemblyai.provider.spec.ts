@@ -72,6 +72,19 @@ describe('AssemblyAiProvider', () => {
     )
   })
 
+  it('should abort when signal is already aborted', async () => {
+    const ac = new AbortController()
+    ac.abort()
+
+    await expect(
+      provider.submitAndWaitByUrl({
+        audioUrl: mockAudioUrl,
+        apiKey: mockApiKey,
+        signal: ac.signal,
+      })
+    ).rejects.toMatchObject({ status: 499 })
+  })
+
   afterEach(() => {
     jest.clearAllMocks()
     delete process.env.STT_POLL_INTERVAL_MS
