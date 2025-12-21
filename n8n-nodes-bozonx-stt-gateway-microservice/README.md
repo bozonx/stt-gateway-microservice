@@ -23,7 +23,7 @@ Follow the official community nodes installation guide: https://docs.n8n.io/inte
 The node sends a POST request to the microservice endpoint:
 
 ```
-POST {{baseUrl}}/transcribe
+POST {{baseUrl}}/api/v1/transcribe
 Content-Type: application/json
 
 {
@@ -36,7 +36,7 @@ Content-Type: application/json
 }
 ```
 
-- Base URL comes from Credentials. It must include protocol (http/https) and the full path including `/api/v1`.
+- Base URL comes from Credentials. It must include protocol (http/https). The `/api/v1` path is appended automatically by the node.
 - Authentication is configured in Credentials and supports None, Basic Auth, or Bearer Token.
 
 ### Example successful response (200)
@@ -79,8 +79,8 @@ Content-Type: application/json
 
 Use the `STT Gateway API` credentials:
 
-- **Base URL** (required)
-  Full base URL of the STT Gateway microservice API (including `/api/v1` or custom path). Example: `https://stt-gateway.example.com/api/v1`.
+  Gateway base URL without `/api/v1`. Example: `https://stt-gateway.example.com` or `http://localhost:8080`.
+  If you use a custom `BASE_PATH` in the microservice, include it here: `https://api.example.com/custom-path`.
 
 - **Authentication** (options: None, Basic Auth, Bearer Token)
   Authentication method to use. Default: None.

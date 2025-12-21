@@ -11,11 +11,10 @@ export class SttGatewayApi implements ICredentialType {
 			displayName: 'Base URL',
 			name: 'baseUrl',
 			type: 'string',
-			default: 'https://stt-gateway-microservice:8080/api/v1',
-			placeholder: 'https://stt-gateway.example.com/api/v1',
+			default: 'https://stt-gateway-microservice:8080',
+			placeholder: 'https://stt-gateway.example.com',
 			required: true,
-			description:
-				'Full base URL of the STT Gateway microservice API (including /api/v1 or custom path)',
+			description: 'Gateway base URL (e.g., https://api.example.com or http://localhost:8080)',
 		},
 		{
 			displayName: 'Authentication',
@@ -94,7 +93,7 @@ export class SttGatewayApi implements ICredentialType {
 	test: ICredentialType['test'] = {
 		request: {
 			baseURL: '={{$credentials.baseUrl}}',
-			url: '/health',
+			url: '/api/v1/health',
 		},
 	};
 }

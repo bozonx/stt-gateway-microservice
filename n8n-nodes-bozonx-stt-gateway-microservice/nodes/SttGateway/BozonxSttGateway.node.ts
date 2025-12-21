@@ -127,7 +127,7 @@ export class BozonxSttGateway implements INodeType {
 
 				const options: IHttpRequestOptions = {
 					method: 'POST',
-					url: `${baseURL}/transcribe`,
+					url: `${baseURL}/api/v1/transcribe`,
 					json: true,
 					body: (() => {
 						const body: IDataObject = { audioUrl };
