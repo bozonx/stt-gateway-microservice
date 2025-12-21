@@ -11,7 +11,11 @@
  * - Override per-test if needed using jest.setTimeout() or passing timeout as third arg to it()
  */
 
+import { jest } from '@jest/globals';
 import nock from 'nock';
+
+// @ts-ignore
+global.jest = jest;
 
 // Block all external network calls; allow localhost for tests that use local adapters
 beforeAll(() => {

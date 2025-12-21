@@ -18,11 +18,13 @@ const transform = {
     'ts-jest',
     {
       tsconfig: 'tsconfig.spec.json',
+      useESM: true,
     },
   ],
 };
 
 const config: Config = {
+  extensionsToTreatAsEsm: ['.ts'],
   // Parallel test execution - use 50% of CPU cores locally, limit to 2 in CI
   maxWorkers: process.env.CI ? 2 : '50%',
   // Stop test execution on first failure in CI for faster feedback
@@ -34,7 +36,7 @@ const config: Config = {
     // Unit tests configuration
     {
       displayName: 'unit',
-      preset: 'ts-jest',
+      preset: 'ts-jest/presets/default-esm',
       testEnvironment: 'node',
       moduleFileExtensions,
       rootDir: '.',
@@ -52,7 +54,7 @@ const config: Config = {
     // E2E tests configuration
     {
       displayName: 'e2e',
-      preset: 'ts-jest',
+      preset: 'ts-jest/presets/default-esm',
       testEnvironment: 'node',
       moduleFileExtensions,
       rootDir: '.',

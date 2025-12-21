@@ -1,5 +1,14 @@
 # CHANGELOG
 
+## 1.2.0 — ESM Migration
+- Migrated the project to ECMAScript Modules (ESM).
+- Added `"type": "module"` to `package.json`.
+- Updated TypeScript configuration to use `ESNext` module and `node` resolution.
+- Added `tsx` as a dependency to facilitate ESM execution without explicit file extensions in the source.
+- Updated npm scripts and Dockerfile to use `node --import tsx`.
+- Fixed Jest configuration for ESM support, including global `jest` injection for tests.
+
+
 ## 0.17.0 — Refactor
 - Renamed environment variable `API_BASE_PATH` to `BASE_PATH`.
 - `BASE_PATH` is now optional and unset by default.
