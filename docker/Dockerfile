@@ -9,6 +9,9 @@ ENV LISTEN_PORT=8080
 ENV TZ=UTC
 ENV LOG_LEVEL=warn
 
+# Install tini for better signal handling
+RUN apk add --no-cache tini
+
 # Install pnpm
 RUN corepack enable
 
@@ -21,9 +24,5 @@ COPY dist ./dist
 
 EXPOSE 8080
 
-# Built-in container healthcheck
-# Uses env variables with defaults: LISTEN_PORT (8080) and API_BASE_PATH (api)
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget -qO- http://127.0.0.1:${LISTEN_PORT:-8080}/${API_BASE_PATH:-api}/v1/health || exit 1
-
+ENTRYPOINT ["tini", "--"]
 CMD ["node", "dist/src/main.js"]
