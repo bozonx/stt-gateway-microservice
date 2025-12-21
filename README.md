@@ -177,6 +177,15 @@ docker run -d \
 - `GET /{BASE_PATH}/api/v1/health` — health check
 - `POST /{BASE_PATH}/api/v1/transcribe` — synchronous transcription by audio URL
 
+### Graceful Shutdown
+
+The service implements proper graceful shutdown:
+
+- On `SIGTERM`/`SIGINT`: stops accepting new connections, waits for active requests to complete
+- Timeout: 25 seconds (configurable via `GRACEFUL_SHUTDOWN_TIMEOUT_MS` constant)
+- Fastify forcefully closes any remaining connections after timeout
+- Docker `stop_grace_period`: 30 seconds (allows 5s buffer for cleanup)
+
 ## Logging
 
 `nestjs-pino` is used for structured logs.

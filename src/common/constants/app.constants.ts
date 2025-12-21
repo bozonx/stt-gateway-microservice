@@ -19,6 +19,12 @@ export const HTTP_TIMEOUTS = {
 } as const
 
 /**
+ * Graceful shutdown timeout (in milliseconds)
+ * Server will wait this long for active requests to complete before forcing shutdown
+ */
+export const GRACEFUL_SHUTDOWN_TIMEOUT_MS = 25000
+
+/**
  * Service metadata
  */
 export const SERVICE_METADATA = {

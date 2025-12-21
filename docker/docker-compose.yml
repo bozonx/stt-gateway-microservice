@@ -5,6 +5,7 @@ services:
     hostname: sttgatewaymicroservice
     restart: unless-stopped
     stop_grace_period: 30s
+    stop_signal: SIGTERM
     user: '1000:1000'
     ports:
       - '8080:8080'
@@ -21,7 +22,7 @@ services:
       - STT_MAX_SYNC_WAIT_MINUTES=3
       - ASSEMBLYAI_API_KEY=
     healthcheck:
-      test: [ 'CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/v1/health || exit 1' ]
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/v1/health || exit 1']
       interval: 30s
       timeout: 3s
       retries: 3
