@@ -31,7 +31,7 @@
 - README rewritten in English and focused on production; dev instructions kept in `docs/dev.md`; examples and endpoints verified against code.
 - Source of truth for env confirmed as `.env.production.example`; added mention of `TZ`.
 - Removed `ALLOW_CUSTOM_API_KEY`; passing `apiKey` in requests is now always allowed (BYO key by default).
-- Updated `env.production.example` and `env.development.example` (removed `ALLOW_CUSTOM_API_KEY`, clarified `ASSEMBLYAI_API_KEY` as fallback).
+- Updated `.env.production.example` and `.env.development.example` (removed `ALLOW_CUSTOM_API_KEY`, clarified `ASSEMBLYAI_API_KEY` as fallback).
 - Removed root index endpoint `GET /` (formerly `/{API_BASE_PATH}/v1`); tests and documentation updated.
 
 ### Security & Logging

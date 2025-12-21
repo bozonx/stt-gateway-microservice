@@ -47,7 +47,7 @@ docker compose -f docker/docker-compose.yml up -d --build
 
 ```bash
 pnpm install
-cp env.production.example .env.production
+cp .env.production.example .env.production
 pnpm build
 pnpm start:prod
 ```
@@ -61,7 +61,7 @@ Default URLs:
 
 ```bash
 pnpm install
-cp env.development.example .env.development
+cp .env.development.example .env.development
 pnpm start:dev
 ```
 
@@ -216,7 +216,7 @@ Adjust verbosity with `LOG_LEVEL`.
 
 ```bash
 pnpm install
-cp env.development.example .env.development
+cp .env.development.example .env.development
 pnpm start:dev
 ```
 
