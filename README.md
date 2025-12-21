@@ -25,7 +25,7 @@ Links:
 
 ## What's included
 
-- 🏥 Minimal health-check endpoint `/{API_BASE_PATH}/v1/health`
+- 🏥 Minimal health-check endpoint `/{BASE_PATH}/api/v1/health` (leave empty if no BASE_PATH)
 - 📊 Structured logging via Pino (JSON in production)
 - 🛡️ Global error filter
 - ⚡ Fastify runtime
@@ -80,7 +80,7 @@ Core variables:
 - `NODE_ENV` — `production|development|test`
 - `LISTEN_HOST` — e.g. `0.0.0.0` or `localhost`
 - `LISTEN_PORT` — e.g. `8080`
-- `API_BASE_PATH` — API prefix (default `api`)
+- `BASE_PATH` — optional URL prefix (e.g. `voice-gateway`)
 - `LOG_LEVEL` — `trace|debug|info|warn|error|fatal|silent`
 - `TZ` — timezone (default `UTC`)
 
@@ -101,8 +101,8 @@ STT variables:
 
 Quick summary of available endpoints:
 
-- `GET /{API_BASE_PATH}/v1/health` — health check
-- `POST /{API_BASE_PATH}/v1/transcribe` — synchronous transcription by audio URL
+- `GET /{BASE_PATH}/api/v1/health` — health check
+- `POST /{BASE_PATH}/api/v1/transcribe` — synchronous transcription by audio URL
 
 ### Transcription behavior (high level)
 
@@ -167,14 +167,15 @@ docker compose -f docker/docker-compose.yml up -d --build
 docker run -d \
   -p 8080:8080 \
   -e NODE_ENV=production \
-  -e API_BASE_PATH=api \
+  -e BASE_PATH= \
   -e LOG_LEVEL=warn \
   -e ASSEMBLYAI_API_KEY=your-assemblyai-key \
   --name stt-gateway \
   your-image:tag
 ```
 
-Healthcheck in compose pings `/{API_BASE_PATH}/v1/health`.
+- `GET /{BASE_PATH}/api/v1/health` — health check
+- `POST /{BASE_PATH}/api/v1/transcribe` — synchronous transcription by audio URL
 
 ## Logging
 

@@ -11,7 +11,7 @@ services:
     environment:
       - TZ=UTC
       - LISTEN_PORT=8080
-      - API_BASE_PATH=api
+      # - BASE_PATH=
       - LOG_LEVEL=warn
       - STT_DEFAULT_PROVIDER=assemblyai
       - STT_ALLOWED_PROVIDERS=assemblyai

@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 0.17.0 — Refactor
+- Renamed environment variable `API_BASE_PATH` to `BASE_PATH`.
+- `BASE_PATH` is now optional and unset by default.
+- API endpoints are hardcoded relative to `BASE_PATH` as `/api/v1` (falling back to `api/v1` if `BASE_PATH` is empty).
+- Updated configuration, main entry point, and e2e test factory.
+- Updated documentation and environment examples.
+
 ## 0.16.0 — Release
 
 ### Configuration
