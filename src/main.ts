@@ -45,6 +45,8 @@ async function bootstrap() {
   // Enable graceful shutdown
   app.enableShutdownHooks()
 
+  setupProcessHandlers(app, logger)
+
   await app.listen(appConfig.port, appConfig.host)
 
   logger.log(
@@ -53,8 +55,6 @@ async function bootstrap() {
   )
   logger.log(`📊 Environment: ${appConfig.nodeEnv}`, 'Bootstrap')
   logger.log(`📝 Log level: ${appConfig.logLevel}`, 'Bootstrap')
-
-  setupProcessHandlers(app, logger)
 }
 
 function setupProcessHandlers(app: NestFastifyApplication, logger: Logger) {
