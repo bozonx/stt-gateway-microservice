@@ -25,4 +25,4 @@ COPY dist ./dist
 EXPOSE 8080
 
 ENTRYPOINT ["tini", "--"]
-CMD ["node", "--import", "tsx", "dist/src/main.js"]
+CMD ["node", "dist/src/main.js"]
