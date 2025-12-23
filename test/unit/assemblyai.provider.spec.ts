@@ -19,9 +19,9 @@ describe('AssemblyAiProvider', () => {
   const mockTranscriptId = 'transcript-123'
 
   beforeEach(async () => {
-    process.env.STT_POLL_INTERVAL_MS = '100' // Speed up tests
-    process.env.STT_TOTAL_TIMEOUT_MINUTES = '1' // 1 minute minimum
-    process.env.STT_REQUEST_TIMEOUT_SECONDS = '5'
+    process.env.POLL_INTERVAL_MS = '100' // Speed up tests
+    process.env.TOTAL_TIMEOUT_MINUTES = '1' // 1 minute minimum
+    process.env.REQUEST_TIMEOUT_SECONDS = '5'
 
     const moduleRef = await Test.createTestingModule({
       imports: [
@@ -87,9 +87,9 @@ describe('AssemblyAiProvider', () => {
 
   afterEach(() => {
     jest.clearAllMocks()
-    delete process.env.STT_POLL_INTERVAL_MS
-    delete process.env.STT_TOTAL_TIMEOUT_MINUTES
-    delete process.env.STT_REQUEST_TIMEOUT_SECONDS
+    delete process.env.POLL_INTERVAL_MS
+    delete process.env.TOTAL_TIMEOUT_MINUTES
+    delete process.env.REQUEST_TIMEOUT_SECONDS
   })
 
   describe('submitAndWaitByUrl', () => {

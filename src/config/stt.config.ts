@@ -56,9 +56,9 @@ export class SttConfig {
 
 export default registerAs('stt', (): SttConfig => {
   const config = plainToClass(SttConfig, {
-    defaultProvider: process.env.STT_DEFAULT_PROVIDER ?? 'assemblyai',
+    defaultProvider: process.env.DEFAULT_PROVIDER ?? 'assemblyai',
     allowedProviders: (() => {
-      const raw = process.env.STT_ALLOWED_PROVIDERS;
+      const raw = process.env.ALLOWED_PROVIDERS;
       if (!raw || raw.trim() === '') return undefined;
       const list = raw
         .split(',')
@@ -66,12 +66,12 @@ export default registerAs('stt', (): SttConfig => {
         .filter(Boolean);
       return list.length ? list : undefined;
     })(),
-    maxFileMb: parseInt(process.env.STT_MAX_FILE_SIZE_MB ?? '100', 10),
-    requestTimeoutSeconds: parseInt(process.env.STT_REQUEST_TIMEOUT_SECONDS ?? '15', 10),
-    pollIntervalMs: parseInt(process.env.STT_POLL_INTERVAL_MS ?? '1500', 10),
-    totalTimeoutMinutes: parseInt(process.env.STT_TOTAL_TIMEOUT_MINUTES ?? process.env.STT_MAX_SYNC_WAIT_MINUTES ?? '3', 10),
-    maxRetries: parseInt(process.env.STT_MAX_RETRIES ?? '3', 10),
-    retryDelayMs: parseInt(process.env.STT_RETRY_DELAY_MS ?? '1000', 10),
+    maxFileMb: parseInt(process.env.MAX_FILE_SIZE_MB ?? '100', 10),
+    requestTimeoutSeconds: parseInt(process.env.REQUEST_TIMEOUT_SECONDS ?? '15', 10),
+    pollIntervalMs: parseInt(process.env.POLL_INTERVAL_MS ?? '1500', 10),
+    totalTimeoutMinutes: parseInt(process.env.TOTAL_TIMEOUT_MINUTES ?? '3', 10),
+    maxRetries: parseInt(process.env.MAX_RETRIES ?? '3', 10),
+    retryDelayMs: parseInt(process.env.RETRY_DELAY_MS ?? '1000', 10),
     assemblyAiApiKey: process.env.ASSEMBLYAI_API_KEY,
   });
 

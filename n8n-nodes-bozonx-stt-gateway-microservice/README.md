@@ -93,8 +93,8 @@ Use the `STT Gateway API` credentials:
 
 You can use expressions and environment variables, e.g.:
 
-- Base URL: `{{$env.STT_GATEWAY_URL}}`
-- Token: `{{$env.STT_GATEWAY_TOKEN}}`
+- Base URL: `{{$env.GATEWAY_URL}}`
+- Token: `{{$env.GATEWAY_TOKEN}}`
 
 ## Advanced
 
