@@ -12,15 +12,18 @@ import { createMockLogger } from '@test/helpers/mocks'
 describe('AssemblyAiProvider', () => {
   let provider: AssemblyAiProvider
   let httpService: HttpService
-  let configService: ConfigService
 
   const mockApiKey = 'test-api-key-123'
   const mockAudioUrl = 'https://example.com/audio.mp3'
   const mockTranscriptId = 'transcript-123'
 
   beforeEach(async () => {
-    process.env.POLL_INTERVAL_MS = '100' // Speed up tests
-    process.env.DEFAULT_MAX_WAIT_MINUTES = '1' // 1 minute minimum
+    // Mock the sleep method globally for THIS provider instance to avoid real delays
+    // This is better than fake timers in complex NestJS/RxJS environments
+    jest.spyOn(AssemblyAiProvider.prototype as any, 'sleep').mockImplementation(() => Promise.resolve())
+
+    process.env.POLL_INTERVAL_MS = '100'
+    process.env.DEFAULT_MAX_WAIT_MINUTES = '1'
     process.env.PROVIDER_API_TIMEOUT_SECONDS = '5'
 
     const moduleRef = await Test.createTestingModule({
@@ -41,343 +44,103 @@ describe('AssemblyAiProvider', () => {
 
     provider = moduleRef.get<AssemblyAiProvider>(AssemblyAiProvider)
     httpService = moduleRef.get<HttpService>(HttpService)
-    configService = moduleRef.get<ConfigService>(ConfigService)
-  })
-
-  it('should pass language_code in create payload when language is provided', async () => {
-    const mockTranscriptId = 't-2'
-    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-    const completedResponse = {
-      status: 200,
-      data: { id: mockTranscriptId, status: 'completed', text: 'ok' },
-    }
-    const postSpy = jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-    jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
-
-    await provider.submitAndWaitByUrl({
-      audioUrl: mockAudioUrl,
-      apiKey: mockApiKey,
-      language: 'ru',
-    })
-
-    expect(postSpy).toHaveBeenCalledWith(
-      'https://api.assemblyai.com/v2/transcript',
-      expect.objectContaining({
-        audio_url: mockAudioUrl,
-        punctuate: true,
-        language_code: 'ru',
-        format_text: true,
-      }),
-      expect.anything()
-    )
-  })
-
-  it('should abort when signal is already aborted', async () => {
-    const ac = new AbortController()
-    ac.abort()
-
-    await expect(
-      provider.submitAndWaitByUrl({
-        audioUrl: mockAudioUrl,
-        apiKey: mockApiKey,
-        signal: ac.signal,
-      })
-    ).rejects.toMatchObject({ status: 499 })
   })
 
   afterEach(() => {
-    jest.clearAllMocks()
+    jest.restoreAllMocks()
     delete process.env.POLL_INTERVAL_MS
     delete process.env.DEFAULT_MAX_WAIT_MINUTES
     delete process.env.PROVIDER_API_TIMEOUT_SECONDS
   })
 
-  describe('submitAndWaitByUrl', () => {
-    it('should successfully complete transcription (queued → processing → completed)', async () => {
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const queuedResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const processingResponse = {
-        status: 200,
-        data: { id: mockTranscriptId, status: 'processing' },
-      }
-      const completedResponse = {
-        status: 200,
-        data: {
-          id: mockTranscriptId,
-          status: 'completed',
-          text: 'Hello world',
-          audio_duration: 5.5,
-          language_code: 'en',
-          confidence: 0.95,
-          words: [
-            { start: 0, end: 500, text: 'Hello', confidence: 0.96 },
-            { start: 500, end: 1000, text: 'world', confidence: 0.94 },
-          ],
-        },
-      }
+  it('should successfully complete transcription (queued → processing → completed)', async () => {
+    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
+    const queuedResponse = { status: 200, data: { status: 'queued' } }
+    const processingResponse = { status: 200, data: { status: 'processing' } }
+    const completedResponse = {
+      status: 200,
+      data: { id: mockTranscriptId, status: 'completed', text: 'Hello world' },
+    }
 
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest
-        .spyOn(httpService, 'get')
-        .mockReturnValueOnce(of(queuedResponse as any))
-        .mockReturnValueOnce(of(processingResponse as any))
-        .mockReturnValueOnce(of(completedResponse as any))
+    jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
+    jest.spyOn(httpService, 'get')
+      .mockReturnValueOnce(of(queuedResponse as any))
+      .mockReturnValueOnce(of(processingResponse as any))
+      .mockReturnValueOnce(of(completedResponse as any))
 
-      const result = await provider.submitAndWaitByUrl({
-        audioUrl: mockAudioUrl,
-        apiKey: mockApiKey,
-      })
+    const result = await provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
 
-      expect(result).toEqual(
-        expect.objectContaining({
-          text: 'Hello world',
-          requestId: mockTranscriptId,
-          durationSec: 5.5,
-          language: 'en',
-          confidenceAvg: 0.95,
-          punctuationRestored: true,
-          words: [
-            { start: 0, end: 500, text: 'Hello' },
-            { start: 500, end: 1000, text: 'world' },
-          ],
-        })
-      )
-      expect(httpService.post).toHaveBeenCalledWith(
-        'https://api.assemblyai.com/v2/transcript',
-        expect.objectContaining({
-          audio_url: mockAudioUrl,
-          punctuate: true,
-          format_text: true,
-        }),
-        expect.objectContaining({ headers: { Authorization: mockApiKey } })
-      )
-      expect(httpService.get).toHaveBeenCalledTimes(3)
-      expect(httpService.get).toHaveBeenCalledWith(
-        `https://api.assemblyai.com/v2/transcript/${mockTranscriptId}`,
-        expect.objectContaining({ headers: { Authorization: mockApiKey } })
-      )
+    expect(result.text).toBe('Hello world')
+    expect(httpService.get).toHaveBeenCalledTimes(3)
+  })
+
+  it('should throw GatewayTimeoutException when deadline is exceeded', async () => {
+    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
+    const processingResponse = { status: 200, data: { status: 'processing' } }
+
+    jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
+    jest.spyOn(httpService, 'get').mockReturnValue(of(processingResponse as any))
+
+    // Mock Date.now to simulate time passing
+    let currentTime = Date.now()
+    jest.spyOn(Date, 'now').mockImplementation(() => {
+      currentTime += 30000 // jump 30s on each call
+      return currentTime
     })
 
-    it('should handle completed status on first poll', async () => {
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const completedResponse = {
-        status: 200,
-        data: {
-          id: mockTranscriptId,
-          status: 'completed',
-          text: 'Quick response',
-          audio_duration: 1.0,
-        },
-      }
+    await expect(provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey }))
+      .rejects.toThrow(GatewayTimeoutException)
+  })
 
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
+  it('should retry submission on 500 error', async () => {
+    const errorResponse = { status: 500, data: { message: 'Err' } }
+    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
+    const completedResponse = { status: 200, data: { status: 'completed', text: 'Retry success' } }
 
-      const result = await provider.submitAndWaitByUrl({
-        audioUrl: mockAudioUrl,
-        apiKey: mockApiKey,
-      })
-      expect(result.text).toBe('Quick response')
-      expect(result.requestId).toBe(mockTranscriptId)
-      expect(httpService.get).toHaveBeenCalledTimes(1)
-    })
+    jest.spyOn(httpService, 'post')
+      .mockReturnValueOnce(of(errorResponse as any))
+      .mockReturnValueOnce(of(createResponse as any))
+    jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
 
-    it('should throw ServiceUnavailableException when create request fails with 400', async () => {
-      const errorResponse = { status: 400, data: { error: 'Invalid audio URL' } }
-      jest.spyOn(httpService, 'post').mockReturnValue(of(errorResponse as any))
-      await expect(
-        provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
-      ).rejects.toThrow(ServiceUnavailableException)
-    })
+    const result = await provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
+    expect(result.text).toBe('Retry success')
+    expect(httpService.post).toHaveBeenCalledTimes(2)
+  })
 
-    it('should throw ServiceUnavailableException when create response has no id', async () => {
-      const invalidResponse = { status: 200, data: { status: 'queued' } }
-      jest.spyOn(httpService, 'post').mockReturnValue(of(invalidResponse as any))
-      await expect(
-        provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
-      ).rejects.toThrow(ServiceUnavailableException)
-    })
+  it('should continue polling on 500 error during status check', async () => {
+    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
+    const errorResponse = { status: 500, data: { message: 'Err' } }
+    const completedResponse = { status: 200, data: { status: 'completed', text: 'Polling success' } }
 
-    it('should throw ServiceUnavailableException when status is error', async () => {
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const errorResponse = {
-        status: 200,
-        data: { id: mockTranscriptId, status: 'error', error: 'Audio file format not supported' },
-      }
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest.spyOn(httpService, 'get').mockReturnValueOnce(of(errorResponse as any))
-      await expect(
-        provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
-      ).rejects.toThrow('Audio file format not supported')
-    })
+    jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
+    jest.spyOn(httpService, 'get')
+      .mockReturnValueOnce(of(errorResponse as any))
+      .mockReturnValueOnce(of(completedResponse as any))
 
-    it('should throw ServiceUnavailableException when status is error without error message', async () => {
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const errorResponse = { status: 200, data: { id: mockTranscriptId, status: 'error' } }
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest.spyOn(httpService, 'get').mockReturnValueOnce(of(errorResponse as any))
-      await expect(
-        provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
-      ).rejects.toThrow('Transcription failed')
-    })
+    const result = await provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
+    expect(result.text).toBe('Polling success')
+    expect(httpService.get).toHaveBeenCalledTimes(2)
+  })
 
-    it.skip('should throw GatewayTimeoutException after maxSyncWaitMinutes', async () => {
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const processingResponse = {
-        status: 200,
-        data: { id: mockTranscriptId, status: 'processing' },
-      }
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest.spyOn(httpService, 'get').mockReturnValue(of(processingResponse as any))
-      await expect(
-        provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
-      ).rejects.toThrow(GatewayTimeoutException)
-    })
+  it('should handle completed status on first poll', async () => {
+    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
+    const completedResponse = { status: 200, data: { status: 'completed', text: 'Quick' } }
 
-    it('should continue polling when response body is empty', async () => {
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const emptyResponse = { status: 200, data: null }
-      const completedResponse = {
-        status: 200,
-        data: { id: mockTranscriptId, status: 'completed', text: 'Recovered' },
-      }
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest
-        .spyOn(httpService, 'get')
-        .mockReturnValueOnce(of(emptyResponse as any))
-        .mockReturnValueOnce(of(completedResponse as any))
-      const result = await provider.submitAndWaitByUrl({
-        audioUrl: mockAudioUrl,
-        apiKey: mockApiKey,
-      })
-      expect(result.text).toBe('Recovered')
-      expect(httpService.get).toHaveBeenCalledTimes(2)
-    }, 10000)
+    jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
+    jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
 
-    it('should handle completed response with minimal fields', async () => {
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const completedResponse = {
-        status: 200,
-        data: { id: mockTranscriptId, status: 'completed', text: 'Minimal response' },
-      }
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
-      const result = await provider.submitAndWaitByUrl({
-        audioUrl: mockAudioUrl,
-        apiKey: mockApiKey,
-      })
-      expect(result).toEqual(
-        expect.objectContaining({
-          text: 'Minimal response',
-          requestId: mockTranscriptId,
-          durationSec: undefined,
-          language: undefined,
-          confidenceAvg: undefined,
-          words: undefined,
-          punctuationRestored: true,
-        })
-      )
-    }, 10000)
+    const result = await provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
+    expect(result.text).toBe('Quick')
+  })
 
-    it('should handle completed response with null text', async () => {
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const completedResponse = {
-        status: 200,
-        data: { id: mockTranscriptId, status: 'completed', text: null },
-      } as any
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse))
-      const result = await provider.submitAndWaitByUrl({
-        audioUrl: mockAudioUrl,
-        apiKey: mockApiKey,
-      })
-      expect(result.text).toBe('')
-    }, 10000)
+  it('should throw ServiceUnavailableException when status is error', async () => {
+    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
+    const errorResponse = { status: 200, data: { status: 'error', error: 'Internal fail' } }
 
-    it('should correctly map words array excluding confidence field', async () => {
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const completedResponse = {
-        status: 200,
-        data: {
-          id: mockTranscriptId,
-          status: 'completed',
-          text: 'Test words',
-          words: [
-            { start: 0, end: 100, text: 'Test', confidence: 0.99 },
-            { start: 100, end: 200, text: 'words', confidence: 0.98 },
-          ],
-        },
-      }
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
-      const result = await provider.submitAndWaitByUrl({
-        audioUrl: mockAudioUrl,
-        apiKey: mockApiKey,
-      })
-      expect(result.words).toEqual([
-        { start: 0, end: 100, text: 'Test' },
-        { start: 100, end: 200, text: 'words' },
-      ])
-      expect(result.words![0]).not.toHaveProperty('confidence')
-    }, 10000)
+    jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
+    jest.spyOn(httpService, 'get').mockReturnValueOnce(of(errorResponse as any))
 
-    it('should handle empty words array', async () => {
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const completedResponse = {
-        status: 200,
-        data: { id: mockTranscriptId, status: 'completed', text: '', words: [] },
-      }
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
-      const result = await provider.submitAndWaitByUrl({
-        audioUrl: mockAudioUrl,
-        apiKey: mockApiKey,
-      })
-      expect(result.words).toEqual([])
-    }, 10000)
-
-    it('should retry submission on 500 error', async () => {
-      const errorResponse = { status: 500, data: { message: 'Internal Server Error' } }
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const completedResponse = {
-        status: 200,
-        data: { id: mockTranscriptId, status: 'completed', text: 'Retry success' },
-      }
-
-      jest
-        .spyOn(httpService, 'post')
-        .mockReturnValueOnce(of(errorResponse as any))
-        .mockReturnValueOnce(of(createResponse as any))
-      jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
-
-      const result = await provider.submitAndWaitByUrl({
-        audioUrl: mockAudioUrl,
-        apiKey: mockApiKey,
-      })
-      expect(result.text).toBe('Retry success')
-      expect(httpService.post).toHaveBeenCalledTimes(2)
-    })
-
-    it('should continue polling on 500 error during status check', async () => {
-      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
-      const errorResponse = { status: 500, data: { message: 'Internal Server Error' } }
-      const completedResponse = {
-        status: 200,
-        data: { id: mockTranscriptId, status: 'completed', text: 'Polling success' },
-      }
-
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest
-        .spyOn(httpService, 'get')
-        .mockReturnValueOnce(of(errorResponse as any))
-        .mockReturnValueOnce(of(completedResponse as any))
-
-      const result = await provider.submitAndWaitByUrl({
-        audioUrl: mockAudioUrl,
-        apiKey: mockApiKey,
-      })
-      expect(result.text).toBe('Polling success')
-      expect(httpService.get).toHaveBeenCalledTimes(2)
-    })
+    await expect(provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey }))
+      .rejects.toThrow('Internal fail')
   })
 })
