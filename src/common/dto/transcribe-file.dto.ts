@@ -26,4 +26,13 @@ export class TranscribeFileDto {
   @IsOptional()
   @IsString()
   public readonly apiKey?: string;
+
+  @IsOptional()
+  public readonly totalTimeoutMinutes?: number;
+
+  @IsOptional()
+  public readonly maxRetries?: number;
+
+  @IsOptional()
+  public readonly retryDelayMs?: number;
 }

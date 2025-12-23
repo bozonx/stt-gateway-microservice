@@ -16,6 +16,7 @@ export const ASSEMBLYAI_API = {
 export const HTTP_TIMEOUTS = {
   DEFAULT_REQUEST: 15000,
   HEAD_REQUEST: 5000,
+  RETRY_JITTER_PERCENT: 20, // +- 20%
 } as const
 
 /**

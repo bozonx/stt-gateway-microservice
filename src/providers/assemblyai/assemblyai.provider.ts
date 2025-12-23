@@ -15,7 +15,7 @@ import type {
   TranscriptionResult,
 } from '../../common/interfaces/stt-provider.interface.js'
 import type { SttConfig } from '../../config/stt.config.js'
-import { ASSEMBLYAI_API } from '../../common/constants/app.constants.js'
+import { ASSEMBLYAI_API, HTTP_TIMEOUTS } from '../../common/constants/app.constants.js'
 
 interface AssemblyCreateResponse {
   id: string
@@ -151,30 +151,89 @@ export class AssemblyAiProvider implements SttProvider {
         }, format_text=${Boolean(payload.format_text)}`
       )
 
-      const create$ = this.http.post<AssemblyCreateResponse>(apiUrl, payload, {
-        headers,
-        validateStatus: () => true,
-        signal,
-        timeout: this.cfg.requestTimeoutSeconds * 1000,
-      })
+      const id = await (async () => {
+        let lastError: any
+        const maxRetries = params.maxRetries ?? this.cfg.maxRetries
+        const retryDelayMs = params.retryDelayMs ?? this.cfg.retryDelayMs
 
-      const createRes = await lastValueFrom(create$)
-      this.logger.debug(
-        `AssemblyAI create response: status=${createRes.status}, hasId=${Boolean(createRes.data?.id)}`
-      )
-      if (createRes.status >= 400 || !createRes.data?.id) {
-        const errorDetail = createRes.data ? JSON.stringify(createRes.data) : 'no response body'
-        this.logger.error(
-          `Failed to create transcription. Status: ${createRes.status}, Response: ${errorDetail}`
-        )
-        throw new ServiceUnavailableException('Failed to create transcription')
-      }
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+          if (signal.aborted) {
+            throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
+          }
 
-      const id = createRes.data.id
+          if (attempt > 0) {
+            const jitterPercent = HTTP_TIMEOUTS.RETRY_JITTER_PERCENT / 100
+            const jitter = retryDelayMs * jitterPercent * (Math.random() * 2 - 1)
+            const finalDelay = Math.max(0, retryDelayMs + jitter)
+            this.logger.debug(
+              `Retrying transcription creation (attempt ${attempt}/${maxRetries}) in ${Math.round(
+                finalDelay
+              )}ms`
+            )
+            await this.sleep(finalDelay, signal)
+          }
+
+          try {
+            const create$ = this.http.post<AssemblyCreateResponse>(apiUrl, payload, {
+              headers,
+              validateStatus: () => true,
+              signal,
+              timeout: this.cfg.requestTimeoutSeconds * 1000,
+            })
+
+            const createRes = await lastValueFrom(create$)
+            this.logger.debug(
+              `AssemblyAI create response: status=${createRes.status}, hasId=${Boolean(
+                createRes.data?.id
+              )}`
+            )
+
+            if (createRes.status >= 400 || !createRes.data?.id) {
+              const errorDetail = createRes.data ? JSON.stringify(createRes.data) : 'no response body'
+              const isRetryable =
+                createRes.status === 429 || createRes.status >= 500 || createRes.status === 0 // 0 for network errors
+
+              if (isRetryable && attempt < maxRetries) {
+                this.logger.warn(
+                  `Failed to create transcription (retryable status ${createRes.status}). Error: ${errorDetail}`
+                )
+                continue
+              }
+
+              this.logger.error(
+                `Failed to create transcription. Status: ${createRes.status}, Response: ${errorDetail}`
+              )
+              throw new ServiceUnavailableException('Failed to create transcription')
+            }
+
+            return createRes.data.id
+          } catch (err: any) {
+            if (signal.aborted) throw err
+            const isRetryable =
+              err.name === 'TimeoutError' ||
+              err.code === 'ECONNABORTED' ||
+              err.code === 'ETIMEDOUT' ||
+              err.status >= 500 ||
+              err.status === 429
+
+            if (isRetryable && attempt < maxRetries) {
+              this.logger.warn(
+                `Failed to create transcription (retryable error: ${err.message}). Attempting retry...`
+              )
+              lastError = err
+              continue
+            }
+            throw err
+          }
+        }
+        throw lastError
+      })()
+
       this.logger.info(`Transcription request created with ID: ${id}`)
 
       const startedAt = Date.now()
-      const deadline = startedAt + this.cfg.maxSyncWaitMinutes * 60 * 1000
+      const totalTimeoutMinutes = params.totalTimeoutMinutes ?? this.cfg.totalTimeoutMinutes
+      const deadline = startedAt + totalTimeoutMinutes * 60 * 1000
 
       // Poll loop
       let pollCount = 0
@@ -183,32 +242,37 @@ export class AssemblyAiProvider implements SttProvider {
           throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
         }
         if (Date.now() > deadline) {
-          this.logger.error(
-            `Transcription timeout after ${this.cfg.maxSyncWaitMinutes} minutes for ID: ${id}`
-          )
+          this.logger.error(`Transcription timeout after ${totalTimeoutMinutes} minutes for ID: ${id}`)
           throw new GatewayTimeoutException('TRANSCRIPTION_TIMEOUT')
         }
 
         await this.sleep(this.cfg.pollIntervalMs, signal)
         pollCount++
 
-        this.logger.debug(`Polling transcription status (attempt ${pollCount}) for ID: ${id}`)
+        let getRes
+        try {
+          const getUrl = `${ASSEMBLYAI_API.BASE_URL}${ASSEMBLYAI_API.TRANSCRIPTS_ENDPOINT}/${id}`
+          const get$ = this.http.get<AssemblyTranscriptResponse>(getUrl, {
+            headers,
+            validateStatus: () => true,
+            signal,
+            timeout: this.cfg.requestTimeoutSeconds * 1000,
+          })
+          getRes = await lastValueFrom(get$)
+        } catch (err: any) {
+          this.logger.warn(`Polling error for ID: ${id}: ${err.message}. Skipping and retrying...`)
+          continue
+        }
 
-        const getUrl = `${ASSEMBLYAI_API.BASE_URL}${ASSEMBLYAI_API.TRANSCRIPTS_ENDPOINT}/${id}`
-        const get$ = this.http.get<AssemblyTranscriptResponse>(getUrl, {
-          headers,
-          validateStatus: () => true,
-          signal,
-          timeout: this.cfg.requestTimeoutSeconds * 1000,
-        })
-        const getRes = await lastValueFrom(get$)
         const body = getRes.data
         this.logger.debug(
           `AssemblyAI poll response: status=${getRes.status}, bodyStatus=${body?.status ?? 'n/a'}`
         )
 
-        if (!body) {
-          this.logger.debug(`No response body for ID: ${id}, continuing...`)
+        if (getRes.status >= 500 || !body) {
+          this.logger.warn(
+            `Unexpected poll response for ID: ${id} (status ${getRes.status}). Skipping and retrying...`
+          )
           continue
         }
 

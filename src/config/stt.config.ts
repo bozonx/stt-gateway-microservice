@@ -37,7 +37,17 @@ export class SttConfig {
   @IsInt()
   @Min(1)
   @Max(60)
-  public maxSyncWaitMinutes!: number;
+  public totalTimeoutMinutes!: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(10)
+  public maxRetries!: number;
+
+  @IsInt()
+  @Min(0)
+  @Max(10000)
+  public retryDelayMs!: number;
 
   @IsOptional()
   @IsString()
@@ -59,7 +69,9 @@ export default registerAs('stt', (): SttConfig => {
     maxFileMb: parseInt(process.env.STT_MAX_FILE_SIZE_MB ?? '100', 10),
     requestTimeoutSeconds: parseInt(process.env.STT_REQUEST_TIMEOUT_SECONDS ?? '15', 10),
     pollIntervalMs: parseInt(process.env.STT_POLL_INTERVAL_MS ?? '1500', 10),
-    maxSyncWaitMinutes: parseInt(process.env.STT_MAX_SYNC_WAIT_MINUTES ?? '3', 10),
+    totalTimeoutMinutes: parseInt(process.env.STT_TOTAL_TIMEOUT_MINUTES ?? process.env.STT_MAX_SYNC_WAIT_MINUTES ?? '3', 10),
+    maxRetries: parseInt(process.env.STT_MAX_RETRIES ?? '3', 10),
+    retryDelayMs: parseInt(process.env.STT_RETRY_DELAY_MS ?? '1000', 10),
     assemblyAiApiKey: process.env.ASSEMBLYAI_API_KEY,
   });
 

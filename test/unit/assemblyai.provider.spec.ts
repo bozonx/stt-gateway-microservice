@@ -20,7 +20,7 @@ describe('AssemblyAiProvider', () => {
 
   beforeEach(async () => {
     process.env.STT_POLL_INTERVAL_MS = '100' // Speed up tests
-    process.env.STT_MAX_SYNC_WAIT_MINUTES = '1' // 1 minute minimum
+    process.env.STT_TOTAL_TIMEOUT_MINUTES = '1' // 1 minute minimum
     process.env.STT_REQUEST_TIMEOUT_SECONDS = '5'
 
     const moduleRef = await Test.createTestingModule({
@@ -88,7 +88,7 @@ describe('AssemblyAiProvider', () => {
   afterEach(() => {
     jest.clearAllMocks()
     delete process.env.STT_POLL_INTERVAL_MS
-    delete process.env.STT_MAX_SYNC_WAIT_MINUTES
+    delete process.env.STT_TOTAL_TIMEOUT_MINUTES
     delete process.env.STT_REQUEST_TIMEOUT_SECONDS
   })
 
@@ -182,9 +182,9 @@ describe('AssemblyAiProvider', () => {
       expect(httpService.get).toHaveBeenCalledTimes(1)
     })
 
-    it('should throw ServiceUnavailableException when create request fails', async () => {
+    it('should throw ServiceUnavailableException when create request fails with 400', async () => {
       const errorResponse = { status: 400, data: { error: 'Invalid audio URL' } }
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(errorResponse as any))
+      jest.spyOn(httpService, 'post').mockReturnValue(of(errorResponse as any))
       await expect(
         provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
       ).rejects.toThrow(ServiceUnavailableException)
@@ -192,7 +192,7 @@ describe('AssemblyAiProvider', () => {
 
     it('should throw ServiceUnavailableException when create response has no id', async () => {
       const invalidResponse = { status: 200, data: { status: 'queued' } }
-      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(invalidResponse as any))
+      jest.spyOn(httpService, 'post').mockReturnValue(of(invalidResponse as any))
       await expect(
         provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
       ).rejects.toThrow(ServiceUnavailableException)
@@ -335,5 +335,49 @@ describe('AssemblyAiProvider', () => {
       })
       expect(result.words).toEqual([])
     }, 10000)
+
+    it('should retry submission on 500 error', async () => {
+      const errorResponse = { status: 500, data: { message: 'Internal Server Error' } }
+      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
+      const completedResponse = {
+        status: 200,
+        data: { id: mockTranscriptId, status: 'completed', text: 'Retry success' },
+      }
+
+      jest
+        .spyOn(httpService, 'post')
+        .mockReturnValueOnce(of(errorResponse as any))
+        .mockReturnValueOnce(of(createResponse as any))
+      jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
+
+      const result = await provider.submitAndWaitByUrl({
+        audioUrl: mockAudioUrl,
+        apiKey: mockApiKey,
+      })
+      expect(result.text).toBe('Retry success')
+      expect(httpService.post).toHaveBeenCalledTimes(2)
+    })
+
+    it('should continue polling on 500 error during status check', async () => {
+      const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
+      const errorResponse = { status: 500, data: { message: 'Internal Server Error' } }
+      const completedResponse = {
+        status: 200,
+        data: { id: mockTranscriptId, status: 'completed', text: 'Polling success' },
+      }
+
+      jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
+      jest
+        .spyOn(httpService, 'get')
+        .mockReturnValueOnce(of(errorResponse as any))
+        .mockReturnValueOnce(of(completedResponse as any))
+
+      const result = await provider.submitAndWaitByUrl({
+        audioUrl: mockAudioUrl,
+        apiKey: mockApiKey,
+      })
+      expect(result.text).toBe('Polling success')
+      expect(httpService.get).toHaveBeenCalledTimes(2)
+    })
   })
 })

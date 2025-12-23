@@ -107,6 +107,9 @@ export class TranscriptionService {
     apiKey?: string
     language?: string /** Explicit source language code */
     formatText?: boolean
+    totalTimeoutMinutes?: number
+    maxRetries?: number
+    retryDelayMs?: number
     signal?: AbortSignal
   }): Promise<{
     text: string
@@ -178,6 +181,9 @@ export class TranscriptionService {
         restorePunctuation: params.restorePunctuation,
         language: trimmedLanguage,
         formatText: params.formatText,
+        totalTimeoutMinutes: params.totalTimeoutMinutes ?? this.cfg.totalTimeoutMinutes,
+        maxRetries: params.maxRetries ?? this.cfg.maxRetries,
+        retryDelayMs: params.retryDelayMs ?? this.cfg.retryDelayMs,
       })
     } catch (err: unknown) {
       if (params.signal?.aborted) {
