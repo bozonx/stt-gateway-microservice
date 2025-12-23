@@ -37,7 +37,7 @@
   - `.env.production.example` and `.env.development.example` set to `8080`
   - Dockerfile `EXPOSE 8080` and `ENV LISTEN_PORT=8080`
   - docker-compose maps `8080:8080` and healthcheck targets `:8080`
-  - Documentation updated (README, docs/API.md, docs/dev.md)
+  - Documentation updated (README, README.md#api, docs/dev.md)
 
 ### API changes
 
@@ -81,7 +81,7 @@
 ### Documentation refactor (English)
 
 - Consolidated environment, logging, Docker, and STT behavior into `README.md` (English)
-- Added `docs/API.md` with endpoint reference, examples, and status codes (English)
+- Consolidated API documentation with endpoint reference, examples, and status codes into the main `README.md`
 - Rewrote `docs/dev.md` in English and moved dev-only content out of `README.md`
   
 

@@ -5,7 +5,7 @@ Built with NestJS + Fastify. Uses AssemblyAI by default. No built-in auth, Swagg
 
 Links:
 
-- API: see [API documentation](docs/API.md)
+- API: see [API](#api) section below
 - Dev guide: see [Development guide](docs/dev.md) (link duplicated at the bottom)
 
 ## Table of contents
@@ -15,7 +15,6 @@ Links:
 - [Quick Start (development)](#quick-start-development)
 - [Environment](#environment)
 - [API](#api)
-- [Usage examples](#usage-examples)
 - [Security](#security)
 - [Docker](#docker)
 - [Logging](#logging)
@@ -97,54 +96,123 @@ STT variables:
 
 ## API
 
-Complete API documentation with all endpoints, request/response formats, error codes, and examples is available in [API documentation](docs/API.md).
+This section provides a complete reference for all API endpoints, request/response formats, and status codes.
 
-### Available Endpoints
+### Base URL
 
-#### Health Check
-- **Endpoint:** `GET /{BASE_PATH}/api/v1/health`
-- **Description:** Simple health check to verify service availability
-- **Response:** `{"status": "ok"}`
+All endpoints are prefixed with:
 
-#### Transcribe Audio
-- **Endpoint:** `POST /{BASE_PATH}/api/v1/transcribe`
-- **Description:** Synchronous audio transcription from a public URL
-- **Request body:**
-  - `audioUrl` (required) — Public HTTP(S) URL to audio file
-  - `provider` (optional) — STT provider name (default: `assemblyai`)
-  - `restorePunctuation` (optional) — Restore punctuation (default: `true`)
-  - `language` (optional) — Source language code (e.g., `en`, `ru`, `en-US`). Leave empty for auto-detect when supported.
-  - `formatText` (optional) — Format transcribed text (default: `false`)
-  - `apiKey` (optional) — Provider API key (falls back to `ASSEMBLYAI_API_KEY`)
-- **Response:** Transcription result with text, metadata, and processing time
+```
+/{BASE_PATH}/api/v1
+```
 
-**Common error responses:**
-- `400` — Invalid URL, private host, file too large, unsupported provider
-- `401` — Missing provider API key
-- `499` — Client closed request
-- `504` — Transcription timeout (exceeds `STT_MAX_SYNC_WAIT_MINUTES`)
+Where `{BASE_PATH}` is an optional URL prefix configured via the `BASE_PATH` environment variable. If `BASE_PATH` is empty, the base URL is simply `/api/v1`.
 
-### Transcription behavior (high level)
+**Examples:**
+- With `BASE_PATH=voice-gateway`: `http://localhost:8080/voice-gateway/api/v1`
+- Without `BASE_PATH` (empty): `http://localhost:8080/api/v1`
 
-- The service does not download audio files; it forwards the original URL to the provider.
-- Pre-flight HEAD may be performed to check size via `Content-Length`.
-  - If present and exceeds `STT_MAX_FILE_SIZE_MB` → `400 File too large`.
-  - If missing/unavailable → size check is skipped.
-- Timeouts and waiting:
-  - Request timeout: `STT_REQUEST_TIMEOUT_SECONDS`.
-  - Polling interval: `STT_POLL_INTERVAL_MS`.
-  - Max sync wait: `STT_MAX_SYNC_WAIT_MINUTES` → returns `504` if exceeded.
+---
 
-## Usage examples
+### Endpoints
 
-- Health check
+#### 1. Health Check
 
+**Endpoint:** `GET /{BASE_PATH}/api/v1/health`
+
+**Description:** Simple health check endpoint to verify the service is running.
+
+**Request:**
+- Method: `GET`
+- Headers: None required
+- Body: None
+
+**Response:**
+
+**Success (200 OK):**
+```json
+{
+  "status": "ok"
+}
+```
+
+**Example:**
 ```bash
 curl http://localhost:8080/api/v1/health
 ```
 
-- Transcription request
+---
 
+#### 2. Transcribe Audio
+
+**Endpoint:** `POST /{BASE_PATH}/api/v1/transcribe`
+
+**Description:** Synchronously transcribes audio from a public URL. The service forwards the URL to the configured STT provider and waits for the result.
+
+**Request:**
+
+- Method: `POST`
+- Headers:
+  - `Content-Type: application/json`
+- Body: JSON object with the following fields:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `audioUrl` | string | **Yes** | Public HTTP(S) URL to the audio file. Must start with `http://` or `https://`. |
+| `provider` | string | No | STT provider name (e.g., `assemblyai`). Defaults to `STT_DEFAULT_PROVIDER` if not specified. |
+| `restorePunctuation` | boolean | No | Whether to restore punctuation in the transcription. Default: `true`. |
+| `language` | string | No | Source language code for transcription (e.g., `en`, `es`, `fr`). See provider documentation for supported languages. Value is trimmed before sending to provider. |
+| `formatText` | boolean | No | Whether to format the transcribed text. Default: `false`. |
+| `apiKey` | string | No | Provider API key. If not provided, uses `ASSEMBLYAI_API_KEY` from environment. |
+
+**Request Example:**
+```json
+{
+  "audioUrl": "https://example.com/audio.mp3",
+  "provider": "assemblyai",
+  "restorePunctuation": true,
+  "language": "en",
+  "formatText": true,
+  "apiKey": "YOUR_ASSEMBLYAI_KEY"
+}
+```
+
+**Response:**
+
+**Success (200 OK):**
+```json
+{
+  "text": "Transcribed text content goes here.",
+  "provider": "assemblyai",
+  "requestId": "unique-request-id",
+  "durationSec": 120.5,
+  "language": "en",
+  "confidenceAvg": 0.95,
+  "wordsCount": 234,
+  "processingMs": 5432,
+  "punctuationRestored": true,
+  "raw": {
+    // Raw response from the provider (structure varies by provider)
+  }
+}
+```
+
+**Response Fields:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `text` | string | Transcribed text. |
+| `provider` | string | Name of the STT provider used. |
+| `requestId` | string | Unique identifier for this transcription request. |
+| `durationSec` | number (optional) | Duration of the audio file in seconds. |
+| `language` | string (optional) | Detected or specified source language. |
+| `confidenceAvg` | number (optional) | Average confidence score (0-1). |
+| `wordsCount` | number (optional) | Number of words in the transcription. |
+| `processingMs` | number | Total processing time in milliseconds. |
+| `punctuationRestored` | boolean | Whether punctuation was restored. |
+| `raw` | object | Raw response from the provider (for debugging/advanced use). |
+
+**Example:**
 ```bash
 curl -X POST \
   http://localhost:8080/api/v1/transcribe \
@@ -159,17 +227,76 @@ curl -X POST \
   }'
 ```
 
-Notes:
-- The `language` value is trimmed and sent to the provider as-is. It specifies the source language of the audio. See AssemblyAI's supported languages: https://www.assemblyai.com/docs/pre-recorded-audio/supported-languages.
+---
 
-See [API documentation](docs/API.md) for full details.
+### Error Responses
+
+All error responses follow a consistent format:
+
+```json
+{
+  "statusCode": 400,
+  "timestamp": "2025-12-23T12:34:56.789Z",
+  "path": "/api/v1/transcribe",
+  "method": "POST",
+  "message": "Human-readable error message",
+  "error": {
+    // Additional error details (varies by error type)
+  }
+}
+```
+
+#### Common Error Codes
+
+- **400 Bad Request**: Invalid URL, private host, file too large, or unsupported provider.
+- **401 Unauthorized**: Missing or invalid provider API key.
+- **404 Not Found**: Endpoint does not exist.
+- **499 Client Closed Request**: Client closed the connection before the request completed.
+- **500 Internal Server Error**: Unexpected error on the server.
+- **504 Gateway Timeout**: Transcription took longer than `STT_MAX_SYNC_WAIT_MINUTES`.
+
+---
+
+### Timeouts & Limits
+
+| Parameter | Environment Variable | Default | Description |
+|-----------|---------------------|---------|-------------|
+| Request timeout | `STT_REQUEST_TIMEOUT_SECONDS` | 30 | Timeout for individual HTTP requests to the provider. |
+| Polling interval | `STT_POLL_INTERVAL_MS` | 1000 | Interval between status checks when waiting for results. |
+| Max sync wait | `STT_MAX_SYNC_WAIT_MINUTES` | 10 | Maximum time to wait for transcription before returning `504`. |
+| Max file size | `STT_MAX_FILE_SIZE_MB` | 100 | Maximum allowed file size (checked via `Content-Length`). |
+| Graceful shutdown | `GRACEFUL_SHUTDOWN_TIMEOUT_MS` | 25000 | Time to wait for active requests during shutdown. |
+
+---
+
+### Request Flow
+
+1. **Validation:** URL format, protocol, and SSRF protection (private/loopback hosts).
+2. **Pre-flight check (optional):** `HEAD` request to check `Content-Length`.
+3. **Provider selection:** Use `provider` from request or `STT_DEFAULT_PROVIDER`.
+4. **API key resolution:** Use `apiKey` from request or `ASSEMBLYAI_API_KEY` from environment.
+5. **Transcription:** Submit audio URL to provider and poll for results until completion or timeout.
+6. **Response:** Return transcription result with metadata.
+
 
 ## Security
 
-- SSRF protection: private and loopback hosts are rejected (`localhost`, `127.0.0.1`, `10.0.0.0/8`, `172.16/12`, `192.168/16`, link-local, IPv6 loopback/link-local).
-- Only HTTP(S) `audioUrl` are allowed.
-- Optional pre-flight HEAD checks `Content-Length` and rejects files larger than `STT_MAX_FILE_SIZE_MB` (when header is present).
-- The service has no built-in authentication; provider API key is supplied in request body as `apiKey` or via `ASSEMBLYAI_API_KEY`.
+The service implements several layers of security and validation:
+
+### SSRF Protection
+
+To prevent Server-Side Request Forgery (SSRF) attacks, the service blocks requests to private and loopback addresses:
+
+- **Blocked IPv4 ranges:** `127.0.0.0/8`, `10.0.0.0/8`, `172.16.0.0/12`, `192.168.0.0/16`, `169.254.0.0/16`.
+- **Blocked IPv6 ranges:** `::1/128`, `fe80::/10`, `fc00::/7`.
+- **Blocked hostnames:** `localhost`.
+
+### Validation
+
+- **URL Validation:** Only `http://` and `https://` protocols are allowed.
+- **File Size Validation:** Pre-flight `HEAD` request checks `Content-Length`. If it exceeds `STT_MAX_FILE_SIZE_MB`, the request is rejected with `400 Bad Request`.
+- **Provider Validation:** If `STT_ALLOWED_PROVIDERS` is set, only listed providers are allowed.
+- **Authentication:** The service has no built-in auth; provider API keys are supplied in the request body or via environment variables.
 
 ## Docker
 
@@ -233,11 +360,12 @@ Adjust verbosity with `LOG_LEVEL`.
 
 ## Troubleshooting
 
-- 400 Invalid URL — Ensure `audioUrl` starts with `http` or `https`.
-- 400 Private/loopback host — Use only public hosts.
-- 400 File too large — The origin returned `Content-Length` above `STT_MAX_FILE_SIZE_MB`.
-- 401 Missing provider API key — Pass `apiKey` or set `ASSEMBLYAI_API_KEY`.
-- 504 Gateway Timeout — Increase `STT_MAX_SYNC_WAIT_MINUTES` or check provider availability.
+- **400 Invalid URL:** Ensure `audioUrl` starts with `http` or `https`.
+- **400 Private/loopback host:** Use only public hosts.
+- **400 File too large:** The origin returned `Content-Length` above `STT_MAX_FILE_SIZE_MB`.
+- **401 Missing provider API key:** Pass `apiKey` or set `ASSEMBLYAI_API_KEY`.
+- **504 Gateway Timeout:** Increase `STT_MAX_SYNC_WAIT_MINUTES` or check provider availability.
+- **Source Language:** If transcription is inaccurate, ensure the correct `language` code is provided. See [AssemblyAI languages](https://www.assemblyai.com/docs/pre-recorded-audio/supported-languages).
 
 ## Development
 

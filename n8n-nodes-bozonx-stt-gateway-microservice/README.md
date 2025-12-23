@@ -107,5 +107,5 @@ Built and tested with n8n `1.60.0+`.
 
 ## Resources
 
-- Service docs and API reference: see the repository root `README.md` and `docs/API.md`.
+- Service docs and API reference: see the repository root [README.md](../README.md#api).
 - n8n community nodes docs: https://docs.n8n.io/integrations/#community-nodes
