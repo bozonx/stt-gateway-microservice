@@ -286,7 +286,7 @@ describe('AssemblyAiProvider', () => {
         data: { id: mockTranscriptId, status: 'completed', text: null },
       } as any
       jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-      jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
+      jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse))
       const result = await provider.submitAndWaitByUrl({
         audioUrl: mockAudioUrl,
         apiKey: mockApiKey,

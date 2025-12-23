@@ -11,22 +11,22 @@
  * - Override per-test if needed using jest.setTimeout() or passing timeout as third arg to it()
  */
 
-import { jest } from '@jest/globals';
-import nock from 'nock';
+import { jest } from '@jest/globals'
+import nock from 'nock'
 
 // @ts-ignore
-global.jest = jest;
+global.jest = jest
 
 // Block all external network calls; allow localhost for tests that use local adapters
 beforeAll(() => {
-  nock.disableNetConnect();
-  nock.enableNetConnect('127.0.0.1');
-});
+  nock.disableNetConnect()
+  nock.enableNetConnect('127.0.0.1')
+})
 
 afterEach(() => {
-  nock.cleanAll();
-});
+  nock.cleanAll()
+})
 
 afterAll(() => {
-  nock.enableNetConnect();
-});
+  nock.enableNetConnect()
+})

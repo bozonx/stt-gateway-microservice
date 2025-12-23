@@ -1,5 +1,5 @@
-import * as fs from 'fs';
-import * as path from 'path';
+import * as fs from 'fs'
+import * as path from 'path'
 
 /**
  * Reads the application version from package.json
@@ -11,20 +11,20 @@ export function readPackageVersion(): string {
     path.resolve(process.cwd(), 'package.json'),
     path.resolve(__dirname, '..', '..', 'package.json'),
     path.resolve(__dirname, '..', '..', '..', 'package.json'),
-  ];
+  ]
 
   for (const pkgPath of candidates) {
     try {
-      const raw = fs.readFileSync(pkgPath, 'utf-8');
-      const pkg = JSON.parse(raw) as { version?: string };
+      const raw = fs.readFileSync(pkgPath, 'utf-8')
+      const pkg = JSON.parse(raw) as { version?: string }
       if (typeof pkg.version === 'string' && pkg.version.length > 0) {
-        return pkg.version;
+        return pkg.version
       }
     } catch (_err) {
       // Continue to next candidate
-      continue;
+      continue
     }
   }
 
-  return '0.0.0';
+  return '0.0.0'
 }

@@ -20,6 +20,18 @@ export const HTTP_TIMEOUTS = {
 } as const
 
 /**
+ * Retry and polling behavior constants
+ */
+export const RETRY_BEHAVIOR = {
+  // Maximum consecutive polling errors before failing
+  MAX_CONSECUTIVE_POLL_ERRORS: 5,
+  // Multiplier for exponential backoff in polling after errors
+  POLL_BACKOFF_MULTIPLIER: 1.5,
+  // Maximum polling interval in milliseconds (10 seconds)
+  MAX_POLL_INTERVAL_MS: 10000,
+} as const
+
+/**
  * Graceful shutdown timeout (in milliseconds)
  * Server will wait this long for active requests to complete before forcing shutdown
  */

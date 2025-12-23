@@ -15,7 +15,11 @@ import type {
   TranscriptionResult,
 } from '../../common/interfaces/stt-provider.interface.js'
 import type { SttConfig } from '../../config/stt.config.js'
-import { ASSEMBLYAI_API, HTTP_TIMEOUTS } from '../../common/constants/app.constants.js'
+import {
+  ASSEMBLYAI_API,
+  HTTP_TIMEOUTS,
+  RETRY_BEHAVIOR,
+} from '../../common/constants/app.constants.js'
 
 interface AssemblyCreateResponse {
   id: string
@@ -92,9 +96,20 @@ export class AssemblyAiProvider implements SttProvider {
       if (!ac.signal.aborted) ac.abort()
     }
 
+    // Check if already aborted before adding listeners (prevents race condition)
+    if (externalSignal?.aborted || this.shutdownAbortController.signal.aborted) {
+      abort()
+      const cleanup = () => {
+        this.activeAbortControllers.delete(ac)
+      }
+      return { signal: ac.signal, cleanup }
+    }
+
+    // Add listeners
     externalSignal?.addEventListener('abort', abort)
     this.shutdownAbortController.signal.addEventListener('abort', abort)
 
+    // Double-check after adding listeners (double-check pattern)
     if (externalSignal?.aborted || this.shutdownAbortController.signal.aborted) {
       abort()
     }
@@ -147,7 +162,8 @@ export class AssemblyAiProvider implements SttProvider {
       this.logger.debug(
         `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
           headers.Authorization
-        )}, punctuate=${Boolean(payload.punctuate)}, language_code=${payload.language_code ?? 'auto'
+        )}, punctuate=${Boolean(payload.punctuate)}, language_code=${
+          payload.language_code ?? 'auto'
         }, format_text=${Boolean(payload.format_text)}`
       )
 
@@ -155,18 +171,23 @@ export class AssemblyAiProvider implements SttProvider {
         let lastError: any
         const maxRetries = this.cfg.maxRetries
         const retryDelayMs = this.cfg.retryDelayMs
+        // Total attempts = 1 initial + maxRetries retries
+        const totalAttempts = maxRetries + 1
 
-        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+        for (let attemptNumber = 1; attemptNumber <= totalAttempts; attemptNumber++) {
           if (signal.aborted) {
             throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
           }
 
-          if (attempt > 0) {
+          const isRetryAttempt = attemptNumber > 1
+          const isLastAttempt = attemptNumber === totalAttempts
+
+          if (isRetryAttempt) {
             const jitterPercent = HTTP_TIMEOUTS.RETRY_JITTER_PERCENT / 100
             const jitter = retryDelayMs * jitterPercent * (Math.random() * 2 - 1)
             const finalDelay = Math.max(0, retryDelayMs + jitter)
             this.logger.debug(
-              `Retrying transcription creation (attempt ${attempt}/${maxRetries}) in ${Math.round(
+              `Retrying transcription creation (attempt ${attemptNumber}/${totalAttempts}) in ${Math.round(
                 finalDelay
               )}ms`
             )
@@ -189,14 +210,18 @@ export class AssemblyAiProvider implements SttProvider {
             )
 
             if (createRes.status >= 400 || !createRes.data?.id) {
-              const errorDetail = createRes.data ? JSON.stringify(createRes.data) : 'no response body'
+              const errorDetail = createRes.data
+                ? JSON.stringify(createRes.data)
+                : 'no response body'
+              // Determine if error is retryable (429, 5xx, network errors)
               const isRetryable =
-                createRes.status === 429 || createRes.status >= 500 || createRes.status === 0 // 0 for network errors
+                createRes.status === 429 || createRes.status >= 500 || createRes.status === 0
 
-              if (isRetryable && attempt < maxRetries) {
+              if (isRetryable && !isLastAttempt) {
                 this.logger.warn(
                   `Failed to create transcription (retryable status ${createRes.status}). Error: ${errorDetail}`
                 )
+                lastError = new ServiceUnavailableException('Failed to create transcription')
                 continue
               }
 
@@ -206,9 +231,17 @@ export class AssemblyAiProvider implements SttProvider {
               throw new ServiceUnavailableException('Failed to create transcription')
             }
 
+            // Success - log if it was a retry
+            if (isRetryAttempt) {
+              this.logger.info(
+                `Transcription created successfully after ${attemptNumber - 1} retry attempt(s)`
+              )
+            }
+
             return createRes.data.id
           } catch (err: any) {
             if (signal.aborted) throw err
+            // Determine if error is retryable (timeouts, network errors, 429, 5xx)
             const isRetryable =
               err.name === 'TimeoutError' ||
               err.code === 'ECONNABORTED' ||
@@ -216,7 +249,7 @@ export class AssemblyAiProvider implements SttProvider {
               err.status >= 500 ||
               err.status === 429
 
-            if (isRetryable && attempt < maxRetries) {
+            if (isRetryable && !isLastAttempt) {
               this.logger.warn(
                 `Failed to create transcription (retryable error: ${err.message}). Attempting retry...`
               )
@@ -235,9 +268,12 @@ export class AssemblyAiProvider implements SttProvider {
       const maxWaitMinutes = params.maxWaitMinutes ?? this.cfg.defaultMaxWaitMinutes
       const deadline = startedAt + maxWaitMinutes * 60 * 1000
 
-      // Poll loop
+      // Poll loop with exponential backoff on errors
       let pollCount = 0
-      for (; ;) {
+      let consecutiveErrors = 0
+      let currentPollInterval = this.cfg.pollIntervalMs
+
+      for (;;) {
         if (signal.aborted) {
           throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
         }
@@ -246,7 +282,7 @@ export class AssemblyAiProvider implements SttProvider {
           throw new GatewayTimeoutException('TRANSCRIPTION_TIMEOUT')
         }
 
-        await this.sleep(this.cfg.pollIntervalMs, signal)
+        await this.sleep(currentPollInterval, signal)
         pollCount++
 
         let getRes
@@ -259,28 +295,85 @@ export class AssemblyAiProvider implements SttProvider {
             timeout: this.cfg.providerApiTimeoutSeconds * 1000,
           })
           getRes = await lastValueFrom(get$)
+          // Reset consecutive errors on successful request
+          consecutiveErrors = 0
+          currentPollInterval = this.cfg.pollIntervalMs
         } catch (err: any) {
-          this.logger.warn(`Polling error for ID: ${id}: ${err.message}. Skipping and retrying...`)
+          consecutiveErrors++
+          // Determine if error is retryable (timeouts, network errors)
+          const isRetryable =
+            err.name === 'TimeoutError' ||
+            err.code === 'ECONNABORTED' ||
+            err.code === 'ETIMEDOUT' ||
+            err.code === 'ECONNRESET'
+
+          if (!isRetryable) {
+            this.logger.error(`Non-retriable polling error for ID: ${id}: ${err.message}`)
+            throw new ServiceUnavailableException('Polling failed')
+          }
+
+          if (consecutiveErrors >= RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS) {
+            this.logger.error(
+              `Too many consecutive polling errors (${consecutiveErrors}) for ID: ${id}`
+            )
+            throw new ServiceUnavailableException('Polling repeatedly failed')
+          }
+
+          // Apply exponential backoff
+          currentPollInterval = Math.min(
+            currentPollInterval * RETRY_BEHAVIOR.POLL_BACKOFF_MULTIPLIER,
+            RETRY_BEHAVIOR.MAX_POLL_INTERVAL_MS
+          )
+
+          this.logger.warn(
+            `Polling error ${consecutiveErrors}/${RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS} for ID: ${id}: ${err.message}. Retrying in ${Math.round(currentPollInterval)}ms...`
+          )
           continue
         }
 
-        const body = getRes.data
+        const body: AssemblyTranscriptResponse | undefined = getRes.data
         this.logger.debug(
           `AssemblyAI poll response: status=${getRes.status}, bodyStatus=${body?.status ?? 'n/a'}`
         )
 
+        // Distinguish between client errors (4xx) and server errors (5xx)
+        if (getRes.status >= 400 && getRes.status < 500) {
+          // Client errors (401, 403, 404, etc.) should not be retried
+          this.logger.error(`Client error during polling for ID: ${id} (status ${getRes.status})`)
+          throw new ServiceUnavailableException(`Polling failed with status ${getRes.status}`)
+        }
+
         if (getRes.status >= 500 || !body) {
+          consecutiveErrors++
+
+          if (consecutiveErrors >= RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS) {
+            this.logger.error(
+              `Too many consecutive server errors (${consecutiveErrors}) for ID: ${id}`
+            )
+            throw new ServiceUnavailableException('Polling repeatedly failed')
+          }
+
+          // Apply exponential backoff
+          currentPollInterval = Math.min(
+            currentPollInterval * RETRY_BEHAVIOR.POLL_BACKOFF_MULTIPLIER,
+            RETRY_BEHAVIOR.MAX_POLL_INTERVAL_MS
+          )
+
           this.logger.warn(
-            `Unexpected poll response for ID: ${id} (status ${getRes.status}). Skipping and retrying...`
+            `Server error ${consecutiveErrors}/${RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS} for ID: ${id} (status ${getRes.status}). Retrying in ${Math.round(currentPollInterval)}ms...`
           )
           continue
         }
+
+        // Reset on successful response
+        consecutiveErrors = 0
+        currentPollInterval = this.cfg.pollIntervalMs
 
         this.logger.debug(`Transcription status: ${body.status} for ID: ${id}`)
 
         if (body.status === 'completed') {
           this.logger.info(
-            `Transcription completed for ID: ${id}. Text length: ${body.text?.length || 0} chars`
+            `Transcription completed for ID: ${id}. Text length: ${body.text?.length ?? 0} chars`
           )
           return {
             text: body.text ?? '',

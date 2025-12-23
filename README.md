@@ -281,6 +281,59 @@ All error responses follow a consistent format:
 5. **Transcription:** Submit audio URL to provider and poll for results until completion or timeout.
 6. **Response:** Return transcription result with metadata.
 
+---
+
+### Retry & Polling Behavior
+
+The service implements robust retry and polling mechanisms to handle transient errors and ensure reliable transcription processing.
+
+#### Submission Retries
+
+When submitting a transcription request to the provider, the service automatically retries on transient errors:
+
+- **Retriable errors:**
+  - HTTP 429 (Too Many Requests)
+  - HTTP 5xx (Server errors)
+  - Network errors (timeouts, connection failures)
+- **Non-retriable errors:**
+  - HTTP 4xx (except 429) - Client errors like 400, 401, 403, 404
+  - Invalid responses
+
+**Configuration:**
+- `MAX_RETRIES` (default: 3) - Maximum number of retry attempts
+- `RETRY_DELAY_MS` (default: 1500) - Base delay between retries in milliseconds
+- **Jitter:** ±20% random variation added to retry delay to prevent thundering herd
+
+**Example:** With `MAX_RETRIES=3`, the service makes 1 initial attempt + up to 3 retries = 4 total attempts.
+
+#### Resilient Polling
+
+After successful submission, the service polls the provider for transcription results:
+
+- **Polling continues** despite temporary errors (network issues, 5xx responses)
+- **Exponential backoff:** After errors, polling interval increases by 1.5x (up to 10 seconds max)
+- **Error limits:** Fails after 5 consecutive polling errors to prevent infinite loops
+- **Client errors (4xx):** Immediately fail without retry (e.g., 401 Unauthorized)
+- **Server errors (5xx):** Retry with backoff up to the error limit
+- **Overall timeout:** Controlled by `maxWaitMinutes` parameter (default: `DEFAULT_MAX_WAIT_MINUTES`)
+
+**Example polling behavior:**
+```
+Normal: 1.5s → 1.5s → 1.5s → completed
+With errors: 1.5s → error → 2.25s → error → 3.4s → success → 1.5s → completed
+Too many errors: 1.5s → error → 2.25s → error → 3.4s → error → 5.1s → error → 7.6s → error → FAIL
+```
+
+#### Graceful Shutdown
+
+The service properly handles shutdown signals (SIGTERM, SIGINT):
+- Stops accepting new requests
+- Waits for active transcriptions to complete
+- Aborts all pending operations after `GRACEFUL_SHUTDOWN_TIMEOUT_MS` (25 seconds)
+- Docker `stop_grace_period`: 30 seconds (allows 5s buffer)
+
+
+
 
 ## Security
 

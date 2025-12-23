@@ -1,12 +1,12 @@
-import { Module } from '@nestjs/common';
-import { HttpModule } from '@nestjs/axios';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TranscriptionService } from './transcription.service.js';
-import { TranscriptionController } from './transcription.controller.js';
-import { AssemblyAiProvider } from '../../providers/assemblyai/assemblyai.provider.js';
-import type { SttConfig } from '../../config/stt.config.js';
-import { SttProviderRegistry } from '../../providers/stt-provider.registry.js';
-import { STT_PROVIDER } from '../../common/constants/tokens.js';
+import { Module } from '@nestjs/common'
+import { HttpModule } from '@nestjs/axios'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { TranscriptionService } from './transcription.service.js'
+import { TranscriptionController } from './transcription.controller.js'
+import { AssemblyAiProvider } from '../../providers/assemblyai/assemblyai.provider.js'
+import type { SttConfig } from '../../config/stt.config.js'
+import { SttProviderRegistry } from '../../providers/stt-provider.registry.js'
+import { STT_PROVIDER } from '../../common/constants/tokens.js'
 
 /**
  * Transcription module
@@ -18,12 +18,12 @@ import { STT_PROVIDER } from '../../common/constants/tokens.js';
     HttpModule.registerAsync({
       inject: [ConfigService],
       useFactory: (cfg: ConfigService) => {
-        const timeoutSec = cfg.get<number>('stt.providerApiTimeoutSeconds', 15);
+        const timeoutSec = cfg.get<number>('stt.providerApiTimeoutSeconds', 15)
         return {
           timeout: timeoutSec * 1000,
           maxRedirects: 3,
           validateStatus: () => true,
-        };
+        }
       },
     }),
   ],
@@ -38,14 +38,14 @@ import { STT_PROVIDER } from '../../common/constants/tokens.js';
       useFactory: (
         configService: ConfigService,
         registry: SttProviderRegistry,
-        assembly: AssemblyAiProvider,
+        assembly: AssemblyAiProvider
       ) => {
-        const cfg = configService.get<SttConfig>('stt');
-        const name = (cfg?.defaultProvider ?? 'assemblyai').toLowerCase();
-        return registry.get(name) ?? assembly;
+        const cfg = configService.get<SttConfig>('stt')
+        const name = (cfg?.defaultProvider ?? 'assemblyai').toLowerCase()
+        return registry.get(name) ?? assembly
       },
     },
   ],
   exports: [TranscriptionService],
 })
-export class TranscriptionModule { }
+export class TranscriptionModule {}

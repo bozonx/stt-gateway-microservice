@@ -1,70 +1,62 @@
-import { registerAs } from '@nestjs/config';
-import {
-  IsString,
-  IsArray,
-  IsInt,
-  IsOptional,
-  Min,
-  Max,
-  validateSync,
-} from 'class-validator';
-import { plainToClass } from 'class-transformer';
+import { registerAs } from '@nestjs/config'
+import { IsString, IsArray, IsInt, IsOptional, Min, Max, validateSync } from 'class-validator'
+import { plainToClass } from 'class-transformer'
 
 export class SttConfig {
   @IsString()
-  public defaultProvider!: string;
+  public defaultProvider!: string
 
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
-  public allowedProviders?: string[];
+  public allowedProviders?: string[]
 
   @IsInt()
   @Min(1)
   @Max(1000)
-  public maxFileMb!: number;
+  public maxFileMb!: number
 
   @IsInt()
   @Min(1)
   @Max(300)
-  public providerApiTimeoutSeconds!: number;
+  public providerApiTimeoutSeconds!: number
 
   @IsInt()
   @Min(100)
   @Max(10000)
-  public pollIntervalMs!: number;
+  public pollIntervalMs!: number
 
   @IsInt()
   @Min(1)
   @Max(60)
-  public defaultMaxWaitMinutes!: number;
+  public defaultMaxWaitMinutes!: number
 
   @IsInt()
   @Min(0)
   @Max(10)
-  public maxRetries!: number;
+  public maxRetries!: number
 
   @IsInt()
   @Min(0)
   @Max(10000)
-  public retryDelayMs!: number;
+  public retryDelayMs!: number
 
   @IsOptional()
   @IsString()
-  public assemblyAiApiKey?: string;
+  public assemblyAiApiKey?: string
 }
 
 export default registerAs('stt', (): SttConfig => {
   const config = plainToClass(SttConfig, {
     defaultProvider: process.env.DEFAULT_PROVIDER ?? 'assemblyai',
     allowedProviders: (() => {
-      const raw = process.env.ALLOWED_PROVIDERS;
-      if (!raw || raw.trim() === '') return undefined;
+      const raw = process.env.ALLOWED_PROVIDERS
+      if (!raw || raw.trim() === '') return undefined
       const list = raw
         .split(',')
-        .map(s => s.trim().toLowerCase())
-        .filter(Boolean);
-      return list.length ? list : undefined;
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean)
+      return list.length ? list : undefined
     })(),
     maxFileMb: parseInt(process.env.MAX_FILE_SIZE_MB ?? '100', 10),
     providerApiTimeoutSeconds: parseInt(process.env.PROVIDER_API_TIMEOUT_SECONDS ?? '15', 10),
@@ -73,16 +65,16 @@ export default registerAs('stt', (): SttConfig => {
     maxRetries: parseInt(process.env.MAX_RETRIES ?? '3', 10),
     retryDelayMs: parseInt(process.env.RETRY_DELAY_MS ?? '1500', 10),
     assemblyAiApiKey: process.env.ASSEMBLYAI_API_KEY,
-  });
+  })
 
   const errors = validateSync(config, {
     skipMissingProperties: false,
-  });
+  })
 
   if (errors.length > 0) {
-    const errorMessages = errors.map(err => Object.values(err.constraints ?? {}).join(', '));
-    throw new Error(`STT config validation error: ${errorMessages.join('; ')}`);
+    const errorMessages = errors.map((err) => Object.values(err.constraints ?? {}).join(', '))
+    throw new Error(`STT config validation error: ${errorMessages.join('; ')}`)
   }
 
-  return config;
-});
+  return config
+})

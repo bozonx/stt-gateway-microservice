@@ -1,14 +1,14 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { APP_FILTER } from '@nestjs/core';
-import { LoggerModule } from 'nestjs-pino';
-import { HealthModule } from './modules/health/health.module.js';
-import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js';
-import appConfig from './config/app.config.js';
-import type { AppConfig } from './config/app.config.js';
-import sttConfig from './config/stt.config.js';
-import { TranscriptionModule } from './modules/transcription/transcription.module.js';
-import pkg from '../package.json' with { type: 'json' };
+import { Module } from '@nestjs/common'
+import { ConfigModule, ConfigService } from '@nestjs/config'
+import { APP_FILTER } from '@nestjs/core'
+import { LoggerModule } from 'nestjs-pino'
+import { HealthModule } from './modules/health/health.module.js'
+import { AllExceptionsFilter } from './common/filters/all-exceptions.filter.js'
+import appConfig from './config/app.config.js'
+import type { AppConfig } from './config/app.config.js'
+import sttConfig from './config/stt.config.js'
+import { TranscriptionModule } from './modules/transcription/transcription.module.js'
+import pkg from '../package.json' with { type: 'json' }
 
 @Module({
   imports: [
@@ -21,8 +21,8 @@ import pkg from '../package.json' with { type: 'json' };
     LoggerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const appConfig = configService.get<AppConfig>('app')!;
-        const isDev = appConfig.nodeEnv === 'development';
+        const appConfig = configService.get<AppConfig>('app')!
+        const isDev = appConfig.nodeEnv === 'development'
 
         return {
           pinoHttp: {
@@ -34,18 +34,18 @@ import pkg from '../package.json' with { type: 'json' };
             },
             transport: isDev
               ? {
-                target: 'pino-pretty',
-                options: {
-                  colorize: true,
-                  singleLine: false,
-                  translateTime: "UTC:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
-                  ignore: 'pid,hostname',
-                  messageFormat: '[{context}] {msg}',
-                },
-              }
+                  target: 'pino-pretty',
+                  options: {
+                    colorize: true,
+                    singleLine: false,
+                    translateTime: "UTC:yyyy-mm-dd'T'HH:MM:ss.l'Z'",
+                    ignore: 'pid,hostname',
+                    messageFormat: '[{context}] {msg}',
+                  },
+                }
               : undefined,
             serializers: {
-              req: req => ({
+              req: (req) => ({
                 id: req.id,
                 method: req.method,
                 url: req.url,
@@ -53,10 +53,10 @@ import pkg from '../package.json' with { type: 'json' };
                 remoteAddress: req.ip,
                 remotePort: req.socket?.remotePort,
               }),
-              res: res => ({
+              res: (res) => ({
                 statusCode: res.statusCode,
               }),
-              err: err => ({
+              err: (err) => ({
                 type: err.type,
                 message: err.message,
                 stack: err.stack,
@@ -68,26 +68,26 @@ import pkg from '../package.json' with { type: 'json' };
             },
             customLogLevel: (req, res, err) => {
               if (res.statusCode >= 500 || err) {
-                return 'error';
+                return 'error'
               }
               if (res.statusCode >= 400) {
-                return 'warn';
+                return 'warn'
               }
               if (res.statusCode >= 300) {
-                return 'info';
+                return 'info'
               }
-              return 'info';
+              return 'info'
             },
             autoLogging: {
-              ignore: req => {
+              ignore: (req) => {
                 if (appConfig.nodeEnv === 'production') {
-                  return req.url?.includes('/health') || false;
+                  return req.url?.includes('/health') || false
                 }
-                return false;
+                return false
               },
             },
           },
-        };
+        }
       },
     }),
     HealthModule,
@@ -101,5 +101,4 @@ import pkg from '../package.json' with { type: 'json' };
     },
   ],
 })
-export class AppModule { }
-
+export class AppModule {}
