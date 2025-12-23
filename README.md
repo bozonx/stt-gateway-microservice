@@ -97,12 +97,32 @@ STT variables:
 
 ## API
 
-- See [API documentation](docs/API.md) for complete endpoint reference, requests/responses, and status codes.
+Complete API documentation with all endpoints, request/response formats, error codes, and examples is available in [API documentation](docs/API.md).
 
-Quick summary of available endpoints:
+### Available Endpoints
 
-- `GET /{BASE_PATH}/api/v1/health` — health check
-- `POST /{BASE_PATH}/api/v1/transcribe` — synchronous transcription by audio URL
+#### Health Check
+- **Endpoint:** `GET /{BASE_PATH}/api/v1/health`
+- **Description:** Simple health check to verify service availability
+- **Response:** `{"status": "ok"}`
+
+#### Transcribe Audio
+- **Endpoint:** `POST /{BASE_PATH}/api/v1/transcribe`
+- **Description:** Synchronous audio transcription from a public URL
+- **Request body:**
+  - `audioUrl` (required) — Public HTTP(S) URL to audio file
+  - `provider` (optional) — STT provider name (default: `assemblyai`)
+  - `restorePunctuation` (optional) — Restore punctuation (default: `true`)
+  - `language` (optional) — Language code (e.g., `en`, `es`, `fr`)
+  - `formatText` (optional) — Format transcribed text (default: `false`)
+  - `apiKey` (optional) — Provider API key (falls back to `ASSEMBLYAI_API_KEY`)
+- **Response:** Transcription result with text, metadata, and processing time
+
+**Common error responses:**
+- `400` — Invalid URL, private host, file too large, unsupported provider
+- `401` — Missing provider API key
+- `499` — Client closed request
+- `504` — Transcription timeout (exceeds `STT_MAX_SYNC_WAIT_MINUTES`)
 
 ### Transcription behavior (high level)
 

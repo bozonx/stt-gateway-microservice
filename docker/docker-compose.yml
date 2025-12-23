@@ -9,20 +9,22 @@ services:
     user: '1000:1000'
     ports:
       - '8080:8080'
+    env_file:
+      - .env
     environment:
-      - TZ=UTC
-      - LISTEN_PORT=8080
-      # - BASE_PATH=
-      - LOG_LEVEL=warn
-      - STT_DEFAULT_PROVIDER=assemblyai
-      - STT_ALLOWED_PROVIDERS=assemblyai
-      - STT_MAX_FILE_SIZE_MB=100
-      - STT_REQUEST_TIMEOUT_SECONDS=15
-      - STT_POLL_INTERVAL_MS=1500
-      - STT_MAX_SYNC_WAIT_MINUTES=3
-      - ASSEMBLYAI_API_KEY=
+      - TZ=${TZ:-UTC}
+      - LISTEN_PORT=${LISTEN_PORT:-8080}
+      # - BASE_PATH=${BASE_PATH:-}
+      - LOG_LEVEL=${LOG_LEVEL:-warn}
+      - STT_DEFAULT_PROVIDER=${STT_DEFAULT_PROVIDER:-assemblyai}
+      - STT_ALLOWED_PROVIDERS=${STT_ALLOWED_PROVIDERS:-assemblyai}
+      - STT_MAX_FILE_SIZE_MB=${STT_MAX_FILE_SIZE_MB:-100}
+      - STT_REQUEST_TIMEOUT_SECONDS=${STT_REQUEST_TIMEOUT_SECONDS:-15}
+      - STT_POLL_INTERVAL_MS=${STT_POLL_INTERVAL_MS:-1500}
+      - STT_MAX_SYNC_WAIT_MINUTES=${STT_MAX_SYNC_WAIT_MINUTES:-3}
+      - ASSEMBLYAI_API_KEY=${ASSEMBLYAI_API_KEY:-}
     healthcheck:
-      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/v1/health || exit 1']
+      test: [ 'CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/v1/health || exit 1' ]
       interval: 30s
       timeout: 3s
       retries: 3
