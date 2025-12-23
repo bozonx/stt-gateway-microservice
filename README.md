@@ -113,7 +113,7 @@ Complete API documentation with all endpoints, request/response formats, error c
   - `audioUrl` (required) — Public HTTP(S) URL to audio file
   - `provider` (optional) — STT provider name (default: `assemblyai`)
   - `restorePunctuation` (optional) — Restore punctuation (default: `true`)
-  - `language` (optional) — Language code (e.g., `en`, `es`, `fr`)
+  - `language` (optional) — Source language code (e.g., `en`, `ru`, `en-US`). Leave empty for auto-detect when supported.
   - `formatText` (optional) — Format transcribed text (default: `false`)
   - `apiKey` (optional) — Provider API key (falls back to `ASSEMBLYAI_API_KEY`)
 - **Response:** Transcription result with text, metadata, and processing time
@@ -160,7 +160,7 @@ curl -X POST \
 ```
 
 Notes:
-- The `language` value is trimmed and sent to the provider as-is. See AssemblyAI's supported languages: https://www.assemblyai.com/docs/pre-recorded-audio/supported-languages.
+- The `language` value is trimmed and sent to the provider as-is. It specifies the source language of the audio. See AssemblyAI's supported languages: https://www.assemblyai.com/docs/pre-recorded-audio/supported-languages.
 
 See [API documentation](docs/API.md) for full details.
 

@@ -5,7 +5,7 @@ export interface TranscriptionRequestByUrl {
   // If true/false is provided, provider should explicitly control punctuation restoration.
   // When undefined, provider defaults apply (e.g., true for AssemblyAI).
   restorePunctuation?: boolean
-  // Explicit language code (e.g., 'en', 'ru', 'en-US') when supported
+  // Explicit source language code (e.g., 'en', 'ru', 'en-US') when supported
   language?: string
   // Format text output (e.g., punctuation, capitalization)
   formatText?: boolean
@@ -21,7 +21,7 @@ export interface TranscriptionResult {
   text: string
   requestId: string
   durationSec?: number
-  language?: string
+  language?: string // Detected or specified source language
   confidenceAvg?: number
   words?: WordTiming[]
   // Whether punctuation has been restored/kept by provider

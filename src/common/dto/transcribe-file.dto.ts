@@ -14,6 +14,7 @@ export class TranscribeFileDto {
   @IsBoolean()
   public readonly restorePunctuation?: boolean;
 
+  /** Explicit source language code (e.g., 'en', 'ru') */
   @IsOptional()
   @IsString()
   public readonly language?: string;

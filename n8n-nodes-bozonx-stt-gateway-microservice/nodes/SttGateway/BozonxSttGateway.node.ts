@@ -54,12 +54,12 @@ export class BozonxSttGateway implements INodeType {
 				description: 'Speech-to-text provider',
 			},
 			{
-				displayName: 'Language',
+				displayName: 'Source Language',
 				name: 'language',
 				type: 'string',
 				default: '',
 				description:
-					"Explicit language code for the audio (e.g., 'en', 'ru', 'en-US'). Leave empty for auto-detect when supported.",
+					"Explicit source language code for the audio (e.g., 'en', 'ru', 'en-US'). Leave empty for auto-detect when supported.",
 			},
 			{
 				displayName: 'Restore Punctuation',

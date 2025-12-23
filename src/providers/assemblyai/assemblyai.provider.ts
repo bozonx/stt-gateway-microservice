@@ -134,7 +134,7 @@ export class AssemblyAiProvider implements SttProvider {
         audio_url: params.audioUrl,
       }
       payload.punctuate = params.restorePunctuation === false ? false : true
-      // Explicit language when provided
+      // Explicit source language when provided
       if (params.language) {
         const trimmed = params.language.trim()
         if (trimmed.length > 0) {
@@ -147,8 +147,7 @@ export class AssemblyAiProvider implements SttProvider {
       this.logger.debug(
         `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
           headers.Authorization
-        )}, punctuate=${Boolean(payload.punctuate)}, language_code=${
-          payload.language_code ?? 'auto'
+        )}, punctuate=${Boolean(payload.punctuate)}, language_code=${payload.language_code ?? 'auto'
         }, format_text=${Boolean(payload.format_text)}`
       )
 
@@ -179,7 +178,7 @@ export class AssemblyAiProvider implements SttProvider {
 
       // Poll loop
       let pollCount = 0
-      for (;;) {
+      for (; ;) {
         if (signal.aborted) {
           throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
         }

@@ -27,7 +27,7 @@ describe('TranscribeFileDto', () => {
     expect(errs.length).toBeGreaterThan(0);
   });
 
-  it('accepts optional language string', async () => {
+  it('accepts optional source language string', async () => {
     const obj = plainToInstance(TranscribeFileDto, {
       audioUrl: 'https://example.com/a.mp3',
       language: 'en-US',

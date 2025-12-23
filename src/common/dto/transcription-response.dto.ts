@@ -10,6 +10,7 @@ export class TranscriptionResponseDto {
 
   public durationSec?: number;
 
+  /** Detected or specified source language */
   public language?: string;
 
   public confidenceAvg?: number;

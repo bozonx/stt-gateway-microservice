@@ -65,7 +65,7 @@ curl http://localhost:8080/api/v1/health
 | `audioUrl` | string | **Yes** | Public HTTP(S) URL to the audio file. Must start with `http://` or `https://`. |
 | `provider` | string | No | STT provider name (e.g., `assemblyai`). Defaults to `STT_DEFAULT_PROVIDER` if not specified. |
 | `restorePunctuation` | boolean | No | Whether to restore punctuation in the transcription. Default: `true`. |
-| `language` | string | No | Language code for transcription (e.g., `en`, `es`, `fr`). See provider documentation for supported languages. Value is trimmed before sending to provider. |
+| `language` | string | No | Source language code for transcription (e.g., `en`, `es`, `fr`). See provider documentation for supported languages. Value is trimmed before sending to provider. |
 | `formatText` | boolean | No | Whether to format the transcribed text. Default: `false`. |
 | `apiKey` | string | No | Provider API key. If not provided, uses `ASSEMBLYAI_API_KEY` from environment. |
 
@@ -109,7 +109,7 @@ curl http://localhost:8080/api/v1/health
 | `provider` | string | Name of the STT provider used. |
 | `requestId` | string | Unique identifier for this transcription request. |
 | `durationSec` | number (optional) | Duration of the audio file in seconds. |
-| `language` | string (optional) | Detected or specified language. |
+| `language` | string (optional) | Detected or specified source language. |
 | `confidenceAvg` | number (optional) | Average confidence score (0-1). |
 | `wordsCount` | number (optional) | Number of words in the transcription. |
 | `processingMs` | number | Total processing time in milliseconds. |
@@ -334,9 +334,9 @@ The service blocks requests to private and loopback addresses to prevent Server-
 
 ---
 
-## Language Support
+## Source Language Support
 
-The `language` parameter is trimmed and passed directly to the provider. Supported languages depend on the provider.
+The `language` parameter is trimmed and passed directly to the provider. Supported source languages depend on the provider.
 
 **AssemblyAI supported languages:**
 - See official documentation: https://www.assemblyai.com/docs/pre-recorded-audio/supported-languages

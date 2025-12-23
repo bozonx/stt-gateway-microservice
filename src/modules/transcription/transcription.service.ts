@@ -105,7 +105,7 @@ export class TranscriptionService {
     provider?: string
     restorePunctuation?: boolean
     apiKey?: string
-    language?: string
+    language?: string /** Explicit source language code */
     formatText?: boolean
     signal?: AbortSignal
   }): Promise<{
@@ -113,7 +113,7 @@ export class TranscriptionService {
     provider: string
     requestId: string
     durationSec?: number
-    language?: string
+    language?: string /** Detected or specified source language */
     confidenceAvg?: number
     wordsCount?: number
     processingMs: number
