@@ -91,9 +91,9 @@ STT variables:
 - `MAX_FILE_SIZE_MB` — file size limit in MB (checked via `Content-Length` on HEAD)
 - `PROVIDER_API_TIMEOUT_SECONDS` — single HTTP request timeout to provider
 - `POLL_INTERVAL_MS` — polling interval in milliseconds when waiting for result
-- `MAX_WAIT_MINUTES` — max synchronous wait before returning `504`
+- `DEFAULT_MAX_WAIT_MINUTES` — max synchronous wait before returning `504`
 - `MAX_RETRIES` — maximum number of retries for the initial submit request (default: 3)
-- `RETRY_DELAY_MS` — delay between retries in milliseconds (default: 1000)
+- `RETRY_DELAY_MS` — delay between retries in milliseconds (default: 1500)
 - `ASSEMBLYAI_API_KEY` — optional default provider key (used if request has no `apiKey`)
 
 ## API
@@ -167,8 +167,6 @@ curl http://localhost:8080/api/v1/health
 | `formatText` | boolean | No | Whether to format the transcribed text. Default: `false`. |
 | `apiKey` | string | No | Provider API key. If not provided, uses `ASSEMBLYAI_API_KEY` from environment. |
 | `maxWaitMinutes` | number | No | Override max synchronous wait time in minutes. |
-| `maxRetries` | number | No | Override maximum number of retries for submission. |
-| `retryDelayMs` | number | No | Override delay between retries in milliseconds. |
 
 **Request Example:**
 ```json
@@ -258,7 +256,7 @@ All error responses follow a consistent format:
 - **404 Not Found**: Endpoint does not exist.
 - **499 Client Closed Request**: Client closed the connection before the request completed.
 - **500 Internal Server Error**: Unexpected error on the server.
-- **504 Gateway Timeout**: Transcription took longer than `MAX_WAIT_MINUTES`.
+- **504 Gateway Timeout**: Transcription took longer than `DEFAULT_MAX_WAIT_MINUTES`.
 
 ---
 
@@ -268,7 +266,7 @@ All error responses follow a consistent format:
 |-----------|---------------------|---------|-------------|
 | Request timeout | `PROVIDER_API_TIMEOUT_SECONDS` | 30 | Timeout for individual HTTP requests to the provider. |
 | Polling interval | `POLL_INTERVAL_MS` | 1000 | Interval between status checks when waiting for results. |
-| Max sync wait | `MAX_WAIT_MINUTES` | 10 | Maximum time to wait for transcription before returning `504`. |
+| Max sync wait | `DEFAULT_MAX_WAIT_MINUTES` | 10 | Maximum time to wait for transcription before returning `504`. |
 | Max file size | `MAX_FILE_SIZE_MB` | 100 | Maximum allowed file size (checked via `Content-Length`). |
 | Graceful shutdown | `GRACEFUL_SHUTDOWN_TIMEOUT_MS` | 25000 | Time to wait for active requests during shutdown. |
 
@@ -369,7 +367,7 @@ Adjust verbosity with `LOG_LEVEL`.
 - **400 Private/loopback host:** Use only public hosts.
 - **400 File too large:** The origin returned `Content-Length` above `MAX_FILE_SIZE_MB`.
 - **401 Missing provider API key:** Pass `apiKey` or set `ASSEMBLYAI_API_KEY`.
-- **504 Gateway Timeout**: Increase `MAX_WAIT_MINUTES` or check provider availability.
+- **504 Gateway Timeout**: Increase `DEFAULT_MAX_WAIT_MINUTES` or check provider availability.
 - **Source Language:** If transcription is inaccurate, ensure the correct `language` code is provided. See [AssemblyAI languages](https://www.assemblyai.com/docs/pre-recorded-audio/supported-languages).
 
 ## Development

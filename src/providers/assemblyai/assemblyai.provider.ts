@@ -153,8 +153,8 @@ export class AssemblyAiProvider implements SttProvider {
 
       const id = await (async () => {
         let lastError: any
-        const maxRetries = params.maxRetries ?? this.cfg.maxRetries
-        const retryDelayMs = params.retryDelayMs ?? this.cfg.retryDelayMs
+        const maxRetries = this.cfg.maxRetries
+        const retryDelayMs = this.cfg.retryDelayMs
 
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
           if (signal.aborted) {
@@ -232,7 +232,7 @@ export class AssemblyAiProvider implements SttProvider {
       this.logger.info(`Transcription request created with ID: ${id}`)
 
       const startedAt = Date.now()
-      const maxWaitMinutes = params.maxWaitMinutes ?? this.cfg.maxWaitMinutes
+      const maxWaitMinutes = params.maxWaitMinutes ?? this.cfg.defaultMaxWaitMinutes
       const deadline = startedAt + maxWaitMinutes * 60 * 1000
 
       // Poll loop

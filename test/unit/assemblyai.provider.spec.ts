@@ -20,7 +20,7 @@ describe('AssemblyAiProvider', () => {
 
   beforeEach(async () => {
     process.env.POLL_INTERVAL_MS = '100' // Speed up tests
-    process.env.MAX_WAIT_MINUTES = '1' // 1 minute minimum
+    process.env.DEFAULT_MAX_WAIT_MINUTES = '1' // 1 minute minimum
     process.env.PROVIDER_API_TIMEOUT_SECONDS = '5'
 
     const moduleRef = await Test.createTestingModule({
@@ -88,7 +88,7 @@ describe('AssemblyAiProvider', () => {
   afterEach(() => {
     jest.clearAllMocks()
     delete process.env.POLL_INTERVAL_MS
-    delete process.env.MAX_WAIT_MINUTES
+    delete process.env.DEFAULT_MAX_WAIT_MINUTES
     delete process.env.PROVIDER_API_TIMEOUT_SECONDS
   })
 

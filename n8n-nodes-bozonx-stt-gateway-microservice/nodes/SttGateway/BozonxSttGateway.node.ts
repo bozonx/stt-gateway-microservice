@@ -77,17 +77,36 @@ export class BozonxSttGateway implements INodeType {
 				description: 'Whether to format text output (punctuation, capitalization)',
 			},
 			{
-				displayName: 'Provider API Key',
-				name: 'apiKey',
-				type: 'string',
-				typeOptions: { password: true },
-				default: '',
-				displayOptions: {
-					show: {
-						provider: ['assemblyai'],
+				displayName: 'Additional Options',
+				name: 'additionalFields',
+				type: 'collection',
+				placeholder: 'Add Option',
+				default: {},
+				options: [
+					{
+						displayName: 'Provider API Key',
+						name: 'apiKey',
+						type: 'string',
+						typeOptions: { password: true },
+						default: '',
+						displayOptions: {
+							show: {
+								'/provider': ['assemblyai'],
+							},
+						},
+						description: 'Optional direct provider API key (when allowed by service policy)',
 					},
-				},
-				description: 'Optional direct provider API key (when allowed by service policy)',
+					{
+						displayName: 'Max Wait Minutes',
+						name: 'maxWaitMinutes',
+						type: 'number',
+						default: 0,
+						typeOptions: {
+							minValue: 0,
+						},
+						description: 'Maximum time in minutes to wait for transcription completion. 0 means use service default.',
+					},
+				],
 			},
 		],
 	};
@@ -103,7 +122,9 @@ export class BozonxSttGateway implements INodeType {
 				const restorePunctuation = this.getNodeParameter('restorePunctuation', i) as boolean;
 				const language = (this.getNodeParameter('language', i, '') as string).trim();
 				const formatText = this.getNodeParameter('formatText', i) as boolean;
-				const apiKey = provider ? (this.getNodeParameter('apiKey', i) as string) : '';
+				const additionalFields = this.getNodeParameter('additionalFields', i, {}) as IDataObject;
+				const apiKey = provider ? (additionalFields.apiKey as string || '') : '';
+				const maxWaitMinutes = additionalFields.maxWaitMinutes as number | undefined;
 
 				if (!audioUrl) {
 					throw new NodeOperationError(this.getNode(), 'Audio URL is required', { itemIndex: i });
@@ -136,6 +157,9 @@ export class BozonxSttGateway implements INodeType {
 						if (language) body.language = language;
 						if (formatText === false) body.formatText = false;
 						if (apiKey) body.apiKey = apiKey;
+						if (maxWaitMinutes !== undefined && maxWaitMinutes > 0) {
+							body.maxWaitMinutes = maxWaitMinutes;
+						}
 						return body;
 					})(),
 				};

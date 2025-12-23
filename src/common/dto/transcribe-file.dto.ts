@@ -1,4 +1,4 @@
-import { IsBoolean, IsOptional, IsString, IsUrl, Matches } from 'class-validator';
+import { IsBoolean, IsNumber, IsOptional, IsString, IsUrl, Matches, Min } from 'class-validator';
 
 export class TranscribeFileDto {
   @IsString()
@@ -28,11 +28,7 @@ export class TranscribeFileDto {
   public readonly apiKey?: string;
 
   @IsOptional()
+  @IsNumber()
+  @Min(1)
   public readonly maxWaitMinutes?: number;
-
-  @IsOptional()
-  public readonly maxRetries?: number;
-
-  @IsOptional()
-  public readonly retryDelayMs?: number;
 }

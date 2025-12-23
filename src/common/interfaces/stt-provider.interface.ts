@@ -9,12 +9,8 @@ export interface TranscriptionRequestByUrl {
   language?: string
   // Format text output (e.g., punctuation, capitalization)
   formatText?: boolean
-  // Total synchronization timeout in minutes
+  // Total synchronization timeout in minutes (optional override)
   maxWaitMinutes?: number
-  // Maximum number of retries for submission
-  maxRetries?: number
-  // Delay between retries in milliseconds
-  retryDelayMs?: number
 }
 
 export interface WordTiming {
