@@ -74,7 +74,7 @@ export class TranscriptionService {
       const req$ = this.http.head(audioUrl, {
         validateStatus: () => true,
         signal,
-        timeout: this.cfg.requestTimeoutSeconds * 1000,
+        timeout: this.cfg.providerApiTimeoutSeconds * 1000,
       })
       const res = await lastValueFrom(req$)
       const len = res.headers['content-length']
@@ -107,7 +107,7 @@ export class TranscriptionService {
     apiKey?: string
     language?: string /** Explicit source language code */
     formatText?: boolean
-    totalTimeoutMinutes?: number
+    maxWaitMinutes?: number
     maxRetries?: number
     retryDelayMs?: number
     signal?: AbortSignal
@@ -181,7 +181,7 @@ export class TranscriptionService {
         restorePunctuation: params.restorePunctuation,
         language: trimmedLanguage,
         formatText: params.formatText,
-        totalTimeoutMinutes: params.totalTimeoutMinutes ?? this.cfg.totalTimeoutMinutes,
+        maxWaitMinutes: params.maxWaitMinutes ?? this.cfg.maxWaitMinutes,
         maxRetries: params.maxRetries ?? this.cfg.maxRetries,
         retryDelayMs: params.retryDelayMs ?? this.cfg.retryDelayMs,
       })

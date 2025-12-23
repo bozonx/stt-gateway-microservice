@@ -178,7 +178,7 @@ export class AssemblyAiProvider implements SttProvider {
               headers,
               validateStatus: () => true,
               signal,
-              timeout: this.cfg.requestTimeoutSeconds * 1000,
+              timeout: this.cfg.providerApiTimeoutSeconds * 1000,
             })
 
             const createRes = await lastValueFrom(create$)
@@ -232,8 +232,8 @@ export class AssemblyAiProvider implements SttProvider {
       this.logger.info(`Transcription request created with ID: ${id}`)
 
       const startedAt = Date.now()
-      const totalTimeoutMinutes = params.totalTimeoutMinutes ?? this.cfg.totalTimeoutMinutes
-      const deadline = startedAt + totalTimeoutMinutes * 60 * 1000
+      const maxWaitMinutes = params.maxWaitMinutes ?? this.cfg.maxWaitMinutes
+      const deadline = startedAt + maxWaitMinutes * 60 * 1000
 
       // Poll loop
       let pollCount = 0
@@ -242,7 +242,7 @@ export class AssemblyAiProvider implements SttProvider {
           throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
         }
         if (Date.now() > deadline) {
-          this.logger.error(`Transcription timeout after ${totalTimeoutMinutes} minutes for ID: ${id}`)
+          this.logger.error(`Transcription timeout after ${maxWaitMinutes} minutes for ID: ${id}`)
           throw new GatewayTimeoutException('TRANSCRIPTION_TIMEOUT')
         }
 
@@ -256,7 +256,7 @@ export class AssemblyAiProvider implements SttProvider {
             headers,
             validateStatus: () => true,
             signal,
-            timeout: this.cfg.requestTimeoutSeconds * 1000,
+            timeout: this.cfg.providerApiTimeoutSeconds * 1000,
           })
           getRes = await lastValueFrom(get$)
         } catch (err: any) {

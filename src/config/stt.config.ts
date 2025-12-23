@@ -27,7 +27,7 @@ export class SttConfig {
   @IsInt()
   @Min(1)
   @Max(300)
-  public requestTimeoutSeconds!: number;
+  public providerApiTimeoutSeconds!: number;
 
   @IsInt()
   @Min(100)
@@ -37,7 +37,7 @@ export class SttConfig {
   @IsInt()
   @Min(1)
   @Max(60)
-  public totalTimeoutMinutes!: number;
+  public maxWaitMinutes!: number;
 
   @IsInt()
   @Min(0)
@@ -67,9 +67,9 @@ export default registerAs('stt', (): SttConfig => {
       return list.length ? list : undefined;
     })(),
     maxFileMb: parseInt(process.env.MAX_FILE_SIZE_MB ?? '100', 10),
-    requestTimeoutSeconds: parseInt(process.env.REQUEST_TIMEOUT_SECONDS ?? '15', 10),
+    providerApiTimeoutSeconds: parseInt(process.env.PROVIDER_API_TIMEOUT_SECONDS ?? '15', 10),
     pollIntervalMs: parseInt(process.env.POLL_INTERVAL_MS ?? '1500', 10),
-    totalTimeoutMinutes: parseInt(process.env.TOTAL_TIMEOUT_MINUTES ?? '3', 10),
+    maxWaitMinutes: parseInt(process.env.MAX_WAIT_MINUTES ?? '3', 10),
     maxRetries: parseInt(process.env.MAX_RETRIES ?? '3', 10),
     retryDelayMs: parseInt(process.env.RETRY_DELAY_MS ?? '1000', 10),
     assemblyAiApiKey: process.env.ASSEMBLYAI_API_KEY,

@@ -10,7 +10,7 @@ export interface TranscriptionRequestByUrl {
   // Format text output (e.g., punctuation, capitalization)
   formatText?: boolean
   // Total synchronization timeout in minutes
-  totalTimeoutMinutes?: number
+  maxWaitMinutes?: number
   // Maximum number of retries for submission
   maxRetries?: number
   // Delay between retries in milliseconds
