@@ -1,5 +1,9 @@
 # CHANGELOG
 
+## 1.3.1 — AssemblyAI Language Auto-Detection
+- When `language` is omitted in `/transcribe` requests, the service now sends `language_detection: true` to AssemblyAI to avoid defaulting to `en_us`.
+- Updated documentation and unit tests accordingly.
+
 ## 1.3.0 — Graceful Shutdown Implementation
 - Implemented proper graceful shutdown handling for SIGTERM and SIGINT signals
 - Added `GRACEFUL_SHUTDOWN_TIMEOUT_MS` constant (25 seconds) in `app.constants.ts`

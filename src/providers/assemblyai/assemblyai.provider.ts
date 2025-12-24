@@ -149,12 +149,12 @@ export class AssemblyAiProvider implements SttProvider {
         audio_url: params.audioUrl,
       }
       payload.punctuate = params.restorePunctuation === false ? false : true
+      const trimmedLanguage = params.language?.trim()
       // Explicit source language when provided
-      if (params.language) {
-        const trimmed = params.language.trim()
-        if (trimmed.length > 0) {
-          payload.language_code = trimmed
-        }
+      if (trimmedLanguage && trimmedLanguage.length > 0) {
+        payload.language_code = trimmedLanguage
+      } else {
+        payload.language_detection = true
       }
       // Format text output (default: true)
       payload.format_text = params.formatText === false ? false : true
@@ -162,9 +162,11 @@ export class AssemblyAiProvider implements SttProvider {
       this.logger.debug(
         `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
           headers.Authorization
-        )}, punctuate=${Boolean(payload.punctuate)}, language_code=${
-          payload.language_code ?? 'auto'
-        }, format_text=${Boolean(payload.format_text)}`
+        )}, punctuate=${Boolean(payload.punctuate)}, language_detection=${Boolean(
+          payload.language_detection
+        )}, language_code=${payload.language_code ?? 'default'}, format_text=${Boolean(
+          payload.format_text
+        )}`
       )
 
       const id = await (async () => {

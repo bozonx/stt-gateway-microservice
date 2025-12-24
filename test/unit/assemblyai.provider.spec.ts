@@ -20,7 +20,9 @@ describe('AssemblyAiProvider', () => {
   beforeEach(async () => {
     // Mock the sleep method globally for THIS provider instance to avoid real delays
     // This is better than fake timers in complex NestJS/RxJS environments
-    jest.spyOn(AssemblyAiProvider.prototype as any, 'sleep').mockImplementation(() => Promise.resolve())
+    jest
+      .spyOn(AssemblyAiProvider.prototype as any, 'sleep')
+      .mockImplementation(() => Promise.resolve())
 
     process.env.POLL_INTERVAL_MS = '100'
     process.env.DEFAULT_MAX_WAIT_MINUTES = '1'
@@ -53,6 +55,38 @@ describe('AssemblyAiProvider', () => {
     delete process.env.PROVIDER_API_TIMEOUT_SECONDS
   })
 
+  it('should enable language detection when language is not provided', async () => {
+    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
+    const completedResponse = { status: 200, data: { status: 'completed', text: 'Hello world' } }
+
+    const postSpy = jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
+    jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
+
+    await provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
+
+    const payload = postSpy.mock.calls[0]?.[1] as Record<string, unknown>
+    expect(payload.language_detection).toBe(true)
+    expect(payload.language_code).toBeUndefined()
+  })
+
+  it('should pass language_code when language is provided', async () => {
+    const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
+    const completedResponse = { status: 200, data: { status: 'completed', text: 'Hello world' } }
+
+    const postSpy = jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
+    jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
+
+    await provider.submitAndWaitByUrl({
+      audioUrl: mockAudioUrl,
+      apiKey: mockApiKey,
+      language: '  ru  ',
+    })
+
+    const payload = postSpy.mock.calls[0]?.[1] as Record<string, unknown>
+    expect(payload.language_detection).toBeUndefined()
+    expect(payload.language_code).toBe('ru')
+  })
+
   it('should successfully complete transcription (queued → processing → completed)', async () => {
     const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
     const queuedResponse = { status: 200, data: { status: 'queued' } }
@@ -63,7 +97,8 @@ describe('AssemblyAiProvider', () => {
     }
 
     jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-    jest.spyOn(httpService, 'get')
+    jest
+      .spyOn(httpService, 'get')
       .mockReturnValueOnce(of(queuedResponse as any))
       .mockReturnValueOnce(of(processingResponse as any))
       .mockReturnValueOnce(of(completedResponse as any))
@@ -88,8 +123,9 @@ describe('AssemblyAiProvider', () => {
       return currentTime
     })
 
-    await expect(provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey }))
-      .rejects.toThrow(GatewayTimeoutException)
+    await expect(
+      provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
+    ).rejects.toThrow(GatewayTimeoutException)
   })
 
   it('should retry submission on 500 error', async () => {
@@ -97,7 +133,8 @@ describe('AssemblyAiProvider', () => {
     const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
     const completedResponse = { status: 200, data: { status: 'completed', text: 'Retry success' } }
 
-    jest.spyOn(httpService, 'post')
+    jest
+      .spyOn(httpService, 'post')
       .mockReturnValueOnce(of(errorResponse as any))
       .mockReturnValueOnce(of(createResponse as any))
     jest.spyOn(httpService, 'get').mockReturnValueOnce(of(completedResponse as any))
@@ -110,10 +147,14 @@ describe('AssemblyAiProvider', () => {
   it('should continue polling on 500 error during status check', async () => {
     const createResponse = { status: 200, data: { id: mockTranscriptId, status: 'queued' } }
     const errorResponse = { status: 500, data: { message: 'Err' } }
-    const completedResponse = { status: 200, data: { status: 'completed', text: 'Polling success' } }
+    const completedResponse = {
+      status: 200,
+      data: { status: 'completed', text: 'Polling success' },
+    }
 
     jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
-    jest.spyOn(httpService, 'get')
+    jest
+      .spyOn(httpService, 'get')
       .mockReturnValueOnce(of(errorResponse as any))
       .mockReturnValueOnce(of(completedResponse as any))
 
@@ -140,7 +181,8 @@ describe('AssemblyAiProvider', () => {
     jest.spyOn(httpService, 'post').mockReturnValueOnce(of(createResponse as any))
     jest.spyOn(httpService, 'get').mockReturnValueOnce(of(errorResponse as any))
 
-    await expect(provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey }))
-      .rejects.toThrow('Internal fail')
+    await expect(
+      provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
+    ).rejects.toThrow('Internal fail')
   })
 })

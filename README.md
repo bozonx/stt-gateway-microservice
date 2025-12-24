@@ -163,8 +163,8 @@ curl http://localhost:8080/api/v1/health
 | `audioUrl` | string | **Yes** | Public HTTP(S) URL to the audio file. Must start with `http://` or `https://`. |
 | `provider` | string | No | STT provider name (e.g., `assemblyai`). Defaults to `DEFAULT_PROVIDER` if not specified. |
 | `restorePunctuation` | boolean | No | Whether to restore punctuation in the transcription. Default: `true`. |
-| `language` | string | No | Source language code for transcription (e.g., `en`, `es`, `fr`). See provider documentation for supported languages. Value is trimmed before sending to provider. |
-| `formatText` | boolean | No | Whether to format the transcribed text. Default: `false`. |
+| `language` | string | No | Source language code for transcription (e.g., `en`, `es`, `fr`). If omitted, the service enables provider language auto-detection (AssemblyAI: `language_detection=true`). Value is trimmed before sending to provider. |
+| `formatText` | boolean | No | Whether to format the transcribed text. Default: `true`. |
 | `apiKey` | string | No | Provider API key. If not provided, uses `ASSEMBLYAI_API_KEY` from environment. |
 | `maxWaitMinutes` | number | No | Override max synchronous wait time in minutes. |
 
