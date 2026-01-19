@@ -109,6 +109,7 @@ export class TranscriptionService {
     formatText?: boolean
     maxWaitMinutes?: number
     signal?: AbortSignal
+    isInternalSource?: boolean
   }): Promise<{
     text: string
     provider: string
@@ -147,7 +148,7 @@ export class TranscriptionService {
       throw new BadRequestException('Only http(s) URLs are allowed')
     }
 
-    if (isPrivateHost(parsed)) {
+    if (!params.isInternalSource && isPrivateHost(parsed)) {
       this.logger.error(`Private host not allowed: ${parsed.hostname}`)
       throw new BadRequestException('Private/loopback hosts are not allowed')
     }
@@ -156,7 +157,11 @@ export class TranscriptionService {
       throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
     }
 
-    await this.enforceSizeLimitIfKnown(params.audioUrl, params.signal)
+    if (!params.isInternalSource) {
+      await this.enforceSizeLimitIfKnown(params.audioUrl, params.signal)
+    } else {
+      this.logger.debug('Skipping size check for internal source')
+    }
 
     const provider = this.selectProvider(params.provider)
 

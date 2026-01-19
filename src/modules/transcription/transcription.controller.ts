@@ -65,38 +65,6 @@ export class TranscriptionController {
 
     this.logger.info('Received streaming transcription request')
 
-    const data = await req.file()
-    if (!data) {
-      throw new BadRequestException('No file provided in multipart request')
-    }
-
-    const { file, filename, mimetype, fields } = data
-    this.logger.debug(`Found file: ${filename} (${mimetype})`)
-
-    // Extract other fields from the multipart request
-    const multipartDto: Partial<TranscribeFileDto> = {}
-
-    // Helper to map fields to DTO
-    const mapField = (fieldName: string, targetKey: keyof TranscribeFileDto, type: 'string' | 'boolean' | 'number') => {
-      const field = fields[fieldName] as any
-      if (field?.value !== undefined) {
-        if (type === 'boolean') {
-          (multipartDto as any)[targetKey] = field.value === 'true' || field.value === true
-        } else if (type === 'number') {
-          (multipartDto as any)[targetKey] = parseInt(field.value, 10)
-        } else {
-          (multipartDto as any)[targetKey] = field.value
-        }
-      }
-    }
-
-    mapField('provider', 'provider', 'string')
-    mapField('restorePunctuation', 'restorePunctuation', 'boolean')
-    mapField('language', 'language', 'string')
-    mapField('formatText', 'formatText', 'boolean')
-    mapField('apiKey', 'apiKey', 'string')
-    mapField('maxWaitMinutes', 'maxWaitMinutes', 'number')
-
     const streamAbortController = new AbortController()
     const onStreamClose = () => {
       if (!streamAbortController.signal.aborted) streamAbortController.abort()
@@ -106,14 +74,50 @@ export class TranscriptionController {
     req.raw.once('aborted', onStreamClose)
 
     try {
-      // 1. Forward stream to tmp-files service
-      const audioUrl = await this.tmpFiles.uploadStream(file, filename, mimetype)
+      const parts = req.parts()
+      let audioUrl: string | undefined
+      const multipartParams: any = {}
+
+      for await (const part of parts) {
+        if (part.type === 'file') {
+          this.logger.debug(`Found file part: ${part.filename} (${part.mimetype})`)
+          
+          try {
+            // 1. Forward stream to tmp-files service
+            audioUrl = await this.tmpFiles.uploadStream(
+              part.file,
+              part.filename,
+              part.mimetype,
+              streamAbortController.signal
+            )
+          } catch (err: any) {
+            this.logger.error(`Failed to upload stream: ${err.message}`)
+            throw err
+          }
+        } else {
+          // It's a field
+          const fieldName = part.fieldname
+          const value = part.value as any
+
+          if (fieldName === 'provider') multipartParams.provider = value
+          else if (fieldName === 'language') multipartParams.language = value
+          else if (fieldName === 'apiKey') multipartParams.apiKey = value
+          else if (fieldName === 'restorePunctuation') multipartParams.restorePunctuation = value === 'true' || value === true
+          else if (fieldName === 'formatText') multipartParams.formatText = value === 'true' || value === true
+          else if (fieldName === 'maxWaitMinutes') multipartParams.maxWaitMinutes = parseInt(value, 10)
+        }
+      }
+
+      if (!audioUrl) {
+        throw new BadRequestException('No file provided in multipart request')
+      }
 
       // 2. Transcribe as usual using the temporary URL
       const result = await this.service.transcribeByUrl({
-        ...(multipartDto as TranscribeFileDto),
+        ...multipartParams,
         audioUrl,
         signal: streamAbortController.signal,
+        isInternalSource: true,
       })
 
       this.logger.info(

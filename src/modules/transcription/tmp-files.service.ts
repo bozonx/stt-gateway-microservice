@@ -25,12 +25,14 @@ export class TmpFilesService {
    * @param stream The audio file stream
    * @param filename Original filename
    * @param contentType MIME type of the file
+   * @param signal Optional AbortSignal for cancellation
    * @returns downloadUrl from the tmp-files service
    */
   public async uploadStream(
     stream: Readable,
     filename: string,
-    contentType: string
+    contentType: string,
+    signal?: AbortSignal
   ): Promise<string> {
     this.logger.info(`Forwarding stream to tmp-files service: ${filename} (${contentType})`)
 
@@ -44,6 +46,7 @@ export class TmpFilesService {
           headers: {
             ...form.getHeaders(),
           },
+          signal,
           // We don't want to buffer the whole file in memory if we can avoid it.
           // Axios + FormData usually handles streams well, but we need to ensure it's not buffered.
           maxBodyLength: Infinity,
