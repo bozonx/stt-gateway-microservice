@@ -1,5 +1,5 @@
 import { Module, OnModuleInit } from '@nestjs/common'
-import { HttpModule } from '@nestjs/axios'
+
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TranscriptionService } from './transcription.service.js'
 import { TranscriptionController } from './transcription.controller.js'
@@ -16,20 +16,7 @@ import { ModuleRef, HttpAdapterHost } from '@nestjs/core'
  * Provides speech-to-text transcription functionality with pluggable provider support
  */
 @Module({
-  imports: [
-    ConfigModule,
-    HttpModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (cfg: ConfigService) => {
-        const timeoutSec = cfg.get<number>('stt.providerApiTimeoutSeconds', 15)
-        return {
-          timeout: timeoutSec * 1000,
-          maxRedirects: 3,
-          validateStatus: () => true,
-        }
-      },
-    }),
-  ],
+  imports: [ConfigModule],
   controllers: [TranscriptionController],
   providers: [
     TranscriptionService,

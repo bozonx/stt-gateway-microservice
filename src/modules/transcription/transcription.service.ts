@@ -9,8 +9,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PinoLogger } from 'nestjs-pino'
-import { lastValueFrom } from 'rxjs'
-import { HttpService } from '@nestjs/axios'
+import { request } from 'undici'
 import type {
   SttProvider,
   TranscriptionResult,
@@ -25,7 +24,6 @@ export class TranscriptionService {
   private readonly cfg: SttConfig
 
   constructor(
-    private readonly http: HttpService,
     @Optional() private readonly registry: SttProviderRegistry | undefined,
     private readonly configService: ConfigService,
     @Inject(PinoLogger) private readonly logger: PinoLogger,
@@ -71,14 +69,13 @@ export class TranscriptionService {
       hostForLog ? `Checking file size for host: ${hostForLog}` : 'Checking file size'
     )
     try {
-      const req$ = this.http.head(audioUrl, {
-        validateStatus: () => true,
+      const { headers } = await request(audioUrl, {
+        method: 'HEAD',
         signal,
-        timeout: this.cfg.providerApiTimeoutSeconds * 1000,
+        headersTimeout: this.cfg.providerApiTimeoutSeconds * 1000,
       })
-      const res = await lastValueFrom(req$)
-      const len = res.headers['content-length']
-        ? parseInt(res.headers['content-length'] as string, 10)
+      const len = headers['content-length']
+        ? parseInt(headers['content-length'] as string, 10)
         : undefined
 
       if (len) {

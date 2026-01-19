@@ -1,4 +1,4 @@
-import { HttpService } from '@nestjs/axios'
+import { request } from 'undici'
 import {
   Injectable,
   ServiceUnavailableException,
@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { PinoLogger } from 'nestjs-pino'
-import { lastValueFrom } from 'rxjs'
+
 import type {
   SttProvider,
   TranscriptionRequestByUrl,
@@ -44,7 +44,6 @@ export class AssemblyAiProvider implements SttProvider {
   private readonly shutdownAbortController = new AbortController()
 
   constructor(
-    private readonly http: HttpService,
     private readonly configService: ConfigService,
     @Inject(PinoLogger) private readonly logger: PinoLogger
   ) {
@@ -197,38 +196,37 @@ export class AssemblyAiProvider implements SttProvider {
           }
 
           try {
-            const create$ = this.http.post<AssemblyCreateResponse>(apiUrl, payload, {
-              headers,
-              validateStatus: () => true,
+            const { statusCode, body } = await request(apiUrl, {
+              method: 'POST',
+              headers: { ...headers, 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload),
               signal,
-              timeout: this.cfg.providerApiTimeoutSeconds * 1000,
+              headersTimeout: this.cfg.providerApiTimeoutSeconds * 1000,
             })
 
-            const createRes = await lastValueFrom(create$)
+            const createResData = (await body.json()) as AssemblyCreateResponse
+
             this.logger.debug(
-              `AssemblyAI create response: status=${createRes.status}, hasId=${Boolean(
-                createRes.data?.id
-              )}`
+              `AssemblyAI create response: status=${statusCode}, hasId=${Boolean(createResData?.id)}`
             )
 
-            if (createRes.status >= 400 || !createRes.data?.id) {
-              const errorDetail = createRes.data
-                ? JSON.stringify(createRes.data)
+            if (statusCode >= 400 || !createResData?.id) {
+              const errorDetail = createResData
+                ? JSON.stringify(createResData)
                 : 'no response body'
               // Determine if error is retryable (429, 5xx, network errors)
-              const isRetryable =
-                createRes.status === 429 || createRes.status >= 500 || createRes.status === 0
+              const isRetryable = statusCode === 429 || statusCode >= 500 || statusCode === 0
 
               if (isRetryable && !isLastAttempt) {
                 this.logger.warn(
-                  `Failed to create transcription (retryable status ${createRes.status}). Error: ${errorDetail}`
+                  `Failed to create transcription (retryable status ${statusCode}). Error: ${errorDetail}`
                 )
                 lastError = new ServiceUnavailableException('Failed to create transcription')
                 continue
               }
 
               this.logger.error(
-                `Failed to create transcription. Status: ${createRes.status}, Response: ${errorDetail}`
+                `Failed to create transcription. Status: ${statusCode}, Response: ${errorDetail}`
               )
               throw new ServiceUnavailableException('Failed to create transcription')
             }
@@ -240,7 +238,7 @@ export class AssemblyAiProvider implements SttProvider {
               )
             }
 
-            return createRes.data.id
+            return createResData.id
           } catch (err: any) {
             if (signal.aborted) throw err
             // Determine if error is retryable (timeouts, network errors, 429, 5xx)
@@ -287,16 +285,21 @@ export class AssemblyAiProvider implements SttProvider {
         await this.sleep(currentPollInterval, signal)
         pollCount++
 
-        let getRes
+        let statusCode = 0
+        let responseBody: AssemblyTranscriptResponse | undefined
+
         try {
           const getUrl = `${ASSEMBLYAI_API.BASE_URL}${ASSEMBLYAI_API.TRANSCRIPTS_ENDPOINT}/${id}`
-          const get$ = this.http.get<AssemblyTranscriptResponse>(getUrl, {
+
+          const res = await request(getUrl, {
+            method: 'GET',
             headers,
-            validateStatus: () => true,
             signal,
-            timeout: this.cfg.providerApiTimeoutSeconds * 1000,
+            headersTimeout: this.cfg.providerApiTimeoutSeconds * 1000,
           })
-          getRes = await lastValueFrom(get$)
+          statusCode = res.statusCode
+          responseBody = (await res.body.json()) as AssemblyTranscriptResponse
+
           // Reset consecutive errors on successful request
           consecutiveErrors = 0
           currentPollInterval = this.cfg.pollIntervalMs
@@ -328,24 +331,26 @@ export class AssemblyAiProvider implements SttProvider {
           )
 
           this.logger.warn(
-            `Polling error ${consecutiveErrors}/${RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS} for ID: ${id}: ${err.message}. Retrying in ${Math.round(currentPollInterval)}ms...`
+            `Polling error ${consecutiveErrors}/${RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS} for ID: ${id}: ${err.message}. Retrying in ${Math.round(
+              currentPollInterval
+            )}ms...`
           )
           continue
         }
 
-        const body: AssemblyTranscriptResponse | undefined = getRes.data
+        const body: AssemblyTranscriptResponse | undefined = responseBody
         this.logger.debug(
-          `AssemblyAI poll response: status=${getRes.status}, bodyStatus=${body?.status ?? 'n/a'}`
+          `AssemblyAI poll response: status=${statusCode}, bodyStatus=${body?.status ?? 'n/a'}`
         )
 
         // Distinguish between client errors (4xx) and server errors (5xx)
-        if (getRes.status >= 400 && getRes.status < 500) {
+        if (statusCode >= 400 && statusCode < 500) {
           // Client errors (401, 403, 404, etc.) should not be retried
-          this.logger.error(`Client error during polling for ID: ${id} (status ${getRes.status})`)
-          throw new ServiceUnavailableException(`Polling failed with status ${getRes.status}`)
+          this.logger.error(`Client error during polling for ID: ${id} (status ${statusCode})`)
+          throw new ServiceUnavailableException(`Polling failed with status ${statusCode}`)
         }
 
-        if (getRes.status >= 500 || !body) {
+        if (statusCode >= 500 || !body) {
           consecutiveErrors++
 
           if (consecutiveErrors >= RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS) {
@@ -362,14 +367,12 @@ export class AssemblyAiProvider implements SttProvider {
           )
 
           this.logger.warn(
-            `Server error ${consecutiveErrors}/${RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS} for ID: ${id} (status ${getRes.status}). Retrying in ${Math.round(currentPollInterval)}ms...`
+            `Server error ${consecutiveErrors}/${RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS} for ID: ${id} (status ${statusCode}). Retrying in ${Math.round(
+              currentPollInterval
+            )}ms...`
           )
           continue
         }
-
-        // Reset on successful response
-        consecutiveErrors = 0
-        currentPollInterval = this.cfg.pollIntervalMs
 
         this.logger.debug(`Transcription status: ${body.status} for ID: ${id}`)
 

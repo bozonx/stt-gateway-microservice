@@ -23,7 +23,6 @@
   },
   "dependencies": {
     "@fastify/multipart": "^9.4.0",
-    "@nestjs/axios": "^4.0.1",
     "@nestjs/common": "^11.1.12",
     "@nestjs/config": "^4.0.2",
     "@nestjs/core": "^11.1.12",
@@ -35,13 +34,15 @@
     "nestjs-pino": "^4.5.0",
     "pino": "^10.2.1",
     "reflect-metadata": "^0.2.2",
-    "rxjs": "^7.8.2"
+    "rxjs": "^7.8.2",
+    "undici": "^7.18.2"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.3",
     "@nestjs/cli": "^11.0.16",
     "@nestjs/schematics": "^11.0.9",
     "@nestjs/testing": "^11.1.12",
+    "@types/form-data": "^2.5.2",
     "@types/jest": "^30.0.0",
     "@types/node": "^25.0.9",
     "@typescript-eslint/eslint-plugin": "^8.53.0",

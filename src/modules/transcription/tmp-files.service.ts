@@ -1,8 +1,7 @@
 import { Injectable, Inject, BadRequestException, InternalServerErrorException } from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
-import { HttpService } from '@nestjs/axios'
+import { request } from 'undici'
 import { PinoLogger } from 'nestjs-pino'
-import { firstValueFrom } from 'rxjs'
 import { Readable } from 'node:stream'
 import FormData from 'form-data'
 import { SttConfig } from '../../config/stt.config.js'
@@ -12,7 +11,6 @@ export class TmpFilesService {
   private readonly cfg: SttConfig
 
   constructor(
-    private readonly http: HttpService,
     private readonly configService: ConfigService,
     @Inject(PinoLogger) private readonly logger: PinoLogger
   ) {
@@ -41,25 +39,31 @@ export class TmpFilesService {
     form.append('ttlMins', this.cfg.tmpFilesDefaultTtlMins.toString())
 
     try {
-      const response = await firstValueFrom(
-        this.http.post(`${this.cfg.tmpFilesBaseUrl}/files`, form, {
-          headers: {
-            ...form.getHeaders(),
-          },
-          signal,
-          // We don't want to buffer the whole file in memory if we can avoid it.
-          // Axios + FormData usually handles streams well, but we need to ensure it's not buffered.
-          maxBodyLength: Infinity,
-          maxContentLength: Infinity,
-        })
-      )
+      const { statusCode, body } = await request(`${this.cfg.tmpFilesBaseUrl}/files`, {
+        method: 'POST',
+        headers: {
+          ...form.getHeaders(),
+        },
+        body: form,
+        signal,
+      })
 
-      if (response.status !== 201) {
-        this.logger.error(`Failed to upload to tmp-files service. Status: ${response.status}`)
+      if (statusCode === 413) {
+        throw new BadRequestException('File too large for temporary storage')
+      }
+
+      const responseBody = (await body.json()) as any
+
+      if (statusCode !== 201) {
+        this.logger.error(
+          `Failed to upload to tmp-files service. Status: ${statusCode}, Body: ${JSON.stringify(
+            responseBody
+          )}`
+        )
         throw new InternalServerErrorException('Failed to upload file to temporary storage')
       }
 
-      const { downloadUrl } = response.data
+      const { downloadUrl } = responseBody
       if (!downloadUrl) {
         this.logger.error('No downloadUrl returned from tmp-files service')
         throw new InternalServerErrorException('Invalid response from temporary storage')
@@ -73,12 +77,11 @@ export class TmpFilesService {
       this.logger.info(`Stream successfully forwarded. Temporary URL: ${finalUrl}`)
       return finalUrl
     } catch (error: any) {
-      this.logger.error(`Error uploading to tmp-files: ${error.message}`)
-      
-      if (error.response?.status === 413) {
-        throw new BadRequestException('File too large for temporary storage')
+      if (error instanceof BadRequestException) {
+        throw error
       }
-      
+      this.logger.error(`Error uploading to tmp-files: ${error.message}`)
+
       throw new InternalServerErrorException(
         `Failed to forward stream to temporary storage: ${error.message}`
       )

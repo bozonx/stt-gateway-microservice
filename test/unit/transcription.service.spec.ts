@@ -1,23 +1,33 @@
+
+import { MockAgent, setGlobalDispatcher } from 'undici'
+import type { TranscriptionService as TranscriptionServiceType } from '../../src/modules/transcription/transcription.service.js'
+
+// Dynamic imports
+const { TranscriptionService } = await import('../../src/modules/transcription/transcription.service.js')
+
 import { Test } from '@nestjs/testing'
-import { HttpModule } from '@nestjs/axios'
 import { ConfigModule } from '@nestjs/config'
-import { TranscriptionService } from '@modules/transcription/transcription.service'
 import { AssemblyAiProvider } from '@/providers/assemblyai/assemblyai.provider'
 import { STT_PROVIDER } from '@common/constants/tokens'
-import { of } from 'rxjs'
-import { HttpService } from '@nestjs/axios'
 import { PinoLogger } from 'nestjs-pino'
 import appConfig from '@config/app.config'
 import sttConfig from '@config/stt.config'
 import { createMockLogger } from '@test/helpers/mocks'
 
 describe('TranscriptionService', () => {
+  let mockAgent: MockAgent
+
+  beforeEach(() => {
+    mockAgent = new MockAgent()
+    mockAgent.disableNetConnect()
+    setGlobalDispatcher(mockAgent)
+  })
+
   it('rejects private host url', async () => {
     const mockProvider = { submitAndWaitByUrl: jest.fn() }
 
     const moduleRef = await Test.createTestingModule({
       imports: [
-        HttpModule,
         ConfigModule.forRoot({
           load: [appConfig, sttConfig],
         }),
@@ -42,6 +52,15 @@ describe('TranscriptionService', () => {
 
   it('returns response shape on success', async () => {
     process.env.ASSEMBLYAI_API_KEY = 'x'
+    
+    // Intercept HEAD request for size check
+    const mockPool = mockAgent.get('https://example.com')
+    mockPool.intercept({
+      path: '/a.mp3',
+      method: 'HEAD',
+    }).reply(200, '', {
+        headers: { 'content-length': '100' }
+    })
 
     const mockProvider = {
       submitAndWaitByUrl: jest.fn().mockResolvedValue({
@@ -56,7 +75,6 @@ describe('TranscriptionService', () => {
 
     const moduleRef = await Test.createTestingModule({
       imports: [
-        HttpModule,
         ConfigModule.forRoot({
           load: [appConfig, sttConfig],
         }),
@@ -73,10 +91,7 @@ describe('TranscriptionService', () => {
           useValue: createMockLogger(),
         },
       ],
-    })
-      .overrideProvider(HttpService)
-      .useValue({ head: () => of({ headers: {} }) })
-      .compile()
+    }).compile()
 
     const svc = moduleRef.get(TranscriptionService)
     const res = await svc.transcribeByUrl({ audioUrl: 'https://example.com/a.mp3' })
@@ -89,6 +104,15 @@ describe('TranscriptionService', () => {
 
   it('trims language before forwarding to provider', async () => {
     process.env.ASSEMBLYAI_API_KEY = 'x'
+    
+    // Intercept HEAD request for size check
+    const mockPool = mockAgent.get('https://example.com')
+    mockPool.intercept({
+      path: '/a.mp3',
+      method: 'HEAD',
+    }).reply(200, '', {
+        headers: { }
+    })
 
     const mockProvider = {
       submitAndWaitByUrl: jest.fn().mockResolvedValue({
@@ -100,7 +124,6 @@ describe('TranscriptionService', () => {
 
     const moduleRef = await Test.createTestingModule({
       imports: [
-        HttpModule,
         ConfigModule.forRoot({
           load: [appConfig, sttConfig],
         }),
@@ -117,10 +140,7 @@ describe('TranscriptionService', () => {
           useValue: createMockLogger(),
         },
       ],
-    })
-      .overrideProvider(HttpService)
-      .useValue({ head: () => of({ headers: {} }) })
-      .compile()
+    }).compile()
 
     const svc = moduleRef.get(TranscriptionService)
     await svc.transcribeByUrl({
@@ -136,6 +156,15 @@ describe('TranscriptionService', () => {
 
   it('forwards AbortSignal to provider', async () => {
     process.env.ASSEMBLYAI_API_KEY = 'x'
+    
+    // Intercept HEAD request for size check
+    const mockPool = mockAgent.get('https://example.com')
+    mockPool.intercept({
+      path: '/a.mp3',
+      method: 'HEAD',
+    }).reply(200, '', {
+        headers: { }
+    })
 
     const mockProvider = {
       submitAndWaitByUrl: jest.fn().mockResolvedValue({
@@ -147,7 +176,6 @@ describe('TranscriptionService', () => {
 
     const moduleRef = await Test.createTestingModule({
       imports: [
-        HttpModule,
         ConfigModule.forRoot({
           load: [appConfig, sttConfig],
         }),
@@ -164,10 +192,7 @@ describe('TranscriptionService', () => {
           useValue: createMockLogger(),
         },
       ],
-    })
-      .overrideProvider(HttpService)
-      .useValue({ head: () => of({ headers: {} }) })
-      .compile()
+    }).compile()
 
     const svc = moduleRef.get(TranscriptionService)
     const ac = new AbortController()
