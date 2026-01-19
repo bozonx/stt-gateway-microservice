@@ -7,12 +7,20 @@ import { Readable } from 'stream'
 describe('Transcription Stream (e2e)', () => {
   let app: NestFastifyApplication
 
+  const originalEnv = process.env
+
   beforeAll(async () => {
+    process.env = {
+      ...originalEnv,
+      TMP_FILES_BASE_URL: 'http://tmp-files-mock:8080/api/v1',
+      ASSEMBLYAI_API_KEY: 'mock-api-key',
+    }
     app = await createTestApp()
   })
 
   afterAll(async () => {
     await app.close()
+    process.env = originalEnv
   })
 
   it('POST /transcribe/stream should forward stream and return transcription', async () => {
