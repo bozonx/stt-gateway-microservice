@@ -1,5 +1,6 @@
 
 import { MockAgent, setGlobalDispatcher } from 'undici'
+import { jest } from '@jest/globals'
 import type { TranscriptionService as TranscriptionServiceType } from '../../src/modules/transcription/transcription.service.js'
 
 // Dynamic imports

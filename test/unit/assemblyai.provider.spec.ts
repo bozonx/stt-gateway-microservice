@@ -1,5 +1,6 @@
 
 import { MockAgent, setGlobalDispatcher } from 'undici'
+import { jest } from '@jest/globals'
 import type { AssemblyAiProvider as AssemblyAiProviderType } from '../../src/providers/assemblyai/assemblyai.provider.js'
 
 // Dynamic imports

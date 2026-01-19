@@ -12,21 +12,10 @@
  */
 
 import { jest } from '@jest/globals'
-import nock from 'nock'
-
-// @ts-ignore
-global.jest = jest
-
 // Block all external network calls; allow localhost for tests that use local adapters
-beforeAll(() => {
-  nock.disableNetConnect()
-  nock.enableNetConnect('127.0.0.1')
-})
+// We use undici MockAgent in tests, so we don't need nock net connect disabling here.
+// Or we can use undici's disableNetConnect() in setup if desired, but 
+// usually it's set per agent.
 
-afterEach(() => {
-  nock.cleanAll()
-})
 
-afterAll(() => {
-  nock.enableNetConnect()
-})
+

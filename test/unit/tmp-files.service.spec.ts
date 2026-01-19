@@ -1,5 +1,6 @@
 
 import { MockAgent, setGlobalDispatcher, getGlobalDispatcher } from 'undici'
+import { jest } from '@jest/globals'
 import { Readable } from 'node:stream'
 
 // Dynamic imports

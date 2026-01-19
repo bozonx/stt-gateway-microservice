@@ -7,6 +7,7 @@
 
 import type { PinoLogger } from 'nestjs-pino'
 import type { ConfigService } from '@nestjs/config'
+import { jest } from '@jest/globals'
 
 /**
  * Creates a mock PinoLogger instance with all required methods
