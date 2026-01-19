@@ -217,17 +217,44 @@ curl http://localhost:8080/api/v1/health
 
 **Example:**
 ```bash
-curl -X POST \
-  http://localhost:8080/api/v1/transcribe \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "audioUrl": "https://example.com/audio.mp3",
-    "provider": "assemblyai",
-    "restorePunctuation": true,
-    "language": "en",
-    "formatText": true,
-    "apiKey": "YOUR_ASSEMBLYAI_KEY"
   }'
+
+---
+
+#### 3. Transcribe Audio Stream
+
+**Endpoint:** `POST /{BASE_PATH}/api/v1/transcribe/stream`
+
+**Description:** Transcribes audio by uploading the file directly as a stream (`multipart/form-data`). The service forwards the stream to a temporary storage microservice, obtains a temporary URL, and then proceeds with transcription through the configured STT provider.
+
+**Request:**
+
+- Method: `POST`
+- Headers:
+  - `Content-Type: multipart/form-data`
+- Body: Multipart form data with the following fields:
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `file` | binary | **Yes** | The audio file content. |
+| `provider` | string | No | STT provider name (e.g., `assemblyai`). |
+| `restorePunctuation` | boolean | No | Whether to restore punctuation. Default: `true`. |
+| `language` | string | No | Source language code (e.g., `en`, `es`). |
+| `formatText` | boolean | No | Whether to format the transcribed text. Default: `true`. |
+| `apiKey` | string | No | Provider API key. |
+| `maxWaitMinutes` | number | No | Override max synchronous wait time in minutes. |
+
+**Success (200 OK):**
+Same response format as `POST /transcribe`.
+
+**Example:**
+```bash
+curl -X POST \
+  http://localhost:8080/api/v1/transcribe/stream \
+  -F "file=@/path/to/audio.mp3" \
+  -F "provider=assemblyai" \
+  -F "language=en"
+```
 ```
 
 ---

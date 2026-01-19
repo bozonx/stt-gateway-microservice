@@ -11,6 +11,14 @@ export class SttConfig {
   @IsString({ each: true })
   public allowedProviders?: string[]
 
+  @IsString()
+  public tmpFilesBaseUrl!: string
+
+  @IsInt()
+  @Min(1)
+  @Max(44640)
+  public tmpFilesDefaultTtlMins!: number
+
   @IsInt()
   @Min(1)
   @Max(1000)
@@ -65,6 +73,9 @@ export default registerAs('stt', (): SttConfig => {
     maxRetries: parseInt(process.env.MAX_RETRIES ?? '3', 10),
     retryDelayMs: parseInt(process.env.RETRY_DELAY_MS ?? '1500', 10),
     assemblyAiApiKey: process.env.ASSEMBLYAI_API_KEY,
+    tmpFilesBaseUrl:
+      process.env.TMP_FILES_BASE_URL ?? 'http://tmp-files-microservice:8080/api/v1',
+    tmpFilesDefaultTtlMins: parseInt(process.env.TMP_FILES_DEFAULT_TTL_MINS ?? '30', 10),
   })
 
   const errors = validateSync(config, {

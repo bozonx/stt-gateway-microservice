@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { Module, OnModuleInit } from '@nestjs/common'
 import { HttpModule } from '@nestjs/axios'
 import { ConfigModule, ConfigService } from '@nestjs/config'
 import { TranscriptionService } from './transcription.service.js'
@@ -7,6 +7,9 @@ import { AssemblyAiProvider } from '../../providers/assemblyai/assemblyai.provid
 import type { SttConfig } from '../../config/stt.config.js'
 import { SttProviderRegistry } from '../../providers/stt-provider.registry.js'
 import { STT_PROVIDER } from '../../common/constants/tokens.js'
+import { TmpFilesService } from './tmp-files.service.js'
+import fastifyMultipart from '@fastify/multipart'
+import { ModuleRef, HttpAdapterHost } from '@nestjs/core'
 
 /**
  * Transcription module
@@ -30,6 +33,7 @@ import { STT_PROVIDER } from '../../common/constants/tokens.js'
   controllers: [TranscriptionController],
   providers: [
     TranscriptionService,
+    TmpFilesService,
     AssemblyAiProvider,
     SttProviderRegistry,
     {
@@ -48,4 +52,21 @@ import { STT_PROVIDER } from '../../common/constants/tokens.js'
   ],
   exports: [TranscriptionService],
 })
-export class TranscriptionModule {}
+export class TranscriptionModule implements OnModuleInit {
+  constructor(private readonly moduleRef: ModuleRef) {}
+
+  async onModuleInit() {
+    const httpAdapterHost = this.moduleRef.get(HttpAdapterHost, { strict: false })
+    const fastify = httpAdapterHost.httpAdapter.getInstance()
+
+    await fastify.register(fastifyMultipart, {
+      limits: {
+        fieldNameSize: 100,
+        fieldSize: 1000,
+        fields: 10,
+        fileSize: 100 * 1024 * 1024,
+        files: 1,
+      },
+    })
+  }
+}
