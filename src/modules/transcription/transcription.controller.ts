@@ -80,6 +80,10 @@ export class TranscriptionController {
 
       for await (const part of parts) {
         if (part.type === 'file') {
+          if (audioUrl) {
+            this.logger.warn('Multiple files provided in multipart request')
+            throw new BadRequestException('Only one file can be provided per request')
+          }
           this.logger.debug(`Found file part: ${part.filename} (${part.mimetype})`)
           
           try {
@@ -104,7 +108,13 @@ export class TranscriptionController {
           else if (fieldName === 'apiKey') multipartParams.apiKey = value
           else if (fieldName === 'restorePunctuation') multipartParams.restorePunctuation = value === 'true' || value === true
           else if (fieldName === 'formatText') multipartParams.formatText = value === 'true' || value === true
-          else if (fieldName === 'maxWaitMinutes') multipartParams.maxWaitMinutes = parseInt(value, 10)
+          else if (fieldName === 'maxWaitMinutes') {
+            const parsed = parseInt(value, 10)
+            if (isNaN(parsed) || parsed < 1) {
+              throw new BadRequestException('maxWaitMinutes must be a positive integer')
+            }
+            multipartParams.maxWaitMinutes = parsed
+          }
         }
       }
 
