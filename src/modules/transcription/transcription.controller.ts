@@ -67,12 +67,38 @@ export class TranscriptionController {
 
     const streamAbortController = new AbortController()
     const onStreamClose = () => {
-      this.logger.warn('Streaming request connection closed')
-      if (!streamAbortController.signal.aborted) streamAbortController.abort()
+      const complete = (req.raw as any).complete === true
+      this.logger.warn(
+        {
+          aborted: req.raw.aborted,
+          complete,
+          destroyed: req.raw.destroyed,
+          headers: {
+            'content-length': req.headers['content-length'],
+            'transfer-encoding': req.headers['transfer-encoding'],
+          },
+        },
+        'Streaming request connection closed'
+      )
+
+      if (req.raw.aborted || !complete) {
+        if (!streamAbortController.signal.aborted) streamAbortController.abort()
+      }
     }
 
     const onStreamAborted = () => {
-      this.logger.warn('Streaming request aborted by client')
+      this.logger.warn(
+        {
+          aborted: req.raw.aborted,
+          complete: (req.raw as any).complete,
+          destroyed: req.raw.destroyed,
+          headers: {
+            'content-length': req.headers['content-length'],
+            'transfer-encoding': req.headers['transfer-encoding'],
+          },
+        },
+        'Streaming request aborted by client'
+      )
       if (!streamAbortController.signal.aborted) streamAbortController.abort()
     }
 
