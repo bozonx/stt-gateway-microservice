@@ -45,18 +45,30 @@ export class AllExceptionsFilter implements ExceptionFilter {
       this.logger.warn(`${request.method} ${request.url} - ${status} - ${message}`)
     }
 
-    if (response.sent || request.raw.destroyed) {
+    if (response.sent) {
       return
     }
 
-    void response.status(status).send({
-      statusCode: status,
-      timestamp: new Date().toISOString(),
-      path: request.url,
-      method: request.method,
-      message,
-      error: errorResponse,
-    })
+    try {
+      void response.status(status).send({
+        statusCode: status,
+        timestamp: new Date().toISOString(),
+        path: request.url,
+        method: request.method,
+        message,
+        error: errorResponse,
+      })
+    } catch (sendErr) {
+      this.logger.warn(
+        {
+          err: sendErr instanceof Error ? sendErr : undefined,
+          reqDestroyed: request.raw.destroyed,
+          resDestroyed: response.raw?.destroyed,
+          resWritableEnded: (response.raw as any)?.writableEnded,
+        },
+        'Failed to send error response'
+      )
+    }
   }
 
   private extractMessage(exception: unknown): string {
