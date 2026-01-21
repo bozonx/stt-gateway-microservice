@@ -67,11 +67,17 @@ export class TranscriptionController {
 
     const streamAbortController = new AbortController()
     const onStreamClose = () => {
+      this.logger.warn('Streaming request connection closed')
+      if (!streamAbortController.signal.aborted) streamAbortController.abort()
+    }
+
+    const onStreamAborted = () => {
+      this.logger.warn('Streaming request aborted by client')
       if (!streamAbortController.signal.aborted) streamAbortController.abort()
     }
 
     req.raw.once('close', onStreamClose)
-    req.raw.once('aborted', onStreamClose)
+    req.raw.once('aborted', onStreamAborted)
 
     try {
       const parts = req.parts()
@@ -85,7 +91,7 @@ export class TranscriptionController {
             throw new BadRequestException('Only one file can be provided per request')
           }
           this.logger.debug(`Found file part: ${part.filename} (${part.mimetype})`)
-          
+
           try {
             // 1. Forward stream to tmp-files service
             audioUrl = await this.tmpFiles.uploadStream(
@@ -106,8 +112,10 @@ export class TranscriptionController {
           if (fieldName === 'provider') multipartParams.provider = value
           else if (fieldName === 'language') multipartParams.language = value
           else if (fieldName === 'apiKey') multipartParams.apiKey = value
-          else if (fieldName === 'restorePunctuation') multipartParams.restorePunctuation = value === 'true' || value === true
-          else if (fieldName === 'formatText') multipartParams.formatText = value === 'true' || value === true
+          else if (fieldName === 'restorePunctuation')
+            multipartParams.restorePunctuation = value === 'true' || value === true
+          else if (fieldName === 'formatText')
+            multipartParams.formatText = value === 'true' || value === true
           else if (fieldName === 'maxWaitMinutes') {
             const parsed = parseInt(value, 10)
             if (isNaN(parsed) || parsed < 1) {
@@ -136,7 +144,7 @@ export class TranscriptionController {
       return result
     } finally {
       req.raw.off('close', onStreamClose)
-      req.raw.off('aborted', onStreamClose)
+      req.raw.off('aborted', onStreamAborted)
     }
   }
 }

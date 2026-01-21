@@ -1,4 +1,10 @@
-import { Injectable, Inject, BadRequestException, InternalServerErrorException } from '@nestjs/common'
+import {
+  Injectable,
+  Inject,
+  BadRequestException,
+  InternalServerErrorException,
+  HttpException,
+} from '@nestjs/common'
 import { ConfigService } from '@nestjs/config'
 import { request } from 'undici'
 import { PinoLogger } from 'nestjs-pino'
@@ -9,6 +15,21 @@ import { SttConfig } from '../../config/stt.config.js'
 @Injectable()
 export class TmpFilesService {
   private readonly cfg: SttConfig
+
+  private isAbortError(error: unknown): boolean {
+    if (!error || typeof error !== 'object') return false
+
+    const err = error as { name?: unknown; code?: unknown; message?: unknown }
+    const name = typeof err.name === 'string' ? err.name : undefined
+    const code = typeof err.code === 'string' ? err.code : undefined
+    const message = typeof err.message === 'string' ? err.message : undefined
+
+    return (
+      name === 'AbortError' ||
+      code === 'UND_ERR_ABORTED' ||
+      message === 'This operation was aborted'
+    )
+  }
 
   constructor(
     private readonly configService: ConfigService,
@@ -80,6 +101,11 @@ export class TmpFilesService {
       if (error instanceof BadRequestException) {
         throw error
       }
+
+      if (this.isAbortError(error) || signal?.aborted) {
+        throw new HttpException('Upload aborted by client', 499)
+      }
+
       this.logger.error(`Error uploading to tmp-files: ${error.message}`)
 
       throw new InternalServerErrorException(
