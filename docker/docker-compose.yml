@@ -13,18 +13,23 @@ services:
       - .env
     environment:
       - TZ=${TZ:-UTC}
+      - LISTEN_HOST=${LISTEN_HOST:-0.0.0.0}
       - LISTEN_PORT=${LISTEN_PORT:-8080}
       # - BASE_PATH=${BASE_PATH:-}
       - LOG_LEVEL=${LOG_LEVEL:-warn}
       - DEFAULT_PROVIDER=${DEFAULT_PROVIDER:-assemblyai}
-      - ALLOWED_PROVIDERS=${ALLOWED_PROVIDERS:-assemblyai}
+      - ALLOWED_PROVIDERS=${ALLOWED_PROVIDERS:-}
       - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-100}
       - PROVIDER_API_TIMEOUT_SECONDS=${PROVIDER_API_TIMEOUT_SECONDS:-15}
       - POLL_INTERVAL_MS=${POLL_INTERVAL_MS:-1500}
       - DEFAULT_MAX_WAIT_MINUTES=${DEFAULT_MAX_WAIT_MINUTES:-3}
+      - MAX_RETRIES=${MAX_RETRIES:-3}
+      - RETRY_DELAY_MS=${RETRY_DELAY_MS:-1500}
       - ASSEMBLYAI_API_KEY=${ASSEMBLYAI_API_KEY:-}
+      - TMP_FILES_BASE_URL=${TMP_FILES_BASE_URL:-http://tmp-files-microservice:8080/api/v1}
+      - TMP_FILES_DEFAULT_TTL_MINS=${TMP_FILES_DEFAULT_TTL_MINS:-10}
     healthcheck:
-      test: [ 'CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/v1/health || exit 1' ]
+      test: ['CMD-SHELL', 'wget -qO- http://127.0.0.1:8080/api/v1/health || exit 1']
       interval: 30s
       timeout: 3s
       retries: 3
