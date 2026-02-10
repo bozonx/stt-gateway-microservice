@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import type { AppConfig } from './config/app.config.js'
 import type { SttConfig } from './config/stt.config.js'
 import type { Logger } from './common/interfaces/logger.interface.js'
-import { HttpError } from './common/errors/http-error.js'
+import { BadRequestError, HttpError } from './common/errors/http-error.js'
 import { TranscriptionService } from './modules/transcription/transcription.service.js'
 import { TmpFilesService } from './modules/transcription/tmp-files.service.js'
 import { AssemblyAiProvider } from './providers/assemblyai/assemblyai.provider.js'
@@ -41,9 +41,21 @@ export function createApp(deps: AppDeps) {
     const message = err instanceof Error ? err.message : 'Internal server error'
 
     if (status >= 500) {
-      logger.error(`${c.req.method} ${c.req.path} - ${status} - ${message}`)
+      logger.error(
+        {
+          statusCode: status,
+          path: c.req.path,
+          method: c.req.method,
+          errorName: err instanceof Error ? err.name : 'UnknownError',
+          errorMessage: message,
+          errorStack: err instanceof Error ? err.stack : undefined,
+        },
+        `${c.req.method} ${c.req.path} - ${status}`
+      )
     } else {
-      logger.warn(`${c.req.method} ${c.req.path} - ${status} - ${message}`)
+      logger.warn(
+        `${c.req.method} ${c.req.path} - ${status} - ${err instanceof Error ? err.name : 'Error'} - ${message}`
+      )
     }
 
     return c.json(
@@ -81,90 +93,51 @@ export function createApp(deps: AppDeps) {
 
   // POST /transcribe — JSON body
   app.post(`${prefix}/transcribe`, async (c) => {
-    const body = await c.req.json()
+    let body: unknown
+    try {
+      body = await c.req.json()
+    } catch {
+      throw new BadRequestError('Invalid JSON body')
+    }
+
+    if (!body || typeof body !== 'object') {
+      throw new BadRequestError('Request body must be a JSON object')
+    }
+
+    const payload = body as Record<string, unknown>
 
     // Validate required field
-    if (!body.audioUrl || typeof body.audioUrl !== 'string') {
-      return c.json(
-        {
-          statusCode: 400,
-          timestamp: new Date().toISOString(),
-          path: c.req.path,
-          method: c.req.method,
-          message: 'audioUrl is required and must be a string',
-          error: 'BadRequestError',
-        },
-        400
-      )
+    if (!payload.audioUrl || typeof payload.audioUrl !== 'string') {
+      throw new BadRequestError('audioUrl is required and must be a string')
     }
 
     // Validate audioUrl format
-    if (!/^https?:\/\//i.test(body.audioUrl)) {
-      return c.json(
-        {
-          statusCode: 400,
-          timestamp: new Date().toISOString(),
-          path: c.req.path,
-          method: c.req.method,
-          message: 'audioUrl must start with http or https',
-          error: 'BadRequestError',
-        },
-        400
-      )
+    if (!/^https?:\/\//i.test(payload.audioUrl)) {
+      throw new BadRequestError('audioUrl must start with http or https')
     }
 
     // Validate optional boolean fields
     for (const field of ['restorePunctuation', 'formatText']) {
-      if (body[field] !== undefined && typeof body[field] !== 'boolean') {
-        return c.json(
-          {
-            statusCode: 400,
-            timestamp: new Date().toISOString(),
-            path: c.req.path,
-            method: c.req.method,
-            message: `${field} must be a boolean`,
-            error: 'BadRequestError',
-          },
-          400
-        )
+      if (payload[field] !== undefined && typeof payload[field] !== 'boolean') {
+        throw new BadRequestError(`${field} must be a boolean`)
       }
     }
 
     // Validate optional string fields
     for (const field of ['provider', 'language', 'apiKey']) {
-      if (body[field] !== undefined && typeof body[field] !== 'string') {
-        return c.json(
-          {
-            statusCode: 400,
-            timestamp: new Date().toISOString(),
-            path: c.req.path,
-            method: c.req.method,
-            message: `${field} must be a string`,
-            error: 'BadRequestError',
-          },
-          400
-        )
+      if (payload[field] !== undefined && typeof payload[field] !== 'string') {
+        throw new BadRequestError(`${field} must be a string`)
       }
     }
 
     // Validate maxWaitMinutes
-    if (body.maxWaitMinutes !== undefined) {
-      if (typeof body.maxWaitMinutes !== 'number' || body.maxWaitMinutes < 1) {
-        return c.json(
-          {
-            statusCode: 400,
-            timestamp: new Date().toISOString(),
-            path: c.req.path,
-            method: c.req.method,
-            message: 'maxWaitMinutes must be a number >= 1',
-            error: 'BadRequestError',
-          },
-          400
-        )
+    if (payload.maxWaitMinutes !== undefined) {
+      if (typeof payload.maxWaitMinutes !== 'number' || payload.maxWaitMinutes < 1) {
+        throw new BadRequestError('maxWaitMinutes must be a number >= 1')
       }
     }
 
-    logger.info(`Received transcription request for URL: ${body.audioUrl}`)
+    logger.info(`Received transcription request for URL: ${payload.audioUrl}`)
 
     const abortController = new AbortController()
 
@@ -174,13 +147,13 @@ export function createApp(deps: AppDeps) {
     })
 
     const result = await transcriptionService.transcribeByUrl({
-      audioUrl: body.audioUrl,
-      provider: body.provider,
-      restorePunctuation: body.restorePunctuation,
-      language: body.language,
-      formatText: body.formatText,
-      apiKey: body.apiKey,
-      maxWaitMinutes: body.maxWaitMinutes,
+      audioUrl: payload.audioUrl,
+      provider: payload.provider as string | undefined,
+      restorePunctuation: payload.restorePunctuation as boolean | undefined,
+      language: payload.language as string | undefined,
+      formatText: payload.formatText as boolean | undefined,
+      apiKey: payload.apiKey as string | undefined,
+      maxWaitMinutes: payload.maxWaitMinutes as number | undefined,
       signal: abortController.signal,
     })
 
@@ -195,17 +168,7 @@ export function createApp(deps: AppDeps) {
   app.post(`${prefix}/transcribe/stream`, async (c) => {
     const contentType = c.req.header('content-type') ?? ''
     if (!contentType.includes('multipart/form-data')) {
-      return c.json(
-        {
-          statusCode: 400,
-          timestamp: new Date().toISOString(),
-          path: c.req.path,
-          method: c.req.method,
-          message: 'Request must be multipart/form-data',
-          error: 'BadRequestError',
-        },
-        400
-      )
+      throw new BadRequestError('Request must be multipart/form-data')
     }
 
     logger.info('Received streaming transcription request')
@@ -215,22 +178,17 @@ export function createApp(deps: AppDeps) {
       if (!abortController.signal.aborted) abortController.abort()
     })
 
-    const body = await c.req.parseBody({ all: true })
+    let body: Record<string, unknown>
+    try {
+      body = (await c.req.parseBody({ all: true })) as Record<string, unknown>
+    } catch {
+      throw new BadRequestError('Invalid multipart/form-data body')
+    }
 
     // Extract file
     const file = body['file']
     if (!file || !(file instanceof File)) {
-      return c.json(
-        {
-          statusCode: 400,
-          timestamp: new Date().toISOString(),
-          path: c.req.path,
-          method: c.req.method,
-          message: 'No file provided in multipart request',
-          error: 'BadRequestError',
-        },
-        400
-      )
+      throw new BadRequestError('No file provided in multipart request')
     }
 
     logger.debug(`Found file: ${file.name} (${file.type})`)

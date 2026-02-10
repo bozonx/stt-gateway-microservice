@@ -11,11 +11,11 @@
 - Node.js entrypoint: `src/entry-node.ts`
 - Workers entrypoint: `src/entry-workers.ts`
 - Shared app factory: `src/app.ts`
+- Cloudflare Workers config: `wrangler.toml`
 - Unit tests: `test/unit/`
 - E2E tests: `test/e2e/`
 - Setup of unit tests: `test/setup/unit.setup.ts`
 - Guides: `docs/`
-- Development stage docs: `dev_docs/`
 - Update `docs/CHANGELOG.md` for significant changes
 - README, all the documentation, jsdoc, messages and strings have to be in English
 - Environment variables: `.env.production.example` is the source of truth for expected variables

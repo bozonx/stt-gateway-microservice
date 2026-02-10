@@ -218,7 +218,12 @@ curl http://localhost:8080/api/v1/health
 
 **Example:**
 ```bash
-  }'
+curl -X POST \
+  http://localhost:8080/api/v1/transcribe \
+  -H "Content-Type: application/json" \
+  -d '{"audioUrl":"https://example.com/audio.mp3","provider":"assemblyai","apiKey":"YOUR_ASSEMBLYAI_KEY"}'
+
+```
 
 ---
 
@@ -226,7 +231,11 @@ curl http://localhost:8080/api/v1/health
 
 **Endpoint:** `POST /{BASE_PATH}/api/v1/transcribe/stream`
 
-**Description:** Transcribes audio by uploading the file directly as a stream (`multipart/form-data`). The service forwards the stream to a temporary storage microservice, obtains a temporary URL, and then proceeds with transcription through the configured STT provider.
+**Description:** Transcribes audio by uploading the file directly as a stream (`multipart/form-data`). The service **forwards the uploaded file to `tmp-files-microservice`**, obtains a temporary public URL, and then proceeds with transcription through the configured STT provider.
+
+**Notes:**
+- The gateway itself does not store files.
+- In Cloudflare Workers, `TMP_FILES_BASE_URL` must be a publicly reachable URL (a Docker-internal hostname like `http://tmp-files-microservice:8080` will not work).
 
 **Request:**
 
@@ -292,9 +301,9 @@ All error responses follow a consistent format:
 
 | Parameter | Environment Variable | Default | Description |
 |-----------|---------------------|---------|-------------|
-| Request timeout | `PROVIDER_API_TIMEOUT_SECONDS` | 30 | Timeout for individual HTTP requests to the provider. |
-| Polling interval | `POLL_INTERVAL_MS` | 1000 | Interval between status checks when waiting for results. |
-| Max sync wait | `DEFAULT_MAX_WAIT_MINUTES` | 10 | Maximum time to wait for transcription before returning `504`. |
+| Request timeout | `PROVIDER_API_TIMEOUT_SECONDS` | 15 | Timeout for individual HTTP requests to the provider. |
+| Polling interval | `POLL_INTERVAL_MS` | 1500 | Interval between status checks when waiting for results. |
+| Max sync wait | `DEFAULT_MAX_WAIT_MINUTES` | 3 | Maximum time to wait for transcription before returning `504`. |
 | Max file size | `MAX_FILE_SIZE_MB` | 100 | Maximum allowed file size (checked via `Content-Length`). |
 | Graceful shutdown | `GRACEFUL_SHUTDOWN_TIMEOUT_MS` | 25000 | Time to wait for active requests during shutdown. |
 
@@ -414,17 +423,16 @@ The service implements proper graceful shutdown:
 
 - On `SIGTERM`/`SIGINT`: stops accepting new connections, waits for active requests to complete
 - Timeout: 25 seconds (configurable via `GRACEFUL_SHUTDOWN_TIMEOUT_MS` constant)
-- Fastify forcefully closes any remaining connections after timeout
 - Docker `stop_grace_period`: 30 seconds (allows 5s buffer for cleanup)
 
 ## Logging
 
-`nestjs-pino` is used for structured logs.
+Node.js runtime uses `pino` for structured logs.
 
 - Dev: pretty output via `pino-pretty`
 - Prod: JSON logs with `@timestamp`, `service`, `environment`
-- Redaction: `authorization`, `x-api-key` headers
-- Auto-logging ignores `/health` in production
+
+Cloudflare Workers runtime uses a console-based logger with log level filtering.
 
 Adjust verbosity with `LOG_LEVEL`.
 
@@ -434,7 +442,7 @@ Adjust verbosity with `LOG_LEVEL`.
 - Use `Bozonx Microservices API` credentials with:
   - Gateway URL (without trailing slash), e.g., `https://api.example.com`
   - Optional API Token: adds `Authorization: Bearer <token>` if provided
-- The node calls `POST {{gatewayUrl}}/{{basePath}}/transcribe` with the same JSON body as the REST API.
+- The node calls `POST {{gatewayUrl}}/{{basePath}}/api/v1/transcribe` with the same JSON body as the REST API.
 - See the node’s [README](n8n-nodes-bozonx-stt-gateway-microservice/README.md) for details.
 
 ## Notes
