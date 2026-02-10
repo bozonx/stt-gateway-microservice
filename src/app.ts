@@ -3,6 +3,7 @@ import type { AppConfig } from './config/app.config.js'
 import type { SttConfig } from './config/stt.config.js'
 import type { Logger } from './common/interfaces/logger.interface.js'
 import { BadRequestError, HttpError } from './common/errors/http-error.js'
+import { authMiddleware } from './common/middleware/auth.middleware.js'
 import { TranscriptionService } from './modules/transcription/transcription.service.js'
 import { TmpFilesService } from './modules/transcription/tmp-files.service.js'
 import { AssemblyAiProvider } from './providers/assemblyai/assemblyai.provider.js'
@@ -34,6 +35,9 @@ export function createApp(deps: AppDeps) {
   const prefix = appConfig.basePath ? `/${appConfig.basePath}/api/v1` : '/api/v1'
 
   const app = new Hono()
+
+  // Bearer authentication
+  app.use('*', authMiddleware(appConfig.authBearerTokens, [`${prefix}/health`]))
 
   // Global error handler — consistent error response format
   app.onError((err, c) => {

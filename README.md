@@ -83,6 +83,8 @@ Core variables:
 - `BASE_PATH` — optional URL prefix (e.g. `voice-gateway`)
 - `LOG_LEVEL` — `trace|debug|info|warn|error|fatal|silent`
 - `TZ` — timezone (default `UTC`)
+- `AUTH_BEARER_TOKENS` — comma-separated list of allowed Bearer tokens (e.g. `token1,token2`).
+  If non-empty, all API requests (except `/health`) must include a valid `Authorization: Bearer <token>` header.
 
 STT variables:
 
@@ -389,7 +391,8 @@ To prevent Server-Side Request Forgery (SSRF) attacks, the service blocks reques
 - **URL Validation:** Only `http://` and `https://` protocols are allowed.
 - **File Size Validation:** Pre-flight `HEAD` request checks `Content-Length`. If it exceeds `MAX_FILE_SIZE_MB`, the request is rejected with `400 Bad Request`.
 - **Provider Validation:** If `ALLOWED_PROVIDERS` is set, only listed providers are allowed.
-- **Authentication:** The service has no built-in auth; provider API keys are supplied in the request body or via environment variables.
+- **Bearer Token Authorization:** If `AUTH_BEARER_TOKENS` is configured, the service requires a valid Bearer token for all requests except the health-check endpoint. Requests must include the `Authorization: Bearer <token>` header.
+- **Provider API Keys:** Individual provider API keys are supplied in the request body (`apiKey` field) or via environment variables (e.g., `ASSEMBLYAI_API_KEY`).
 
 ## Docker
 
@@ -448,7 +451,7 @@ Adjust verbosity with `LOG_LEVEL`.
 ## Notes
 
 - No Swagger or GraphQL included
-- No built-in authorization
+- Optional Bearer token authorization via `AUTH_BEARER_TOKENS`
 
 ## Troubleshooting
 
