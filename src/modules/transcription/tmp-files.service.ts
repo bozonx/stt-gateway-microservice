@@ -1,20 +1,16 @@
+import type { SttConfig } from '../../config/stt.config.js'
+import type { Logger } from '../../common/interfaces/logger.interface.js'
 import {
-  Injectable,
-  Inject,
-  BadRequestException,
-  InternalServerErrorException,
-  HttpException,
-} from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { request } from 'undici'
-import { PinoLogger } from 'nestjs-pino'
-import { Readable } from 'node:stream'
-import FormData from 'form-data'
-import { SttConfig } from '../../config/stt.config.js'
+  BadRequestError,
+  InternalServerError,
+  ClientClosedRequestError,
+} from '../../common/errors/http-error.js'
 
-@Injectable()
 export class TmpFilesService {
-  private readonly cfg: SttConfig
+  constructor(
+    private readonly cfg: SttConfig,
+    private readonly logger: Logger
+  ) {}
 
   private isAbortError(error: unknown): boolean {
     if (!error || typeof error !== 'object') return false
@@ -31,63 +27,52 @@ export class TmpFilesService {
     )
   }
 
-  constructor(
-    private readonly configService: ConfigService,
-    @Inject(PinoLogger) private readonly logger: PinoLogger
-  ) {
-    this.cfg = this.configService.get<SttConfig>('stt')!
-    this.logger.setContext(TmpFilesService.name)
-  }
-
   /**
-   * Uploads a file stream to the temporary files microservice.
-   * @param stream The audio file stream
+   * Uploads a file (as Blob/File) to the temporary files microservice using Web-standard FormData.
+   * @param file The audio file as a Blob
    * @param filename Original filename
    * @param contentType MIME type of the file
    * @param signal Optional AbortSignal for cancellation
    * @returns downloadUrl from the tmp-files service
    */
-  public async uploadStream(
-    stream: Readable,
+  public async uploadFile(
+    file: Blob,
     filename: string,
     contentType: string,
     signal?: AbortSignal
   ): Promise<string> {
-    this.logger.info(`Forwarding stream to tmp-files service: ${filename} (${contentType})`)
+    this.logger.info(`Forwarding file to tmp-files service: ${filename} (${contentType})`)
 
     const form = new FormData()
-    form.append('file', stream, { filename, contentType })
+    form.append('file', new File([file], filename, { type: contentType }))
     form.append('ttlMins', this.cfg.tmpFilesDefaultTtlMins.toString())
 
     try {
-      const { statusCode, body } = await request(`${this.cfg.tmpFilesBaseUrl}/files`, {
+      const res = await fetch(`${this.cfg.tmpFilesBaseUrl}/files`, {
         method: 'POST',
-        headers: {
-          ...form.getHeaders(),
-        },
         body: form,
         signal,
       })
 
-      if (statusCode === 413) {
-        throw new BadRequestException('File too large for temporary storage')
+      if (res.status === 413) {
+        throw new BadRequestError('File too large for temporary storage')
       }
 
-      const responseBody = (await body.json()) as any
+      const responseBody = (await res.json()) as Record<string, unknown>
 
-      if (statusCode !== 201) {
+      if (res.status !== 201) {
         this.logger.error(
-          `Failed to upload to tmp-files service. Status: ${statusCode}, Body: ${JSON.stringify(
+          `Failed to upload to tmp-files service. Status: ${res.status}, Body: ${JSON.stringify(
             responseBody
           )}`
         )
-        throw new InternalServerErrorException('Failed to upload file to temporary storage')
+        throw new InternalServerError('Failed to upload file to temporary storage')
       }
 
-      const { downloadUrl } = responseBody
+      const downloadUrl = responseBody.downloadUrl as string | undefined
       if (!downloadUrl) {
         this.logger.error('No downloadUrl returned from tmp-files service')
-        throw new InternalServerErrorException('Invalid response from temporary storage')
+        throw new InternalServerError('Invalid response from temporary storage')
       }
 
       // If downloadUrl is relative, prepend the base URL
@@ -95,22 +80,25 @@ export class TmpFilesService {
         ? downloadUrl
         : new URL(downloadUrl, this.cfg.tmpFilesBaseUrl).toString()
 
-      this.logger.info(`Stream successfully forwarded. Temporary URL: ${finalUrl}`)
+      this.logger.info(`File successfully forwarded. Temporary URL: ${finalUrl}`)
       return finalUrl
-    } catch (error: any) {
-      if (error instanceof BadRequestException) {
+    } catch (error: unknown) {
+      if (error instanceof BadRequestError) {
         throw error
       }
 
       if (this.isAbortError(error) || signal?.aborted) {
-        throw new HttpException('Upload aborted by client', 499)
+        throw new ClientClosedRequestError('Upload aborted by client')
       }
 
-      this.logger.error(`Error uploading to tmp-files: ${error.message}`)
+      if (error instanceof InternalServerError) {
+        throw error
+      }
 
-      throw new InternalServerErrorException(
-        `Failed to forward stream to temporary storage: ${error.message}`
-      )
+      const msg = error instanceof Error ? error.message : String(error)
+      this.logger.error(`Error uploading to tmp-files: ${msg}`)
+
+      throw new InternalServerError(`Failed to forward file to temporary storage: ${msg}`)
     }
   }
 }

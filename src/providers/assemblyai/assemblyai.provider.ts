@@ -1,20 +1,15 @@
-import { request } from 'undici'
-import {
-  Injectable,
-  ServiceUnavailableException,
-  GatewayTimeoutException,
-  HttpException,
-  Inject,
-} from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { PinoLogger } from 'nestjs-pino'
-
 import type {
   SttProvider,
   TranscriptionRequestByUrl,
   TranscriptionResult,
 } from '../../common/interfaces/stt-provider.interface.js'
 import type { SttConfig } from '../../config/stt.config.js'
+import type { Logger } from '../../common/interfaces/logger.interface.js'
+import {
+  ServiceUnavailableError,
+  GatewayTimeoutError,
+  ClientClosedRequestError,
+} from '../../common/errors/http-error.js'
 import {
   ASSEMBLYAI_API,
   HTTP_TIMEOUTS,
@@ -34,33 +29,28 @@ interface AssemblyTranscriptResponse {
   words?: Array<{ start: number; end: number; text: string; confidence?: number }>
   audio_duration?: number
   language_code?: string
-  confidence?: number // some payloads expose average confidence
+  confidence?: number
 }
 
-@Injectable()
 export class AssemblyAiProvider implements SttProvider {
-  private readonly cfg: SttConfig
   private readonly activeAbortControllers = new Set<AbortController>()
   private readonly shutdownAbortController = new AbortController()
 
   constructor(
-    private readonly configService: ConfigService,
-    @Inject(PinoLogger) private readonly logger: PinoLogger
-  ) {
-    this.cfg = this.configService.get<SttConfig>('stt')!
-    logger.setContext(AssemblyAiProvider.name)
-  }
+    private readonly cfg: SttConfig,
+    private readonly logger: Logger
+  ) {}
 
   private async sleep(ms: number, signal?: AbortSignal): Promise<void> {
     if (signal?.aborted) {
-      throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
+      throw new ClientClosedRequestError()
     }
     await new Promise<void>((resolve, reject) => {
-      let t: NodeJS.Timeout | undefined
+      let t: ReturnType<typeof setTimeout> | undefined
       const onAbort = () => {
         if (t) clearTimeout(t)
         signal?.removeEventListener('abort', onAbort)
-        reject(new HttpException('CLIENT_CLOSED_REQUEST', 499))
+        reject(new ClientClosedRequestError())
       }
 
       signal?.addEventListener('abort', onAbort, { once: true })
@@ -72,7 +62,7 @@ export class AssemblyAiProvider implements SttProvider {
     })
   }
 
-  public onApplicationShutdown(): void {
+  public shutdown(): void {
     if (!this.shutdownAbortController.signal.aborted) {
       this.shutdownAbortController.abort()
     }
@@ -95,7 +85,6 @@ export class AssemblyAiProvider implements SttProvider {
       if (!ac.signal.aborted) ac.abort()
     }
 
-    // Check if already aborted before adding listeners (prevents race condition)
     if (externalSignal?.aborted || this.shutdownAbortController.signal.aborted) {
       abort()
       const cleanup = () => {
@@ -104,11 +93,9 @@ export class AssemblyAiProvider implements SttProvider {
       return { signal: ac.signal, cleanup }
     }
 
-    // Add listeners
     externalSignal?.addEventListener('abort', abort)
     this.shutdownAbortController.signal.addEventListener('abort', abort)
 
-    // Double-check after adding listeners (double-check pattern)
     if (externalSignal?.aborted || this.shutdownAbortController.signal.aborted) {
       abort()
     }
@@ -122,9 +109,23 @@ export class AssemblyAiProvider implements SttProvider {
     return { signal: ac.signal, cleanup }
   }
 
+  /**
+   * Wraps fetch with a timeout via AbortSignal.timeout, linked to the provided signal
+   */
+  private async fetchWithTimeout(
+    url: string,
+    init: RequestInit,
+    timeoutMs: number,
+    linkedSignal: AbortSignal
+  ): Promise<Response> {
+    const timeoutSignal = AbortSignal.timeout(timeoutMs)
+    const combined = AbortSignal.any([linkedSignal, timeoutSignal])
+    return fetch(url, { ...init, signal: combined })
+  }
+
   public async submitAndWaitByUrl(params: TranscriptionRequestByUrl): Promise<TranscriptionResult> {
     if (params.signal?.aborted) {
-      throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
+      throw new ClientClosedRequestError()
     }
 
     const { signal, cleanup } = this.createLinkedAbortSignal(params.signal)
@@ -142,42 +143,44 @@ export class AssemblyAiProvider implements SttProvider {
           : 'Submitting transcription request to AssemblyAI'
       )
 
-      const headers = { Authorization: params.apiKey as string }
+      const headers: Record<string, string> = {
+        Authorization: params.apiKey as string,
+        'Content-Type': 'application/json',
+      }
       const apiUrl = `${ASSEMBLYAI_API.BASE_URL}${ASSEMBLYAI_API.TRANSCRIPTS_ENDPOINT}`
-      const payload: Record<string, any> = {
+      const payload: Record<string, unknown> = {
         audio_url: params.audioUrl,
       }
-      payload.punctuate = params.restorePunctuation === false ? false : true
+      payload.punctuate = params.restorePunctuation !== false
       const trimmedLanguage = params.language?.trim()
-      // Explicit source language when provided
       if (trimmedLanguage && trimmedLanguage.length > 0) {
         payload.language_code = trimmedLanguage
       } else {
         payload.language_detection = true
       }
-      // Format text output (default: true)
-      payload.format_text = params.formatText === false ? false : true
+      payload.format_text = params.formatText !== false
 
       this.logger.debug(
         `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
           headers.Authorization
         )}, punctuate=${Boolean(payload.punctuate)}, language_detection=${Boolean(
           payload.language_detection
-        )}, language_code=${payload.language_code ?? 'default'}, format_text=${Boolean(
+        )}, language_code=${(payload.language_code as string) ?? 'default'}, format_text=${Boolean(
           payload.format_text
         )}`
       )
 
+      const timeoutMs = this.cfg.providerApiTimeoutSeconds * 1000
+
       const id = await (async () => {
-        let lastError: any
+        let lastError: unknown
         const maxRetries = this.cfg.maxRetries
         const retryDelayMs = this.cfg.retryDelayMs
-        // Total attempts = 1 initial + maxRetries retries
         const totalAttempts = maxRetries + 1
 
         for (let attemptNumber = 1; attemptNumber <= totalAttempts; attemptNumber++) {
           if (signal.aborted) {
-            throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
+            throw new ClientClosedRequestError()
           }
 
           const isRetryAttempt = attemptNumber > 1
@@ -196,42 +199,41 @@ export class AssemblyAiProvider implements SttProvider {
           }
 
           try {
-            const { statusCode, body } = await request(apiUrl, {
-              method: 'POST',
-              headers: { ...headers, 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload),
-              signal,
-              headersTimeout: this.cfg.providerApiTimeoutSeconds * 1000,
-            })
-
-            const createResData = (await body.json()) as AssemblyCreateResponse
-
-            this.logger.debug(
-              `AssemblyAI create response: status=${statusCode}, hasId=${Boolean(createResData?.id)}`
+            const res = await this.fetchWithTimeout(
+              apiUrl,
+              {
+                method: 'POST',
+                headers,
+                body: JSON.stringify(payload),
+              },
+              timeoutMs,
+              signal
             )
 
-            if (statusCode >= 400 || !createResData?.id) {
-              const errorDetail = createResData
-                ? JSON.stringify(createResData)
-                : 'no response body'
-              // Determine if error is retryable (429, 5xx, network errors)
-              const isRetryable = statusCode === 429 || statusCode >= 500 || statusCode === 0
+            const createResData = (await res.json()) as AssemblyCreateResponse
+
+            this.logger.debug(
+              `AssemblyAI create response: status=${res.status}, hasId=${Boolean(createResData?.id)}`
+            )
+
+            if (res.status >= 400 || !createResData?.id) {
+              const errorDetail = createResData ? JSON.stringify(createResData) : 'no response body'
+              const isRetryable = res.status === 429 || res.status >= 500 || res.status === 0
 
               if (isRetryable && !isLastAttempt) {
                 this.logger.warn(
-                  `Failed to create transcription (retryable status ${statusCode}). Error: ${errorDetail}`
+                  `Failed to create transcription (retryable status ${res.status}). Error: ${errorDetail}`
                 )
-                lastError = new ServiceUnavailableException('Failed to create transcription')
+                lastError = new ServiceUnavailableError('Failed to create transcription')
                 continue
               }
 
               this.logger.error(
-                `Failed to create transcription. Status: ${statusCode}, Response: ${errorDetail}`
+                `Failed to create transcription. Status: ${res.status}, Response: ${errorDetail}`
               )
-              throw new ServiceUnavailableException('Failed to create transcription')
+              throw new ServiceUnavailableError('Failed to create transcription')
             }
 
-            // Success - log if it was a retry
             if (isRetryAttempt) {
               this.logger.info(
                 `Transcription created successfully after ${attemptNumber - 1} retry attempt(s)`
@@ -239,19 +241,19 @@ export class AssemblyAiProvider implements SttProvider {
             }
 
             return createResData.id
-          } catch (err: any) {
+          } catch (err: unknown) {
             if (signal.aborted) throw err
-            // Determine if error is retryable (timeouts, network errors, 429, 5xx)
+            const e = err as { name?: string; code?: string; status?: number; message?: string }
             const isRetryable =
-              err.name === 'TimeoutError' ||
-              err.code === 'ECONNABORTED' ||
-              err.code === 'ETIMEDOUT' ||
-              err.status >= 500 ||
-              err.status === 429
+              e.name === 'TimeoutError' ||
+              e.code === 'ECONNABORTED' ||
+              e.code === 'ETIMEDOUT' ||
+              (e.status !== undefined && e.status >= 500) ||
+              e.status === 429
 
             if (isRetryable && !isLastAttempt) {
               this.logger.warn(
-                `Failed to create transcription (retryable error: ${err.message}). Attempting retry...`
+                `Failed to create transcription (retryable error: ${e.message}). Attempting retry...`
               )
               lastError = err
               continue
@@ -268,22 +270,19 @@ export class AssemblyAiProvider implements SttProvider {
       const maxWaitMinutes = params.maxWaitMinutes ?? this.cfg.defaultMaxWaitMinutes
       const deadline = startedAt + maxWaitMinutes * 60 * 1000
 
-      // Poll loop with exponential backoff on errors
-      let pollCount = 0
       let consecutiveErrors = 0
       let currentPollInterval = this.cfg.pollIntervalMs
 
       for (;;) {
         if (signal.aborted) {
-          throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
+          throw new ClientClosedRequestError()
         }
         if (Date.now() > deadline) {
           this.logger.error(`Transcription timeout after ${maxWaitMinutes} minutes for ID: ${id}`)
-          throw new GatewayTimeoutException('TRANSCRIPTION_TIMEOUT')
+          throw new GatewayTimeoutError('TRANSCRIPTION_TIMEOUT')
         }
 
         await this.sleep(currentPollInterval, signal)
-        pollCount++
 
         let statusCode = 0
         let responseBody: AssemblyTranscriptResponse | undefined
@@ -291,47 +290,45 @@ export class AssemblyAiProvider implements SttProvider {
         try {
           const getUrl = `${ASSEMBLYAI_API.BASE_URL}${ASSEMBLYAI_API.TRANSCRIPTS_ENDPOINT}/${id}`
 
-          const res = await request(getUrl, {
-            method: 'GET',
-            headers,
-            signal,
-            headersTimeout: this.cfg.providerApiTimeoutSeconds * 1000,
-          })
-          statusCode = res.statusCode
-          responseBody = (await res.body.json()) as AssemblyTranscriptResponse
+          const res = await this.fetchWithTimeout(
+            getUrl,
+            { method: 'GET', headers: { Authorization: params.apiKey as string } },
+            timeoutMs,
+            signal
+          )
+          statusCode = res.status
+          responseBody = (await res.json()) as AssemblyTranscriptResponse
 
-          // Reset consecutive errors on successful request
           consecutiveErrors = 0
           currentPollInterval = this.cfg.pollIntervalMs
-        } catch (err: any) {
+        } catch (err: unknown) {
           consecutiveErrors++
-          // Determine if error is retryable (timeouts, network errors)
+          const e = err as { name?: string; code?: string; message?: string }
           const isRetryable =
-            err.name === 'TimeoutError' ||
-            err.code === 'ECONNABORTED' ||
-            err.code === 'ETIMEDOUT' ||
-            err.code === 'ECONNRESET'
+            e.name === 'TimeoutError' ||
+            e.code === 'ECONNABORTED' ||
+            e.code === 'ETIMEDOUT' ||
+            e.code === 'ECONNRESET'
 
           if (!isRetryable) {
-            this.logger.error(`Non-retriable polling error for ID: ${id}: ${err.message}`)
-            throw new ServiceUnavailableException('Polling failed')
+            this.logger.error(`Non-retriable polling error for ID: ${id}: ${e.message}`)
+            throw new ServiceUnavailableError('Polling failed')
           }
 
           if (consecutiveErrors >= RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS) {
             this.logger.error(
               `Too many consecutive polling errors (${consecutiveErrors}) for ID: ${id}`
             )
-            throw new ServiceUnavailableException('Polling repeatedly failed')
+            throw new ServiceUnavailableError('Polling repeatedly failed')
           }
 
-          // Apply exponential backoff
           currentPollInterval = Math.min(
             currentPollInterval * RETRY_BEHAVIOR.POLL_BACKOFF_MULTIPLIER,
             RETRY_BEHAVIOR.MAX_POLL_INTERVAL_MS
           )
 
           this.logger.warn(
-            `Polling error ${consecutiveErrors}/${RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS} for ID: ${id}: ${err.message}. Retrying in ${Math.round(
+            `Polling error ${consecutiveErrors}/${RETRY_BEHAVIOR.MAX_CONSECUTIVE_POLL_ERRORS} for ID: ${id}: ${e.message}. Retrying in ${Math.round(
               currentPollInterval
             )}ms...`
           )
@@ -343,11 +340,9 @@ export class AssemblyAiProvider implements SttProvider {
           `AssemblyAI poll response: status=${statusCode}, bodyStatus=${body?.status ?? 'n/a'}`
         )
 
-        // Distinguish between client errors (4xx) and server errors (5xx)
         if (statusCode >= 400 && statusCode < 500) {
-          // Client errors (401, 403, 404, etc.) should not be retried
           this.logger.error(`Client error during polling for ID: ${id} (status ${statusCode})`)
-          throw new ServiceUnavailableException(`Polling failed with status ${statusCode}`)
+          throw new ServiceUnavailableError(`Polling failed with status ${statusCode}`)
         }
 
         if (statusCode >= 500 || !body) {
@@ -357,10 +352,9 @@ export class AssemblyAiProvider implements SttProvider {
             this.logger.error(
               `Too many consecutive server errors (${consecutiveErrors}) for ID: ${id}`
             )
-            throw new ServiceUnavailableException('Polling repeatedly failed')
+            throw new ServiceUnavailableError('Polling repeatedly failed')
           }
 
-          // Apply exponential backoff
           currentPollInterval = Math.min(
             currentPollInterval * RETRY_BEHAVIOR.POLL_BACKOFF_MULTIPLIER,
             RETRY_BEHAVIOR.MAX_POLL_INTERVAL_MS
@@ -401,7 +395,7 @@ export class AssemblyAiProvider implements SttProvider {
           this.logger.error(
             `Transcription failed for ID: ${id}. Error: ${body.error ?? 'Unknown error'}`
           )
-          throw new ServiceUnavailableException(body.error ?? 'Transcription failed')
+          throw new ServiceUnavailableError(body.error ?? 'Transcription failed')
         }
       }
     } finally {

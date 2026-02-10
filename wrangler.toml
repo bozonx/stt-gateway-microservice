@@ -1,0 +1,19 @@
+name = "stt-gateway-microservice"
+main = "src/entry-workers.ts"
+compatibility_date = "2024-12-01"
+
+[vars]
+NODE_ENV = "production"
+LOG_LEVEL = "warn"
+DEFAULT_PROVIDER = "assemblyai"
+MAX_FILE_SIZE_MB = "100"
+PROVIDER_API_TIMEOUT_SECONDS = "15"
+POLL_INTERVAL_MS = "1500"
+DEFAULT_MAX_WAIT_MINUTES = "3"
+MAX_RETRIES = "3"
+RETRY_DELAY_MS = "1500"
+TMP_FILES_BASE_URL = "http://tmp-files-microservice:8080/api/v1"
+TMP_FILES_DEFAULT_TTL_MINS = "10"
+
+# Secrets (set via `wrangler secret put`):
+# ASSEMBLYAI_API_KEY

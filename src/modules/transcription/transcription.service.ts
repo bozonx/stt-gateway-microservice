@@ -1,37 +1,25 @@
-import {
-  Injectable,
-  BadRequestException,
-  UnauthorizedException,
-  GatewayTimeoutException,
-  HttpException,
-  Inject,
-  Optional,
-} from '@nestjs/common'
-import { ConfigService } from '@nestjs/config'
-import { PinoLogger } from 'nestjs-pino'
-import { request } from 'undici'
 import type {
   SttProvider,
   TranscriptionResult,
 } from '../../common/interfaces/stt-provider.interface.js'
 import type { SttConfig } from '../../config/stt.config.js'
+import type { Logger } from '../../common/interfaces/logger.interface.js'
+import {
+  BadRequestError,
+  UnauthorizedError,
+  GatewayTimeoutError,
+  HttpError,
+  ClientClosedRequestError,
+} from '../../common/errors/http-error.js'
 import { isPrivateHost } from '../../utils/network.utils.js'
-import { SttProviderRegistry } from '../../providers/stt-provider.registry.js'
-import { STT_PROVIDER } from '../../common/constants/tokens.js'
+import type { SttProviderRegistry } from '../../providers/stt-provider.registry.js'
 
-@Injectable()
 export class TranscriptionService {
-  private readonly cfg: SttConfig
-
   constructor(
-    @Optional() private readonly registry: SttProviderRegistry | undefined,
-    private readonly configService: ConfigService,
-    @Inject(PinoLogger) private readonly logger: PinoLogger,
-    @Optional() @Inject(STT_PROVIDER) private readonly legacyProvider?: SttProvider
-  ) {
-    this.cfg = this.configService.get<SttConfig>('stt')!
-    logger.setContext(TranscriptionService.name)
-  }
+    private readonly registry: SttProviderRegistry,
+    private readonly cfg: SttConfig,
+    private readonly logger: Logger
+  ) {}
 
   private selectProvider(name?: string): SttProvider {
     const providerName = (name ?? this.cfg.defaultProvider).toLowerCase()
@@ -40,21 +28,15 @@ export class TranscriptionService {
     if (this.cfg.allowedProviders && this.cfg.allowedProviders.length > 0) {
       if (!this.cfg.allowedProviders.includes(providerName)) {
         this.logger.warn(`Unsupported provider requested: ${providerName}`)
-        throw new BadRequestException('Unsupported provider')
+        throw new BadRequestError('Unsupported provider')
       }
     }
 
-    const selected = this.registry?.get(providerName)
+    const selected = this.registry.get(providerName)
     if (selected) return selected
 
-    // Backward compatibility for tests that inject STT_PROVIDER directly
-    if (this.legacyProvider) {
-      this.logger.debug('Falling back to legacy injected provider')
-      return this.legacyProvider
-    }
-
     this.logger.warn(`Provider not available: ${providerName}`)
-    throw new BadRequestException('Unsupported provider')
+    throw new BadRequestError('Unsupported provider')
   }
 
   private async enforceSizeLimitIfKnown(audioUrl: string, signal?: AbortSignal) {
@@ -69,31 +51,27 @@ export class TranscriptionService {
       hostForLog ? `Checking file size for host: ${hostForLog}` : 'Checking file size'
     )
     try {
-      const { headers } = await request(audioUrl, {
-        method: 'HEAD',
-        signal,
-        headersTimeout: this.cfg.providerApiTimeoutSeconds * 1000,
-      })
-      const len = headers['content-length']
-        ? parseInt(headers['content-length'] as string, 10)
-        : undefined
+      const timeoutSignal = AbortSignal.timeout(this.cfg.providerApiTimeoutSeconds * 1000)
+      const combinedSignal = signal ? AbortSignal.any([signal, timeoutSignal]) : timeoutSignal
+      const res = await fetch(audioUrl, { method: 'HEAD', signal: combinedSignal })
+      const lenStr = res.headers.get('content-length')
+      const len = lenStr ? parseInt(lenStr, 10) : undefined
 
       if (len) {
         this.logger.debug(`File size: ${len} bytes (${(len / 1024 / 1024).toFixed(2)} MB)`)
         if (len > this.cfg.maxFileMb * 1024 * 1024) {
           this.logger.warn(`File too large: ${len} bytes exceeds limit of ${this.cfg.maxFileMb}MB`)
-          throw new BadRequestException('File too large')
+          throw new BadRequestError('File too large')
         }
       } else {
         this.logger.debug('Content-Length header not available, skipping size check')
       }
     } catch (error) {
-      if (error instanceof BadRequestException) {
+      if (error instanceof BadRequestError) {
         throw error
       }
       const msg = error instanceof Error ? error.message : String(error)
       this.logger.debug(`HEAD request failed, skipping size check: ${msg}`)
-      // HEAD may fail or be blocked; we ignore unless explicit oversized length was detected
     }
   }
 
@@ -102,7 +80,7 @@ export class TranscriptionService {
     provider?: string
     restorePunctuation?: boolean
     apiKey?: string
-    language?: string /** Explicit source language code */
+    language?: string
     formatText?: boolean
     maxWaitMinutes?: number
     signal?: AbortSignal
@@ -112,7 +90,7 @@ export class TranscriptionService {
     provider: string
     requestId: string
     durationSec?: number
-    language?: string /** Detected or specified source language */
+    language?: string
     confidenceAvg?: number
     wordsCount?: number
     processingMs: number
@@ -137,21 +115,21 @@ export class TranscriptionService {
       parsed = new URL(params.audioUrl)
     } catch {
       this.logger.error('Invalid URL provided')
-      throw new BadRequestException('audioUrl must be a valid URL')
+      throw new BadRequestError('audioUrl must be a valid URL')
     }
 
     if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
       this.logger.error(`Unsupported protocol: ${parsed.protocol}`)
-      throw new BadRequestException('Only http(s) URLs are allowed')
+      throw new BadRequestError('Only http(s) URLs are allowed')
     }
 
     if (!params.isInternalSource && isPrivateHost(parsed)) {
       this.logger.error(`Private host not allowed: ${parsed.hostname}`)
-      throw new BadRequestException('Private/loopback hosts are not allowed')
+      throw new BadRequestError('Private/loopback hosts are not allowed')
     }
 
     if (params.signal?.aborted) {
-      throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
+      throw new ClientClosedRequestError()
     }
 
     if (!params.isInternalSource) {
@@ -165,7 +143,7 @@ export class TranscriptionService {
     const apiKeyToUse = params.apiKey || this.cfg.assemblyAiApiKey
     if (!apiKeyToUse) {
       this.logger.error('Missing provider API key')
-      throw new UnauthorizedException('Missing provider API key')
+      throw new UnauthorizedError('Missing provider API key')
     }
 
     const start = Date.now()
@@ -185,15 +163,15 @@ export class TranscriptionService {
       })
     } catch (err: unknown) {
       if (params.signal?.aborted) {
-        throw new HttpException('CLIENT_CLOSED_REQUEST', 499)
+        throw new ClientClosedRequestError()
       }
-      if (err instanceof HttpException) {
+      if (err instanceof HttpError) {
         this.logger.error(`Transcription failed with HTTP error: ${err.message}`)
         throw err
       }
       const em = err instanceof Error ? err.message : String(err)
       this.logger.error(`Transcription timeout or unknown error: ${em}`)
-      throw new GatewayTimeoutException('TRANSCRIPTION_TIMEOUT')
+      throw new GatewayTimeoutError('TRANSCRIPTION_TIMEOUT')
     }
     const processingMs = Date.now() - start
 

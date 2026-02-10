@@ -1,91 +1,76 @@
-import { registerAs } from '@nestjs/config'
-import { IsString, IsArray, IsInt, IsOptional, Min, Max, validateSync } from 'class-validator'
-import { plainToClass } from 'class-transformer'
+/**
+ * Platform-agnostic STT configuration
+ * Works with process.env (Node.js) and env bindings (Cloudflare Workers)
+ */
 
-export class SttConfig {
-  @IsString()
-  public defaultProvider!: string
-
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  public allowedProviders?: string[]
-
-  @IsString()
-  public tmpFilesBaseUrl!: string
-
-  @IsInt()
-  @Min(1)
-  @Max(44640)
-  public tmpFilesDefaultTtlMins!: number
-
-  @IsInt()
-  @Min(1)
-  @Max(1000)
-  public maxFileMb!: number
-
-  @IsInt()
-  @Min(1)
-  @Max(300)
-  public providerApiTimeoutSeconds!: number
-
-  @IsInt()
-  @Min(100)
-  @Max(10000)
-  public pollIntervalMs!: number
-
-  @IsInt()
-  @Min(1)
-  @Max(60)
-  public defaultMaxWaitMinutes!: number
-
-  @IsInt()
-  @Min(0)
-  @Max(10)
-  public maxRetries!: number
-
-  @IsInt()
-  @Min(0)
-  @Max(10000)
-  public retryDelayMs!: number
-
-  @IsOptional()
-  @IsString()
-  public assemblyAiApiKey?: string
+export interface SttConfig {
+  defaultProvider: string
+  allowedProviders?: string[]
+  tmpFilesBaseUrl: string
+  tmpFilesDefaultTtlMins: number
+  maxFileMb: number
+  providerApiTimeoutSeconds: number
+  pollIntervalMs: number
+  defaultMaxWaitMinutes: number
+  maxRetries: number
+  retryDelayMs: number
+  assemblyAiApiKey?: string
 }
 
-export default registerAs('stt', (): SttConfig => {
-  const config = plainToClass(SttConfig, {
-    defaultProvider: process.env.DEFAULT_PROVIDER ?? 'assemblyai',
-    allowedProviders: (() => {
-      const raw = process.env.ALLOWED_PROVIDERS
-      if (!raw || raw.trim() === '') return undefined
-      const list = raw
-        .split(',')
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean)
-      return list.length ? list : undefined
-    })(),
-    maxFileMb: parseInt(process.env.MAX_FILE_SIZE_MB ?? '100', 10),
-    providerApiTimeoutSeconds: parseInt(process.env.PROVIDER_API_TIMEOUT_SECONDS ?? '15', 10),
-    pollIntervalMs: parseInt(process.env.POLL_INTERVAL_MS ?? '1500', 10),
-    defaultMaxWaitMinutes: parseInt(process.env.DEFAULT_MAX_WAIT_MINUTES ?? '3', 10),
-    maxRetries: parseInt(process.env.MAX_RETRIES ?? '3', 10),
-    retryDelayMs: parseInt(process.env.RETRY_DELAY_MS ?? '1500', 10),
-    assemblyAiApiKey: process.env.ASSEMBLYAI_API_KEY,
-    tmpFilesBaseUrl:
-      process.env.TMP_FILES_BASE_URL ?? 'http://tmp-files-microservice:8080/api/v1',
-    tmpFilesDefaultTtlMins: parseInt(process.env.TMP_FILES_DEFAULT_TTL_MINS ?? '30', 10),
-  })
-
-  const errors = validateSync(config, {
-    skipMissingProperties: false,
-  })
-
-  if (errors.length > 0) {
-    const errorMessages = errors.map((err) => Object.values(err.constraints ?? {}).join(', '))
-    throw new Error(`STT config validation error: ${errorMessages.join('; ')}`)
+function parseIntChecked(
+  value: string | undefined,
+  fallback: number,
+  name: string,
+  min: number,
+  max: number
+): number {
+  const num = parseInt(value ?? String(fallback), 10)
+  if (isNaN(num) || num < min || num > max) {
+    throw new Error(`STT config validation error: ${name} must be between ${min} and ${max}`)
   }
+  return num
+}
 
-  return config
-})
+export function loadSttConfig(env: Record<string, string | undefined>): SttConfig {
+  const allowedProviders = (() => {
+    const raw = env.ALLOWED_PROVIDERS
+    if (!raw || raw.trim() === '') return undefined
+    const list = raw
+      .split(',')
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean)
+    return list.length ? list : undefined
+  })()
+
+  return {
+    defaultProvider: env.DEFAULT_PROVIDER ?? 'assemblyai',
+    allowedProviders,
+    maxFileMb: parseIntChecked(env.MAX_FILE_SIZE_MB, 100, 'MAX_FILE_SIZE_MB', 1, 1000),
+    providerApiTimeoutSeconds: parseIntChecked(
+      env.PROVIDER_API_TIMEOUT_SECONDS,
+      15,
+      'PROVIDER_API_TIMEOUT_SECONDS',
+      1,
+      300
+    ),
+    pollIntervalMs: parseIntChecked(env.POLL_INTERVAL_MS, 1500, 'POLL_INTERVAL_MS', 100, 10000),
+    defaultMaxWaitMinutes: parseIntChecked(
+      env.DEFAULT_MAX_WAIT_MINUTES,
+      3,
+      'DEFAULT_MAX_WAIT_MINUTES',
+      1,
+      60
+    ),
+    maxRetries: parseIntChecked(env.MAX_RETRIES, 3, 'MAX_RETRIES', 0, 10),
+    retryDelayMs: parseIntChecked(env.RETRY_DELAY_MS, 1500, 'RETRY_DELAY_MS', 0, 10000),
+    assemblyAiApiKey: env.ASSEMBLYAI_API_KEY || undefined,
+    tmpFilesBaseUrl: env.TMP_FILES_BASE_URL ?? 'http://tmp-files-microservice:8080/api/v1',
+    tmpFilesDefaultTtlMins: parseIntChecked(
+      env.TMP_FILES_DEFAULT_TTL_MINS,
+      30,
+      'TMP_FILES_DEFAULT_TTL_MINS',
+      1,
+      44640
+    ),
+  }
+}

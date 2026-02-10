@@ -1,44 +1,42 @@
-import { registerAs } from '@nestjs/config'
-import { IsInt, IsString, IsIn, Min, Max, validateSync } from 'class-validator'
-import { plainToClass } from 'class-transformer'
+/**
+ * Platform-agnostic application configuration
+ * Works with process.env (Node.js) and env bindings (Cloudflare Workers)
+ */
 
-export class AppConfig {
-  @IsInt()
-  @Min(1)
-  @Max(65535)
-  public port!: number
-
-  @IsString()
-  public host!: string
-
-  @IsString()
-  public basePath!: string
-
-  @IsIn(['development', 'production', 'test'])
-  public nodeEnv!: string
-
-  // Allow only Pino log levels
-  @IsIn(['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent'])
-  public logLevel!: string
+export interface AppConfig {
+  port: number
+  host: string
+  basePath: string
+  nodeEnv: string
+  logLevel: string
 }
 
-export default registerAs('app', (): AppConfig => {
-  const config = plainToClass(AppConfig, {
-    port: parseInt(process.env.LISTEN_PORT ?? '8080', 10),
-    host: process.env.LISTEN_HOST ?? '0.0.0.0',
-    basePath: (process.env.BASE_PATH ?? '').replace(/^\/+|\/+$/g, ''),
-    nodeEnv: process.env.NODE_ENV ?? 'production',
-    logLevel: process.env.LOG_LEVEL ?? 'warn',
-  })
+const VALID_ENVS = ['development', 'production', 'test']
+const VALID_LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'fatal', 'silent']
 
-  const errors = validateSync(config, {
-    skipMissingProperties: false,
-  })
-
-  if (errors.length > 0) {
-    const errorMessages = errors.map((err) => Object.values(err.constraints ?? {}).join(', '))
-    throw new Error(`App config validation error: ${errorMessages.join('; ')}`)
+export function loadAppConfig(env: Record<string, string | undefined>): AppConfig {
+  const port = parseInt(env.LISTEN_PORT ?? '8080', 10)
+  if (isNaN(port) || port < 1 || port > 65535) {
+    throw new Error('App config validation error: LISTEN_PORT must be between 1 and 65535')
   }
 
-  return config
-})
+  const nodeEnv = env.NODE_ENV ?? 'production'
+  if (!VALID_ENVS.includes(nodeEnv)) {
+    throw new Error(`App config validation error: NODE_ENV must be one of ${VALID_ENVS.join(', ')}`)
+  }
+
+  const logLevel = env.LOG_LEVEL ?? 'warn'
+  if (!VALID_LOG_LEVELS.includes(logLevel)) {
+    throw new Error(
+      `App config validation error: LOG_LEVEL must be one of ${VALID_LOG_LEVELS.join(', ')}`
+    )
+  }
+
+  return {
+    port,
+    host: env.LISTEN_HOST ?? '0.0.0.0',
+    basePath: (env.BASE_PATH ?? '').replace(/^\/+|\/+$/g, ''),
+    nodeEnv,
+    logLevel,
+  }
+}

@@ -1,7 +1,7 @@
-# STT Gateway Microservice (NestJS + Fastify)
+# STT Gateway Microservice (Hono)
 
 High-performance microservice for synchronous speech-to-text from a public audio URL.
-Built with NestJS + Fastify. Uses AssemblyAI by default. No built-in auth, Swagger, or GraphQL.
+Built with Hono. Runs on both **Cloudflare Workers** and **Node.js** (Docker). Uses AssemblyAI by default. No built-in auth, Swagger, or GraphQL.
 
 Links:
 
@@ -25,11 +25,12 @@ Links:
 ## What's included
 
 - 🏥 Minimal health-check endpoint `/{BASE_PATH}/api/v1/health` (leave empty if no BASE_PATH)
-- 📊 Structured logging via Pino (JSON in production)
-- 🛡️ Global error filter
-- ⚡ Fastify runtime
+- 📊 Structured logging via Pino (Node.js) / console (Workers)
+- 🛡️ Global error handler
+- ⚡ Hono runtime (Cloudflare Workers + Node.js)
 - 🧪 Ready-to-use Jest tests (unit and e2e)
-- 🐳 Docker-ready
+- 🐳 Docker-ready (Node.js)
+- ☁️ Cloudflare Workers-ready (`wrangler deploy`)
 - 🎙️ Synchronous transcription endpoint via AssemblyAI
 
 ## Quick Start (production)

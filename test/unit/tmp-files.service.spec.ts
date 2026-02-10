@@ -1,75 +1,52 @@
-import { MockAgent, setGlobalDispatcher, getGlobalDispatcher } from 'undici'
 import { jest } from '@jest/globals'
-import { Readable } from 'node:stream'
+import { TmpFilesService } from '../../src/modules/transcription/tmp-files.service.js'
+import {
+  BadRequestError,
+  InternalServerError,
+  ClientClosedRequestError,
+} from '../../src/common/errors/http-error.js'
+import { createMockLogger } from '../helpers/mocks.js'
 
-// Dynamic imports
-import type { TmpFilesService as TmpFilesServiceType } from '../../src/modules/transcription/tmp-files.service.js'
-const { TmpFilesService } = await import('../../src/modules/transcription/tmp-files.service.js')
-
-import { Test, TestingModule } from '@nestjs/testing'
-import { ConfigService } from '@nestjs/config'
-import { PinoLogger } from 'nestjs-pino'
-import { BadRequestException, InternalServerErrorException, HttpException } from '@nestjs/common'
-import { createMockLogger } from '@test/helpers/mocks'
+// Save original fetch
+const originalFetch = globalThis.fetch
 
 describe('TmpFilesService', () => {
-  let service: TmpFilesServiceType
-  let configService: ConfigService
-  let mockAgent: MockAgent
+  let service: TmpFilesService
 
-  const mockConfig: Record<string, any> = {
-    stt: {
-      tmpFilesBaseUrl: 'http://tmp-files-mock',
-      tmpFilesDefaultTtlMins: 30,
-    },
+  const mockCfg = {
+    tmpFilesBaseUrl: 'http://tmp-files-mock',
+    tmpFilesDefaultTtlMins: 30,
+    defaultProvider: 'assemblyai',
+    maxFileMb: 100,
+    providerApiTimeoutSeconds: 15,
+    pollIntervalMs: 1500,
+    defaultMaxWaitMinutes: 3,
+    maxRetries: 3,
+    retryDelayMs: 1500,
   }
 
-  beforeEach(async () => {
-    mockAgent = new MockAgent()
-    mockAgent.disableNetConnect()
-    setGlobalDispatcher(mockAgent)
-
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        TmpFilesService,
-        {
-          provide: ConfigService,
-          useValue: {
-            get: jest.fn((key) => mockConfig[key]),
-          },
-        },
-        {
-          provide: PinoLogger,
-          useValue: createMockLogger(),
-        },
-      ],
-    }).compile()
-
-    service = module.get<TmpFilesServiceType>(TmpFilesService)
-    configService = module.get<ConfigService>(ConfigService)
+  beforeEach(() => {
+    const logger = createMockLogger()
+    service = new TmpFilesService(mockCfg, logger)
   })
 
   afterEach(() => {
-    // Cleanup if needed, though beforeEach resets the agent
+    globalThis.fetch = originalFetch
   })
 
   it('should be defined', () => {
     expect(service).toBeDefined()
   })
 
-  it('should successfully upload a stream and return the download URL', async () => {
-    const mockPool = mockAgent.get(mockConfig.stt.tmpFilesBaseUrl)
-    mockPool
-      .intercept({
-        path: '/files',
-        method: 'POST',
-      })
-      .reply(201, {
-        downloadUrl: '/api/v1/download/uuid-123',
-      })
+  it('should successfully upload a file and return the download URL', async () => {
+    globalThis.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ downloadUrl: '/api/v1/download/uuid-123' }), { status: 201 })
+      ) as any
 
-    const mockStream = Readable.from(['test audio data'])
-    const result = await service.uploadStream(mockStream, 'test.mp3', 'audio/mpeg')
+    const file = new Blob(['test audio data'], { type: 'audio/mpeg' })
+    const result = await service.uploadFile(file, 'test.mp3', 'audio/mpeg')
 
     expect(result).toBe('http://tmp-files-mock/api/v1/download/uuid-123')
   })
@@ -77,84 +54,68 @@ describe('TmpFilesService', () => {
   it('should return the full download URL if the service returns a full URL', async () => {
     const fullUrl = 'https://external-storage.com/file/uuid-456'
 
-    const mockPool = mockAgent.get(mockConfig.stt.tmpFilesBaseUrl)
-    mockPool
-      .intercept({
-        path: '/files',
-        method: 'POST',
-      })
-      .reply(201, {
-        downloadUrl: fullUrl,
-      })
+    globalThis.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ downloadUrl: fullUrl }), { status: 201 })
+      ) as any
 
-    const mockStream = Readable.from(['test'])
-    const result = await service.uploadStream(mockStream, 'test.mp3', 'audio/mpeg')
+    const file = new Blob(['test'], { type: 'audio/mpeg' })
+    const result = await service.uploadFile(file, 'test.mp3', 'audio/mpeg')
 
     expect(result).toBe(fullUrl)
   })
 
-  it('should throw BadRequestException when tmp-files returns 413', async () => {
-    const mockPool = mockAgent.get(mockConfig.stt.tmpFilesBaseUrl)
-    mockPool
-      .intercept({
-        path: '/files',
-        method: 'POST',
-      })
-      .reply(413, {
-        message: 'Payload Too Large',
-      })
+  it('should throw BadRequestError when tmp-files returns 413', async () => {
+    globalThis.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ message: 'Payload Too Large' }), { status: 413 })
+      ) as any
 
-    const mockStream = Readable.from(['large file'])
-    await expect(service.uploadStream(mockStream, 'large.mp3', 'audio/mpeg')).rejects.toThrow(
-      BadRequestException
+    const file = new Blob(['large file'], { type: 'audio/mpeg' })
+    await expect(service.uploadFile(file, 'large.mp3', 'audio/mpeg')).rejects.toThrow(
+      BadRequestError
     )
   })
 
-  it('should throw InternalServerErrorException for other errors', async () => {
-    const mockPool = mockAgent.get(mockConfig.stt.tmpFilesBaseUrl)
-    mockPool
-      .intercept({
-        path: '/files',
-        method: 'POST',
-      })
-      .reply(500, {
-        message: 'Internal Error',
-      })
+  it('should throw InternalServerError for other errors', async () => {
+    globalThis.fetch = jest
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ message: 'Internal Error' }), { status: 500 })
+      ) as any
 
-    const mockStream = Readable.from(['test'])
-    await expect(service.uploadStream(mockStream, 'test.mp3', 'audio/mpeg')).rejects.toThrow(
-      InternalServerErrorException
+    const file = new Blob(['test'], { type: 'audio/mpeg' })
+    await expect(service.uploadFile(file, 'test.mp3', 'audio/mpeg')).rejects.toThrow(
+      InternalServerError
     )
   })
 
-  it('should throw InternalServerErrorException if downloadUrl is missing in response', async () => {
-    const mockPool = mockAgent.get(mockConfig.stt.tmpFilesBaseUrl)
-    mockPool
-      .intercept({
-        path: '/files',
-        method: 'POST',
-      })
-      .reply(201, {})
+  it('should throw InternalServerError if downloadUrl is missing in response', async () => {
+    globalThis.fetch = jest
+      .fn()
+      .mockResolvedValue(new Response(JSON.stringify({}), { status: 201 })) as any
 
-    const mockStream = Readable.from(['test'])
-    await expect(service.uploadStream(mockStream, 'test.mp3', 'audio/mpeg')).rejects.toThrow(
-      InternalServerErrorException
+    const file = new Blob(['test'], { type: 'audio/mpeg' })
+    await expect(service.uploadFile(file, 'test.mp3', 'audio/mpeg')).rejects.toThrow(
+      InternalServerError
     )
   })
 
-  it('should throw HttpException with 499 when request is aborted', async () => {
+  it('should throw ClientClosedRequestError when request is aborted', async () => {
+    globalThis.fetch = jest
+      .fn()
+      .mockRejectedValue(
+        Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })
+      ) as any
+
     const abortController = new AbortController()
     abortController.abort()
 
-    const mockStream = Readable.from(['test'])
+    const file = new Blob(['test'], { type: 'audio/mpeg' })
     await expect(
-      service.uploadStream(mockStream, 'test.mp3', 'audio/mpeg', abortController.signal)
-    ).rejects.toMatchObject({
-      status: 499,
-    })
-
-    await expect(
-      service.uploadStream(mockStream, 'test.mp3', 'audio/mpeg', abortController.signal)
-    ).rejects.toThrow(HttpException)
+      service.uploadFile(file, 'test.mp3', 'audio/mpeg', abortController.signal)
+    ).rejects.toThrow(ClientClosedRequestError)
   })
 })

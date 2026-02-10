@@ -1,5 +1,37 @@
 # CHANGELOG
 
+## 2.0.0 — Hono Migration (Dual Runtime)
+
+### Breaking Changes
+- Migrated from NestJS + Fastify to **Hono** web framework
+- Dual runtime support: **Cloudflare Workers** and **Node.js** (Docker)
+- Replaced `undici` with standard Web `fetch` API
+- Replaced `form-data` + `node:stream` with Web-standard `FormData` / `File` / `Blob`
+- Replaced `class-validator` / `class-transformer` with inline request validation
+- Replaced `nestjs-pino` with platform-agnostic logger interface (Pino for Node.js, console for Workers)
+- Replaced `@nestjs/config` with plain config loader functions
+- Node.js entrypoint changed from `dist/src/main.js` to `dist/src/entry-node.js`
+
+### New
+- `src/app.ts` — shared Hono app factory (platform-agnostic)
+- `src/entry-node.ts` — Node.js entrypoint with `@hono/node-server`
+- `src/entry-workers.ts` — Cloudflare Workers entrypoint
+- `wrangler.toml` — Cloudflare Workers deployment configuration
+- `src/common/errors/http-error.ts` — platform-agnostic HTTP error classes
+- `src/common/interfaces/logger.interface.ts` — logger abstraction
+
+### Removed
+- All NestJS dependencies (`@nestjs/*`, `reflect-metadata`, `rxjs`)
+- `fastify`, `@fastify/multipart`, `undici`, `form-data`, `class-validator`, `class-transformer`
+- NestJS modules, controllers, filters, DTOs, injection tokens
+- `nest-cli.json`
+
+### Updated
+- Dockerfile entrypoint updated to `dist/src/entry-node.js`
+- Jest config simplified (removed NestJS path aliases)
+- All unit and e2e tests rewritten for plain class instantiation and `app.request()` testing
+- README, AGENTS.md updated for Hono stack
+
 ## 1.3.1 — AssemblyAI Language Auto-Detection
 - When `language` is omitted in `/transcribe` requests, the service now sends `language_detection: true` to AssemblyAI to avoid defaulting to `en_us`.
 - Updated documentation and unit tests accordingly.

@@ -1,28 +1,18 @@
-import { Test, type TestingModule } from '@nestjs/testing'
-import { HealthController } from '@/modules/health/health.controller'
+import { createApp } from '../../src/app.js'
+import { loadAppConfig } from '../../src/config/app.config.js'
+import { loadSttConfig } from '../../src/config/stt.config.js'
+import { createMockLogger } from '../helpers/mocks.js'
 
-describe('HealthController (unit)', () => {
-  let controller: HealthController
-  let moduleRef: TestingModule
-
-  beforeAll(async () => {
-    moduleRef = await Test.createTestingModule({
-      controllers: [HealthController],
-    }).compile()
-
-    controller = moduleRef.get<HealthController>(HealthController)
-  })
-
-  afterAll(async () => {
-    await moduleRef.close()
-  })
-
-  it('should be defined', () => {
-    expect(controller).toBeDefined()
-  })
-
+describe('Health endpoint (unit)', () => {
   it('GET /api/v1/health returns ok', async () => {
-    const res = await controller.check()
-    expect(res).toEqual({ status: 'ok' })
+    const appConfig = loadAppConfig({})
+    const sttConfig = loadSttConfig({})
+    const logger = createMockLogger()
+    const { app } = createApp({ appConfig, sttConfig, logger })
+
+    const res = await app.request('/api/v1/health')
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body).toEqual({ status: 'ok' })
   })
 })

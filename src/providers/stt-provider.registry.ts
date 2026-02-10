@@ -1,8 +1,6 @@
-import { Injectable } from '@nestjs/common'
 import type { SttProvider } from '../common/interfaces/stt-provider.interface.js'
 import { AssemblyAiProvider } from './assemblyai/assemblyai.provider.js'
 
-@Injectable()
 export class SttProviderRegistry {
   constructor(private readonly assemblyAiProvider: AssemblyAiProvider) {}
 

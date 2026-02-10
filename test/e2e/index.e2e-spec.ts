@@ -1,21 +1,9 @@
-import type { NestFastifyApplication } from '@nestjs/platform-fastify'
-import { createTestApp } from './test-app.factory'
+import { createTestApp } from './test-app.factory.js'
 
 describe('Index (e2e)', () => {
-  let app: NestFastifyApplication
-
-  beforeEach(async () => {
-    app = await createTestApp()
-  })
-
-  afterEach(async () => {
-    if (app) {
-      await app.close()
-    }
-  })
-
   it('GET /api/v1 returns 404 when index endpoint is removed', async () => {
-    const response = await app.inject({ method: 'GET', url: '/api/v1' })
-    expect(response.statusCode).toBe(404)
+    const app = createTestApp()
+    const response = await app.request('/api/v1')
+    expect(response.status).toBe(404)
   })
 })
