@@ -501,12 +501,20 @@ Adjust verbosity with `LOG_LEVEL`.
 ## Development
 
 - Requirements: Node.js 22+, pnpm 10+
-- Dev quick start:
+- Dev quick start (Node.js):
 
 ```bash
 pnpm install
 cp .env.development.example .env.development
 pnpm start:dev
+```
+
+- Dev quick start (Cloudflare Workers):
+
+```bash
+pnpm install
+# Variables are loaded from .dev.vars (auto-created if you followed Node.js guide or manual copy)
+pnpm start:worker:dev
 ```
 
 - Tests: `pnpm test`, `pnpm test:unit`, `pnpm test:e2e`
