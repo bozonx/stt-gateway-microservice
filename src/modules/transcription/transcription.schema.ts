@@ -52,5 +52,38 @@ export const transcribeStreamSchema = z.object({
     .transform((val) => (val ? val.split(',').map((s) => s.trim()) : undefined)),
 })
 
+/**
+ * Schema for metadata fields only (used for manual multipart parsing in stream endpoint)
+ */
+export const transcribeStreamMetadataSchema = z.object({
+  provider: z.string().optional(),
+  language: z.string().optional(),
+  restorePunctuation: z
+    .enum(['true', 'false'])
+    .transform((val) => val === 'true')
+    .optional(),
+  formatText: z
+    .enum(['true', 'false'])
+    .transform((val) => val === 'true')
+    .optional(),
+  includeWords: z
+    .enum(['true', 'false'])
+    .transform((val) => val === 'true')
+    .optional(),
+  apiKey: z.string().optional(),
+  maxWaitMinutes: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : undefined))
+    .refine((val) => val === undefined || (!isNaN(val) && val >= 1), {
+      message: 'maxWaitMinutes must be a number >= 1',
+    }),
+  models: z
+    .string()
+    .optional()
+    .transform((val) => (val ? val.split(',').map((s) => s.trim()) : undefined)),
+})
+
 export type TranscribeJsonRequest = z.infer<typeof transcribeJsonSchema>
 export type TranscribeStreamRequest = z.infer<typeof transcribeStreamSchema>
+export type TranscribeStreamMetadata = z.infer<typeof transcribeStreamMetadataSchema>

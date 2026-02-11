@@ -6,6 +6,9 @@
 - Added optional `includeWords` request parameter to `/transcribe` and `/transcribe/stream`.
   When enabled, the API returns `words` with word-level timings in milliseconds (provider-dependent).
 
+### Improved
+- **Streaming upload for `/transcribe/stream`**: File data is now piped directly to the `tmp-files` microservice via a streaming multipart body (`ReadableStream`), eliminating the previous double-buffering (`File` → `new File([file])` → `FormData`). Uses `file.stream()` + custom `createMultipartStream()` utility on pure Web Streams API (works on both Node.js and Cloudflare Workers). Added `TmpFilesService.uploadStream()` method; legacy `uploadFile()` is deprecated.
+
 ## 2.2.0 — Code Audit & Performance Improvements
 
 ### New

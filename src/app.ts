@@ -11,7 +11,7 @@ import { AssemblyAiProvider } from './providers/assemblyai/assemblyai.provider.j
 import { SttProviderRegistry } from './providers/stt-provider.registry.js'
 import {
   transcribeJsonSchema,
-  transcribeStreamSchema,
+  transcribeStreamMetadataSchema,
 } from './modules/transcription/transcription.schema.js'
 
 /**
@@ -152,58 +152,74 @@ export function createApp(deps: AppDeps) {
     }
   )
 
-  // POST /transcribe/stream — multipart/form-data
-  app.post(
-    `${prefix}/transcribe/stream`,
-    zValidator('form', transcribeStreamSchema, (result) => {
-      if (!result.success) {
-        const message = result.error.issues
-          .map((i) => `${i.path.join('.')}: ${i.message}`)
-          .join('; ')
-        throw new BadRequestError(`Validation failed: ${message}`)
-      }
-    }),
-    async (c) => {
-      const payload = c.req.valid('form')
+  // POST /transcribe/stream — multipart/form-data with streaming upload
+  app.post(`${prefix}/transcribe/stream`, async (c) => {
+    logger.info('Received streaming transcription request')
 
-      logger.info('Received streaming transcription request')
+    const abortController = new AbortController()
+    c.req.raw.signal?.addEventListener('abort', () => {
+      if (!abortController.signal.aborted) abortController.abort()
+    })
 
-      const abortController = new AbortController()
-      c.req.raw.signal?.addEventListener('abort', () => {
-        if (!abortController.signal.aborted) abortController.abort()
-      })
+    // Parse multipart body — file is materialized as File by the runtime,
+    // but we immediately call .stream() to get a ReadableStream for piping
+    const body = await c.req.parseBody()
+    const file = body['file']
 
-      logger.debug(`Found file: ${payload.file.name} (${payload.file.type})`)
-
-      // Upload to tmp-files service
-      const audioUrl = await tmpFilesService.uploadFile(
-        payload.file,
-        payload.file.name,
-        payload.file.type || 'application/octet-stream',
-        abortController.signal
-      )
-
-      const result = await transcriptionService.transcribeByUrl({
-        audioUrl,
-        provider: payload.provider,
-        language: payload.language,
-        apiKey: payload.apiKey,
-        restorePunctuation: payload.restorePunctuation,
-        formatText: payload.formatText,
-        includeWords: payload.includeWords,
-        models: payload.models,
-        maxWaitMinutes: payload.maxWaitMinutes,
-        signal: abortController.signal,
-        isInternalSource: true,
-      })
-
-      logger.info(
-        `Stream transcription completed. Provider: ${result.provider}, Processing time: ${result.processingMs}ms`
-      )
-
-      return c.json(result)
+    if (!(file instanceof File)) {
+      throw new BadRequestError('Validation failed: file: No file provided in multipart request')
     }
-  )
+
+    // Collect metadata fields as plain strings for validation
+    const rawMetadata: Record<string, string | undefined> = {}
+    for (const key of Object.keys(body)) {
+      if (key !== 'file' && typeof body[key] === 'string') {
+        rawMetadata[key] = body[key]
+      }
+    }
+
+    const metaResult = transcribeStreamMetadataSchema.safeParse(rawMetadata)
+    if (!metaResult.success) {
+      const message = metaResult.error.issues
+        .map((i) => `${i.path.join('.')}: ${i.message}`)
+        .join('; ')
+      throw new BadRequestError(`Validation failed: ${message}`)
+    }
+    const metadata = metaResult.data
+
+    const filename = file.name || 'upload'
+    const contentType = file.type || 'application/octet-stream'
+    logger.debug(`Found file: ${filename} (${contentType})`)
+
+    // Stream file directly to tmp-files service without re-buffering
+    const fileStream = file.stream() as ReadableStream<Uint8Array>
+    const audioUrl = await tmpFilesService.uploadStream(
+      fileStream,
+      filename,
+      contentType,
+      abortController.signal
+    )
+
+    const result = await transcriptionService.transcribeByUrl({
+      audioUrl,
+      provider: metadata.provider,
+      language: metadata.language,
+      apiKey: metadata.apiKey,
+      restorePunctuation: metadata.restorePunctuation,
+      formatText: metadata.formatText,
+      includeWords: metadata.includeWords,
+      models: metadata.models,
+      maxWaitMinutes: metadata.maxWaitMinutes,
+      signal: abortController.signal,
+      isInternalSource: true,
+    })
+
+    logger.info(
+      `Stream transcription completed. Provider: ${result.provider}, Processing time: ${result.processingMs}ms`
+    )
+
+    return c.json(result)
+  })
 
   return { app, assemblyAiProvider }
 }
