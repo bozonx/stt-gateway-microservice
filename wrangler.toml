@@ -17,3 +17,4 @@ TMP_FILES_DEFAULT_TTL_MINS = "10"
 
 # Secrets (set via `wrangler secret put`):
 # ASSEMBLYAI_API_KEY
+# TMP_FILES_BEARER_TOKEN

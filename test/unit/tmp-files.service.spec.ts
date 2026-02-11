@@ -66,6 +66,28 @@ describe('TmpFilesService', () => {
     expect(result).toBe(fullUrl)
   })
 
+  it('should include Authorization header if tmpFilesBearerToken is provided', async () => {
+    const token = 'test-token'
+    const serviceWithAuth = new TmpFilesService({ ...mockCfg, tmpFilesBearerToken: token }, createMockLogger())
+    
+    const fetchMock = jest.fn().mockResolvedValue(
+      new Response(JSON.stringify({ downloadUrl: '/file' }), { status: 201 })
+    ) as any
+    globalThis.fetch = fetchMock
+
+    const file = new Blob(['test'], { type: 'audio/mpeg' })
+    await serviceWithAuth.uploadFile(file, 'test.mp3', 'audio/mpeg')
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      expect.stringContaining('/files'),
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: `Bearer ${token}`
+        })
+      })
+    )
+  })
+
   it('should throw BadRequestError when tmp-files returns 413', async () => {
     globalThis.fetch = jest
       .fn()

@@ -47,10 +47,16 @@ export class TmpFilesService {
     form.append('file', new File([file], filename, { type: contentType }))
     form.append('ttlMins', this.cfg.tmpFilesDefaultTtlMins.toString())
 
+    const headers: Record<string, string> = {}
+    if (this.cfg.tmpFilesBearerToken) {
+      headers['Authorization'] = `Bearer ${this.cfg.tmpFilesBearerToken}`
+    }
+
     try {
       const res = await fetch(`${this.cfg.tmpFilesBaseUrl}/files`, {
         method: 'POST',
         body: form,
+        headers,
         signal,
       })
 

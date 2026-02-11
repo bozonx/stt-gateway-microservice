@@ -15,6 +15,7 @@ export interface SttConfig {
   maxRetries: number
   retryDelayMs: number
   assemblyAiApiKey?: string
+  tmpFilesBearerToken?: string
 }
 
 function parseIntChecked(
@@ -65,6 +66,7 @@ export function loadSttConfig(env: Record<string, string | undefined>): SttConfi
     retryDelayMs: parseIntChecked(env.RETRY_DELAY_MS, 1500, 'RETRY_DELAY_MS', 0, 10000),
     assemblyAiApiKey: env.ASSEMBLYAI_API_KEY || undefined,
     tmpFilesBaseUrl: env.TMP_FILES_BASE_URL ?? 'http://tmp-files-microservice:8080/api/v1',
+    tmpFilesBearerToken: env.TMP_FILES_BEARER_TOKEN || undefined,
     tmpFilesDefaultTtlMins: parseIntChecked(
       env.TMP_FILES_DEFAULT_TTL_MINS,
       30,
