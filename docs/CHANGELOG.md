@@ -1,5 +1,12 @@
 # CHANGELOG
 
+## 2.1.0 — Validation & Error Handling Improvements
+
+### New
+- Replaced manual request validation with **Zod** and **@hono/zod-validator** middleware for better reliability and declarative schemas.
+- Improved error reporting in **AssemblyAI** provider by extracting detailed error messages from API responses.
+- Shared validation schemas defined in `src/modules/transcription/transcription.schema.ts`.
+
 ## 2.0.0 — Hono Migration (Dual Runtime)
 
 ### Breaking Changes

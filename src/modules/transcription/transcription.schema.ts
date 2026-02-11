@@ -1,0 +1,46 @@
+import { z } from 'zod'
+
+/**
+ * Schema for JSON-based transcription request
+ */
+export const transcribeJsonSchema = z.object({
+  audioUrl: z
+    .string()
+    .min(1, 'audioUrl is required')
+    .url('audioUrl must be a valid URL')
+    .regex(/^https?:\/\//i, 'audioUrl must start with http or https'),
+  provider: z.string().optional(),
+  language: z.string().optional(),
+  restorePunctuation: z.boolean().optional(),
+  formatText: z.boolean().optional(),
+  apiKey: z.string().optional(),
+  maxWaitMinutes: z.number().int().min(1).optional(),
+})
+
+/**
+ * Schema for multipart/form-data transcription request
+ */
+export const transcribeStreamSchema = z.object({
+  file: z.instanceof(File, { message: 'No file provided in multipart request' }),
+  provider: z.string().optional(),
+  language: z.string().optional(),
+  restorePunctuation: z
+    .enum(['true', 'false'])
+    .transform((val) => val === 'true')
+    .optional(),
+  formatText: z
+    .enum(['true', 'false'])
+    .transform((val) => val === 'true')
+    .optional(),
+  apiKey: z.string().optional(),
+  maxWaitMinutes: z
+    .string()
+    .optional()
+    .transform((val) => (val ? parseInt(val, 10) : undefined))
+    .refine((val) => val === undefined || (!isNaN(val) && val >= 1), {
+      message: 'maxWaitMinutes must be a number >= 1',
+    }),
+})
+
+export type TranscribeJsonRequest = z.infer<typeof transcribeJsonSchema>
+export type TranscribeStreamRequest = z.infer<typeof transcribeStreamSchema>
