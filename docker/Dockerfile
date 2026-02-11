@@ -1,5 +1,5 @@
-ARG NODE_MAJOR=22
-FROM node:${NODE_MAJOR}-alpine AS builder
+ARG NODE_MAJOR=24
+FROM node:${NODE_MAJOR}-bookworm-slim AS builder
 
 WORKDIR /app
 
@@ -21,7 +21,7 @@ COPY jest.config.ts jest.d.ts ./
 RUN pnpm build
 RUN pnpm prune --prod
 
-FROM node:${NODE_MAJOR}-alpine AS runtime
+FROM node:${NODE_MAJOR}-bookworm-slim AS runtime
 
 WORKDIR /app
 
@@ -31,7 +31,9 @@ ENV LISTEN_PORT=8080
 ENV TZ=UTC
 ENV LOG_LEVEL=warn
 
-RUN apk add --no-cache tini curl
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends tini curl ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
 
 COPY package.json ./
 COPY --from=builder /app/node_modules ./node_modules

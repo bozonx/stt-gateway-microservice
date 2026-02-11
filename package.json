@@ -1,6 +1,6 @@
 {
   "name": "stt-gateway-microservice",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "Speech-to-Text microservice (Hono — runs on Cloudflare Workers and Node.js)",
   "type": "module",
   "main": "dist/src/entry-node.js",
@@ -51,7 +51,7 @@
   "author": "Ivan K",
   "license": "MIT",
   "engines": {
-    "node": ">=22.0.0"
+    "node": ">=24.0.0"
   },
   "packageManager": "pnpm@10.13.1"
 }
