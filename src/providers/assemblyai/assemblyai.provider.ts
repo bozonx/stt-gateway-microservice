@@ -151,7 +151,9 @@ export class AssemblyAiProvider implements SttProvider {
       const apiUrl = `${ASSEMBLYAI_API.BASE_URL}${ASSEMBLYAI_API.TRANSCRIPTS_ENDPOINT}`
       const payload: Record<string, unknown> = {
         audio_url: params.audioUrl,
-        speech_models: params.speechModels ?? ['universal-3-pro', 'universal-2'],
+      }
+      if (params.speechModels && params.speechModels.length > 0) {
+        payload.speech_models = params.speechModels
       }
       payload.punctuate = params.restorePunctuation !== false
       const trimmedLanguage = params.language?.trim()
