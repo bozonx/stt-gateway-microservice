@@ -15,6 +15,7 @@ import {
   HTTP_TIMEOUTS,
   RETRY_BEHAVIOR,
 } from '../../common/constants/app.constants.js'
+import { normalizeLanguageCode } from '../../utils/language.utils.js'
 
 interface AssemblyCreateResponse {
   id: string
@@ -156,9 +157,9 @@ export class AssemblyAiProvider implements SttProvider {
         payload.speech_models = params.models
       }
       payload.punctuate = params.restorePunctuation !== false
-      const trimmedLanguage = params.language?.trim()
-      if (trimmedLanguage && trimmedLanguage.length > 0) {
-        payload.language_code = trimmedLanguage
+      const languageCode = normalizeLanguageCode(params.language)
+      if (languageCode) {
+        payload.language_code = languageCode
       } else {
         payload.language_detection = true
       }
