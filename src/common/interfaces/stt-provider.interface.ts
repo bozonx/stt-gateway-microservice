@@ -5,8 +5,10 @@ export interface TranscriptionRequestByUrl {
   // If true/false is provided, provider should explicitly control punctuation restoration.
   // When undefined, provider defaults apply (e.g., true for AssemblyAI).
   restorePunctuation?: boolean
-  // Explicit source language code (e.g., 'en', 'ru', 'en-US') when supported
+  // Source language code
   language?: string
+  // Models to use for transcription (e.g., ['universal-3-pro', 'universal-2'])
+  speechModels?: string[]
   // Format text output (e.g., punctuation, capitalization)
   formatText?: boolean
   // Total synchronization timeout in minutes (optional override)

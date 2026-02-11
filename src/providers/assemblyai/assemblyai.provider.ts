@@ -145,12 +145,13 @@ export class AssemblyAiProvider implements SttProvider {
       )
 
       const headers: Record<string, string> = {
-        Authorization: params.apiKey as string,
+        authorization: params.apiKey as string,
         'Content-Type': 'application/json',
       }
       const apiUrl = `${ASSEMBLYAI_API.BASE_URL}${ASSEMBLYAI_API.TRANSCRIPTS_ENDPOINT}`
       const payload: Record<string, unknown> = {
         audio_url: params.audioUrl,
+        speech_models: params.speechModels ?? ['universal-3-pro', 'universal-2'],
       }
       payload.punctuate = params.restorePunctuation !== false
       const trimmedLanguage = params.language?.trim()
@@ -293,7 +294,7 @@ export class AssemblyAiProvider implements SttProvider {
 
           const res = await this.fetchWithTimeout(
             getUrl,
-            { method: 'GET', headers: { Authorization: params.apiKey as string } },
+            { method: 'GET', headers: { authorization: params.apiKey as string } },
             timeoutMs,
             signal
           )
