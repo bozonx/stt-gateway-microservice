@@ -37,13 +37,20 @@ Links:
 
 Choose one of the options below.
 
-- Docker Compose (recommended):
+### Docker Compose (recommended)
 
 ```bash
+cp .env.production.example .env
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-- Run from source:
+Notes:
+
+- The Compose file contains both `image:` and `build:`.
+  - Use `--build` to build locally from source.
+  - Omit `--build` to pull and run the published image from GHCR.
+
+### Run from source
 
 ```bash
 pnpm install
@@ -402,9 +409,11 @@ To prevent Server-Side Request Forgery (SSRF) attacks, the service blocks reques
 - Minimal flow:
 
 ```bash
-pnpm install && pnpm build
+cp .env.production.example .env
 docker compose -f docker/docker-compose.yml up -d --build
 ```
+
+- The Docker image is built using a multi-stage Docker build (builder + runtime).
 
 `docker run` example:
 

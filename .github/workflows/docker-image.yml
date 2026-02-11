@@ -45,14 +45,14 @@ jobs:
       - name: Run unit tests
         run: pnpm test:unit
 
-      - name: Build the project
-        run: pnpm build
-
       - name: Build the Docker image
         run: |
           OWNER=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          docker build . --file docker/Dockerfile --build-arg NODE_MAJOR=${{ steps.versions.outputs.NODE_VERSION }} --tag ghcr.io/$OWNER/${{ steps.versions.outputs.APP_NAME }}:${{ steps.versions.outputs.APP_VERSION }}
-          docker build . --file docker/Dockerfile --build-arg NODE_MAJOR=${{ steps.versions.outputs.NODE_VERSION }} --tag ghcr.io/$OWNER/${{ steps.versions.outputs.APP_NAME }}:latest
+          docker build . \
+            --file docker/Dockerfile \
+            --build-arg NODE_MAJOR=${{ steps.versions.outputs.NODE_VERSION }} \
+            --tag ghcr.io/$OWNER/${{ steps.versions.outputs.APP_NAME }}:${{ steps.versions.outputs.APP_VERSION }} \
+            --tag ghcr.io/$OWNER/${{ steps.versions.outputs.APP_NAME }}:latest
 
       - name: Login to GHCR
         if: ${{ github.event_name == 'push' }}
