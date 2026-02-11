@@ -11,6 +11,8 @@ export interface TranscriptionRequestByUrl {
   models?: string[]
   // Format text output (e.g., punctuation, capitalization)
   formatText?: boolean
+  // If true, include word-level timings in the result when supported by the provider.
+  includeWords?: boolean
   // Total synchronization timeout in minutes (optional override)
   maxWaitMinutes?: number
 }
@@ -19,12 +21,14 @@ export interface SttProviderCapabilities {
   restorePunctuation: boolean
   formatText: boolean
   models: boolean
+  wordTimings: boolean
 }
 
 export interface WordTiming {
   start: number
   end: number
   text: string
+  confidence?: number
 }
 
 export interface TranscriptionResult {

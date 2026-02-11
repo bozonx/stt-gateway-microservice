@@ -42,6 +42,7 @@ describe('TranscriptionService', () => {
         restorePunctuation: true,
         formatText: true,
         models: true,
+        wordTimings: true,
       },
       submitAndWaitByUrl: jest.fn<(...args: any[]) => Promise<any>>(),
       ...overrides,
@@ -72,7 +73,31 @@ describe('TranscriptionService', () => {
     expect(res.provider).toBe('assemblyai')
     expect(res.requestId).toBe('id1')
     expect(res.wordsCount).toBe(1)
+    expect(res.words).toBeUndefined()
     expect(res.punctuationRestored).toBe(true)
+  })
+
+  it('returns words when includeWords=true', async () => {
+    const mockProvider = createMockProvider({
+      submitAndWaitByUrl: jest.fn<(...args: any[]) => Promise<any>>().mockResolvedValue({
+        text: 'hello',
+        requestId: 'id1',
+        words: [{ start: 0, end: 100, text: 'hello' }],
+        punctuationRestored: true,
+        raw: {},
+      }),
+    })
+
+    const svc = createService(mockProvider)
+    const res = await svc.transcribeByUrl({
+      audioUrl: 'https://example.com/a.mp3',
+      includeWords: true,
+    })
+
+    expect(res.words).toEqual([{ start: 0, end: 100, text: 'hello' }])
+    expect(mockProvider.submitAndWaitByUrl).toHaveBeenCalledWith(
+      expect.objectContaining({ includeWords: true })
+    )
   })
 
   it('trims language before forwarding to provider', async () => {
@@ -144,6 +169,7 @@ describe('TranscriptionService', () => {
         restorePunctuation: false,
         formatText: true,
         models: false,
+        wordTimings: false,
       },
       submitAndWaitByUrl: jest.fn<(...args: any[]) => Promise<any>>().mockResolvedValue({
         text: 'ok',
@@ -162,5 +188,31 @@ describe('TranscriptionService', () => {
         models: ['universal-3-pro'],
       })
     ).rejects.toThrow("Unsupported options for provider 'assemblyai': restorePunctuation, models")
+  })
+
+  it('rejects includeWords when provider does not support wordTimings', async () => {
+    const mockProvider = createMockProvider({
+      capabilities: {
+        restorePunctuation: true,
+        formatText: true,
+        models: true,
+        wordTimings: false,
+      },
+      submitAndWaitByUrl: jest.fn<(...args: any[]) => Promise<any>>().mockResolvedValue({
+        text: 'ok',
+        requestId: 'id6',
+        punctuationRestored: true,
+        raw: {},
+      }),
+    })
+
+    const svc = createService(mockProvider)
+
+    await expect(
+      svc.transcribeByUrl({
+        audioUrl: 'https://example.com/a.mp3',
+        includeWords: true,
+      })
+    ).rejects.toThrow("Unsupported options for provider 'assemblyai': includeWords")
   })
 })

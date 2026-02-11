@@ -39,6 +39,7 @@ export class AssemblyAiProvider implements SttProvider {
     restorePunctuation: true,
     formatText: true,
     models: true,
+    wordTimings: true,
   } as const
 
   private readonly activeAbortControllers = new Set<AbortController>()
@@ -398,12 +399,16 @@ export class AssemblyAiProvider implements SttProvider {
             durationSec: body.audio_duration,
             language: body.language_code,
             confidenceAvg: body.confidence,
-            words:
-              body.words?.map((w: { start: number; end: number; text: string }) => ({
-                start: w.start,
-                end: w.end,
-                text: w.text,
-              })) ?? undefined,
+            words: params.includeWords
+              ? (body.words?.map(
+                  (w: { start: number; end: number; text: string; confidence?: number }) => ({
+                    start: w.start,
+                    end: w.end,
+                    text: w.text,
+                    confidence: w.confidence,
+                  })
+                ) ?? undefined)
+              : undefined,
             punctuationRestored: params.restorePunctuation ?? true,
             raw: body,
           }

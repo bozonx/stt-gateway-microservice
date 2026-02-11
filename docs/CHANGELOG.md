@@ -1,5 +1,11 @@
 # CHANGELOG
 
+## Unreleased
+
+### New
+- Added optional `includeWords` request parameter to `/transcribe` and `/transcribe/stream`.
+  When enabled, the API returns `words` with word-level timings in milliseconds (provider-dependent).
+
 ## 2.2.0 — Code Audit & Performance Improvements
 
 ### New

@@ -178,6 +178,7 @@ curl http://localhost:8080/api/v1/health
 | `restorePunctuation` | boolean | No | Whether to restore punctuation in the transcription. Default: `true`. |
 | `language` | string | No | Source language code for transcription (e.g., `en`, `es`, `fr`). If omitted, the service enables provider language auto-detection (AssemblyAI: `language_detection=true`). Value is trimmed before sending to provider. |
 | `formatText` | boolean | No | Whether to format the transcribed text. Default: `true`. |
+| `includeWords` | boolean | No | If `true`, the response includes word-level timings (`words`) when supported by the selected provider. |
 | `models` | string[] | No | List of STT models to use (AssemblyAI only). If omitted, provider defaults are used. Example: `["universal-3-pro", "universal-2"]`. |
 | `apiKey` | string | No | Provider API key. If not provided, uses `ASSEMBLYAI_API_KEY` from environment. |
 | `maxWaitMinutes` | number | No | Override max synchronous wait time in minutes. |
@@ -208,6 +209,7 @@ This is intentional: it makes adding new providers safe and prevents silently ig
   "restorePunctuation": true,
   "language": "en",
   "formatText": true,
+  "includeWords": true,
   "models": ["universal-3-pro", "universal-2"],
   "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
@@ -225,6 +227,10 @@ This is intentional: it makes adding new providers safe and prevents silently ig
   "language": "en",
   "confidenceAvg": 0.95,
   "wordsCount": 234,
+  "words": [
+    { "start": 0, "end": 120, "text": "Hello", "confidence": 0.99 },
+    { "start": 130, "end": 260, "text": "world", "confidence": 0.98 }
+  ],
   "processingMs": 5432,
   "punctuationRestored": true,
   "raw": {}
@@ -242,6 +248,7 @@ This is intentional: it makes adding new providers safe and prevents silently ig
 | `language` | string (optional) | Detected or specified source language. |
 | `confidenceAvg` | number (optional) | Average confidence score (0-1). |
 | `wordsCount` | number (optional) | Number of words in the transcription. |
+| `words` | array (optional) | Word-level timings in milliseconds. Returned only when `includeWords=true`. |
 | `processingMs` | number | Total processing time in milliseconds. |
 | `punctuationRestored` | boolean | Whether punctuation was restored. |
 | `raw` | object | Raw response from the provider (for debugging/advanced use). |

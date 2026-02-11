@@ -47,6 +47,7 @@ export class TranscriptionService {
       restorePunctuation?: boolean
       formatText?: boolean
       models?: string[]
+      includeWords?: boolean
     }
   ): void {
     const unsupported: string[] = []
@@ -61,6 +62,10 @@ export class TranscriptionService {
 
     if (params.models !== undefined && params.models.length > 0 && !provider.capabilities.models) {
       unsupported.push('models')
+    }
+
+    if (params.includeWords === true && !provider.capabilities.wordTimings) {
+      unsupported.push('includeWords')
     }
 
     if (unsupported.length > 0) {
@@ -113,6 +118,7 @@ export class TranscriptionService {
     apiKey?: string
     language?: string
     formatText?: boolean
+    includeWords?: boolean
     maxWaitMinutes?: number
     models?: string[]
     signal?: AbortSignal
@@ -125,6 +131,7 @@ export class TranscriptionService {
     language?: string
     confidenceAvg?: number
     wordsCount?: number
+    words?: TranscriptionResult['words']
     processingMs: number
     punctuationRestored: boolean
     raw: unknown
@@ -176,6 +183,7 @@ export class TranscriptionService {
       restorePunctuation: params.restorePunctuation,
       formatText: params.formatText,
       models: params.models,
+      includeWords: params.includeWords,
     })
 
     const apiKeyToUse = params.apiKey || this.cfg.assemblyAiApiKey
@@ -197,6 +205,7 @@ export class TranscriptionService {
         restorePunctuation: params.restorePunctuation,
         language: trimmedLanguage,
         formatText: params.formatText,
+        includeWords: params.includeWords,
         models: params.models,
         maxWaitMinutes: params.maxWaitMinutes ?? this.cfg.defaultMaxWaitMinutes,
       })
@@ -235,6 +244,7 @@ export class TranscriptionService {
       language: result.language,
       confidenceAvg: result.confidenceAvg,
       wordsCount: result.words?.length,
+      words: params.includeWords ? result.words : undefined,
       processingMs,
       punctuationRestored: result.punctuationRestored ?? params.restorePunctuation ?? true,
       raw: result.raw,

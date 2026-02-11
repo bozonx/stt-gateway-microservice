@@ -13,6 +13,7 @@ export const transcribeJsonSchema = z.object({
   language: z.string().optional(),
   restorePunctuation: z.boolean().optional(),
   formatText: z.boolean().optional(),
+  includeWords: z.boolean().optional(),
   apiKey: z.string().optional(),
   maxWaitMinutes: z.number().int().min(1).optional(),
   models: z.array(z.string()).optional(),
@@ -30,6 +31,10 @@ export const transcribeStreamSchema = z.object({
     .transform((val) => val === 'true')
     .optional(),
   formatText: z
+    .enum(['true', 'false'])
+    .transform((val) => val === 'true')
+    .optional(),
+  includeWords: z
     .enum(['true', 'false'])
     .transform((val) => val === 'true')
     .optional(),

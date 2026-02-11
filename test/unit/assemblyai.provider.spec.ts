@@ -169,6 +169,55 @@ describe('AssemblyAiProvider', () => {
     expect(result.text).toBe('Quick')
   })
 
+  it('should return word timings only when includeWords=true', async () => {
+    fetchResponses = [
+      { status: 200, body: { id: mockTranscriptId, status: 'queued' } },
+      {
+        status: 200,
+        body: {
+          status: 'completed',
+          text: 'Hello world',
+          words: [
+            { text: 'Hello', start: 10, end: 100, confidence: 0.9 },
+            { text: 'world', start: 120, end: 200, confidence: 0.8 },
+          ],
+        },
+      },
+    ]
+
+    const noWords = await provider.submitAndWaitByUrl({
+      audioUrl: mockAudioUrl,
+      apiKey: mockApiKey,
+    })
+    expect(noWords.words).toBeUndefined()
+
+    fetchResponses = [
+      { status: 200, body: { id: mockTranscriptId, status: 'queued' } },
+      {
+        status: 200,
+        body: {
+          status: 'completed',
+          text: 'Hello world',
+          words: [
+            { text: 'Hello', start: 10, end: 100, confidence: 0.9 },
+            { text: 'world', start: 120, end: 200, confidence: 0.8 },
+          ],
+        },
+      },
+    ]
+
+    const withWords = await provider.submitAndWaitByUrl({
+      audioUrl: mockAudioUrl,
+      apiKey: mockApiKey,
+      includeWords: true,
+    })
+
+    expect(withWords.words).toEqual([
+      { text: 'Hello', start: 10, end: 100, confidence: 0.9 },
+      { text: 'world', start: 120, end: 200, confidence: 0.8 },
+    ])
+  })
+
   it('should throw ServiceUnavailableError when status is error', async () => {
     fetchResponses = [
       { status: 200, body: { id: mockTranscriptId, status: 'queued' } },
