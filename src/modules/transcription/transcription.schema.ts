@@ -20,44 +20,13 @@ export const transcribeJsonSchema = z.object({
 })
 
 /**
- * Schema for multipart/form-data transcription request
+ * Schema for raw streaming transcription request query parameters.
+ * All values come from the query string and therefore start as strings.
  */
-export const transcribeStreamSchema = z.object({
-  file: z.instanceof(File, { message: 'No file provided in multipart request' }),
+export const transcribeStreamQuerySchema = z.object({
   provider: z.string().optional(),
   language: z.string().optional(),
-  restorePunctuation: z
-    .enum(['true', 'false'])
-    .transform((val) => val === 'true')
-    .optional(),
-  formatText: z
-    .enum(['true', 'false'])
-    .transform((val) => val === 'true')
-    .optional(),
-  includeWords: z
-    .enum(['true', 'false'])
-    .transform((val) => val === 'true')
-    .optional(),
-  apiKey: z.string().optional(),
-  maxWaitMinutes: z
-    .string()
-    .optional()
-    .transform((val) => (val ? parseInt(val, 10) : undefined))
-    .refine((val) => val === undefined || (!isNaN(val) && val >= 1), {
-      message: 'maxWaitMinutes must be a number >= 1',
-    }),
-  models: z
-    .string()
-    .optional()
-    .transform((val) => (val ? val.split(',').map((s) => s.trim()) : undefined)),
-})
-
-/**
- * Schema for metadata fields only (used for manual multipart parsing in stream endpoint)
- */
-export const transcribeStreamMetadataSchema = z.object({
-  provider: z.string().optional(),
-  language: z.string().optional(),
+  filename: z.string().min(1).optional(),
   restorePunctuation: z
     .enum(['true', 'false'])
     .transform((val) => val === 'true')
@@ -85,5 +54,4 @@ export const transcribeStreamMetadataSchema = z.object({
 })
 
 export type TranscribeJsonRequest = z.infer<typeof transcribeJsonSchema>
-export type TranscribeStreamRequest = z.infer<typeof transcribeStreamSchema>
-export type TranscribeStreamMetadata = z.infer<typeof transcribeStreamMetadataSchema>
+export type TranscribeStreamQuery = z.infer<typeof transcribeStreamQuerySchema>

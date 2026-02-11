@@ -268,7 +268,7 @@ curl -X POST \
 
 **Endpoint:** `POST /{BASE_PATH}/api/v1/transcribe/stream`
 
-**Description:** Transcribes audio by uploading the file directly as a stream (`multipart/form-data`). The service **forwards the uploaded file to `tmp-files-microservice`**, obtains a temporary public URL, and then proceeds with transcription through the configured STT provider.
+**Description:** Transcribes audio by uploading the raw audio bytes directly as a stream (request body). The service **forwards the uploaded bytes to `tmp-files-microservice`**, obtains a temporary public URL, and then proceeds with transcription through the configured STT provider.
 
 **Notes:**
 - The gateway itself does not store files.
@@ -278,12 +278,14 @@ curl -X POST \
 
 - Method: `POST`
 - Headers:
-  - `Content-Type: multipart/form-data`
-- Body: Multipart form data with the following fields:
+  - `Content-Type: audio/*` (recommended) or `application/octet-stream`
+- Body: Raw audio bytes
 
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `file` | binary | **Yes** | The audio file content. |
+**Query parameters:**
+
+| Parameter | Type | Required | Description |
+|----------|------|----------|-------------|
+| `filename` | string | No | Original filename (used for tmp-files upload metadata). Default: `upload`. |
 | `provider` | string | No | STT provider name (e.g., `assemblyai`). |
 | `restorePunctuation` | boolean | No | Whether to restore punctuation. Default: `true`. |
 | `language` | string | No | Source language code (e.g., `en`, `es`). |
@@ -298,11 +300,9 @@ Same response format as `POST /transcribe`.
 **Example:**
 ```bash
 curl -X POST \
-  http://localhost:8080/api/v1/transcribe/stream \
-  -F "file=@/path/to/audio.mp3" \
-  -F "provider=assemblyai" \
-  -F "language=en"
-```
+  "http://localhost:8080/api/v1/transcribe/stream?provider=assemblyai&language=en&filename=audio.mp3" \
+  -H "Content-Type: audio/mpeg" \
+  --data-binary "@/path/to/audio.mp3"
 ```
 
 ---
