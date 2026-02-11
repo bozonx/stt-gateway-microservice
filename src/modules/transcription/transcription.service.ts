@@ -40,6 +40,36 @@ export class TranscriptionService {
     throw new BadRequestError('Unsupported provider')
   }
 
+  private enforceProviderCapabilities(
+    providerName: string,
+    provider: SttProvider,
+    params: {
+      restorePunctuation?: boolean
+      formatText?: boolean
+      models?: string[]
+    }
+  ): void {
+    const unsupported: string[] = []
+
+    if (params.restorePunctuation !== undefined && !provider.capabilities.restorePunctuation) {
+      unsupported.push('restorePunctuation')
+    }
+
+    if (params.formatText !== undefined && !provider.capabilities.formatText) {
+      unsupported.push('formatText')
+    }
+
+    if (params.models !== undefined && params.models.length > 0 && !provider.capabilities.models) {
+      unsupported.push('models')
+    }
+
+    if (unsupported.length > 0) {
+      throw new BadRequestError(
+        `Unsupported options for provider '${providerName}': ${unsupported.join(', ')}`
+      )
+    }
+  }
+
   private async enforceSizeLimitIfKnown(audioUrl: string, signal?: AbortSignal) {
     const hostForLog = (() => {
       try {
@@ -141,6 +171,12 @@ export class TranscriptionService {
     }
 
     const provider = this.selectProvider(params.provider)
+    const providerName = (params.provider ?? this.cfg.defaultProvider).toLowerCase()
+    this.enforceProviderCapabilities(providerName, provider, {
+      restorePunctuation: params.restorePunctuation,
+      formatText: params.formatText,
+      models: params.models,
+    })
 
     const apiKeyToUse = params.apiKey || this.cfg.assemblyAiApiKey
     if (!apiKeyToUse) {
@@ -193,7 +229,7 @@ export class TranscriptionService {
 
     return {
       text: result.text,
-      provider: (params.provider ?? this.cfg.defaultProvider).toLowerCase(),
+      provider: providerName,
       requestId: result.requestId,
       durationSec: result.durationSec,
       language: result.language,

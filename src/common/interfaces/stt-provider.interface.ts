@@ -15,6 +15,12 @@ export interface TranscriptionRequestByUrl {
   maxWaitMinutes?: number
 }
 
+export interface SttProviderCapabilities {
+  restorePunctuation: boolean
+  formatText: boolean
+  models: boolean
+}
+
 export interface WordTiming {
   start: number
   end: number
@@ -35,5 +41,6 @@ export interface TranscriptionResult {
 }
 
 export interface SttProvider {
+  capabilities: SttProviderCapabilities
   submitAndWaitByUrl(params: TranscriptionRequestByUrl): Promise<TranscriptionResult>
 }

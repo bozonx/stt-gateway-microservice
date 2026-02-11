@@ -35,6 +35,12 @@ interface AssemblyTranscriptResponse {
 }
 
 export class AssemblyAiProvider implements SttProvider {
+  public readonly capabilities = {
+    restorePunctuation: true,
+    formatText: true,
+    models: true,
+  } as const
+
   private readonly activeAbortControllers = new Set<AbortController>()
   private readonly shutdownAbortController = new AbortController()
 

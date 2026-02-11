@@ -182,6 +182,24 @@ curl http://localhost:8080/api/v1/health
 | `apiKey` | string | No | Provider API key. If not provided, uses `ASSEMBLYAI_API_KEY` from environment. |
 | `maxWaitMinutes` | number | No | Override max synchronous wait time in minutes. |
 
+**Provider-specific options**
+
+Not all STT providers support all request fields.
+
+If you send an option that is not supported by the selected provider, the API returns `400 Bad Request` with a message like:
+
+```
+Unsupported options for provider 'PROVIDER_NAME': restorePunctuation, models
+```
+
+This is intentional: it makes adding new providers safe and prevents silently ignored parameters.
+
+**Provider compatibility matrix**
+
+| Provider | `restorePunctuation` | `formatText` | `models` |
+|----------|----------------------|-------------|----------|
+| `assemblyai` | Yes | Yes | Yes |
+
 **Request Example:**
 ```json
 {

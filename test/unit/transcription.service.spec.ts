@@ -36,15 +36,27 @@ describe('TranscriptionService', () => {
     return new TranscriptionService(registry, sttConfig, logger)
   }
 
+  function createMockProvider(overrides?: Partial<any>) {
+    return {
+      capabilities: {
+        restorePunctuation: true,
+        formatText: true,
+        models: true,
+      },
+      submitAndWaitByUrl: jest.fn<(...args: any[]) => Promise<any>>(),
+      ...overrides,
+    }
+  }
+
   it('rejects private host url', async () => {
-    const mockProvider = { submitAndWaitByUrl: jest.fn() }
+    const mockProvider = createMockProvider()
     const svc = createService(mockProvider)
     await expect(svc.transcribeByUrl({ audioUrl: 'http://localhost:8000/a.mp3' })).rejects.toThrow()
   })
 
   it('returns response shape on success', async () => {
-    const mockProvider = {
-      submitAndWaitByUrl: jest.fn().mockResolvedValue({
+    const mockProvider = createMockProvider({
+      submitAndWaitByUrl: jest.fn<(...args: any[]) => Promise<any>>().mockResolvedValue({
         text: 'hello',
         requestId: 'id1',
         durationSec: 1,
@@ -52,7 +64,7 @@ describe('TranscriptionService', () => {
         confidenceAvg: 0.9,
         words: [{ start: 0, end: 100, text: 'hello' }],
       }),
-    }
+    })
 
     const svc = createService(mockProvider)
     const res = await svc.transcribeByUrl({ audioUrl: 'https://example.com/a.mp3' })
@@ -64,13 +76,13 @@ describe('TranscriptionService', () => {
   })
 
   it('trims language before forwarding to provider', async () => {
-    const mockProvider = {
-      submitAndWaitByUrl: jest.fn().mockResolvedValue({
+    const mockProvider = createMockProvider({
+      submitAndWaitByUrl: jest.fn<(...args: any[]) => Promise<any>>().mockResolvedValue({
         text: 'ok',
         requestId: 'id2',
         punctuationRestored: true,
       }),
-    }
+    })
 
     const svc = createService(mockProvider)
     await svc.transcribeByUrl({
@@ -85,13 +97,13 @@ describe('TranscriptionService', () => {
   })
 
   it('forwards AbortSignal to provider', async () => {
-    const mockProvider = {
-      submitAndWaitByUrl: jest.fn().mockResolvedValue({
+    const mockProvider = createMockProvider({
+      submitAndWaitByUrl: jest.fn<(...args: any[]) => Promise<any>>().mockResolvedValue({
         text: 'ok',
         requestId: 'id3',
         punctuationRestored: true,
       }),
-    }
+    })
 
     const svc = createService(mockProvider)
     const ac = new AbortController()
@@ -107,13 +119,13 @@ describe('TranscriptionService', () => {
   })
 
   it('forwards models to provider', async () => {
-    const mockProvider = {
-      submitAndWaitByUrl: jest.fn().mockResolvedValue({
+    const mockProvider = createMockProvider({
+      submitAndWaitByUrl: jest.fn<(...args: any[]) => Promise<any>>().mockResolvedValue({
         text: 'ok',
         requestId: 'id4',
         punctuationRestored: true,
       }),
-    }
+    })
 
     const svc = createService(mockProvider)
     await svc.transcribeByUrl({
@@ -124,5 +136,31 @@ describe('TranscriptionService', () => {
     expect(mockProvider.submitAndWaitByUrl).toHaveBeenCalledWith(
       expect.objectContaining({ models: ['universal-3-pro', 'universal-2'] })
     )
+  })
+
+  it('rejects unsupported options for provider', async () => {
+    const mockProvider = createMockProvider({
+      capabilities: {
+        restorePunctuation: false,
+        formatText: true,
+        models: false,
+      },
+      submitAndWaitByUrl: jest.fn<(...args: any[]) => Promise<any>>().mockResolvedValue({
+        text: 'ok',
+        requestId: 'id5',
+        punctuationRestored: true,
+        raw: {},
+      }),
+    })
+
+    const svc = createService(mockProvider)
+
+    await expect(
+      svc.transcribeByUrl({
+        audioUrl: 'https://example.com/a.mp3',
+        restorePunctuation: true,
+        models: ['universal-3-pro'],
+      })
+    ).rejects.toThrow("Unsupported options for provider 'assemblyai': restorePunctuation, models")
   })
 })

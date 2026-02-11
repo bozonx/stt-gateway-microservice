@@ -30,6 +30,16 @@ export const LANGUAGE_MAP: Record<string, string> = {
 export function normalizeLanguageCode(input?: string): string | undefined {
   if (!input) return undefined
   const cleaned = input.trim().toLowerCase()
+  
+  // If it's already a 2-letter code, return it
   if (cleaned.length === 2) return cleaned
+  
+  // If it's a locale code like 'ru-RU' or 'en-US', extract the language part
+  if (cleaned.includes('-')) {
+    const languagePart = cleaned.split('-')[0]
+    if (languagePart.length === 2) return languagePart
+  }
+  
+  // Try to map full language name to code
   return LANGUAGE_MAP[cleaned] || cleaned
 }
