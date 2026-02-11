@@ -105,4 +105,24 @@ describe('TranscriptionService', () => {
       expect.objectContaining({ signal: ac.signal })
     )
   })
+
+  it('forwards models to provider', async () => {
+    const mockProvider = {
+      submitAndWaitByUrl: jest.fn().mockResolvedValue({
+        text: 'ok',
+        requestId: 'id4',
+        punctuationRestored: true,
+      }),
+    }
+
+    const svc = createService(mockProvider)
+    await svc.transcribeByUrl({
+      audioUrl: 'https://example.com/a.mp3',
+      models: ['universal-3-pro', 'universal-2'],
+    })
+
+    expect(mockProvider.submitAndWaitByUrl).toHaveBeenCalledWith(
+      expect.objectContaining({ models: ['universal-3-pro', 'universal-2'] })
+    )
+  })
 })

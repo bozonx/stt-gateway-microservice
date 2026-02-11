@@ -8,7 +8,7 @@ export interface TranscriptionRequestByUrl {
   // Source language code
   language?: string
   // Models to use for transcription (e.g., ['universal-3-pro', 'universal-2'])
-  speechModels?: string[]
+  models?: string[]
   // Format text output (e.g., punctuation, capitalization)
   formatText?: boolean
   // Total synchronization timeout in minutes (optional override)

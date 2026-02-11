@@ -152,8 +152,8 @@ export class AssemblyAiProvider implements SttProvider {
       const payload: Record<string, unknown> = {
         audio_url: params.audioUrl,
       }
-      if (params.speechModels && params.speechModels.length > 0) {
-        payload.speech_models = params.speechModels
+      if (params.models && params.models.length > 0) {
+        payload.speech_models = params.models
       }
       payload.punctuate = params.restorePunctuation !== false
       const trimmedLanguage = params.language?.trim()
@@ -221,14 +221,18 @@ export class AssemblyAiProvider implements SttProvider {
             )
 
             if (res.status >= 400 || !createResData?.id) {
-              const errorDetail = createResData?.error || (createResData ? JSON.stringify(createResData) : 'no response body')
+              const errorDetail =
+                createResData?.error ||
+                (createResData ? JSON.stringify(createResData) : 'no response body')
               const isRetryable = res.status === 429 || res.status >= 500 || res.status === 0
 
               if (isRetryable && !isLastAttempt) {
                 this.logger.warn(
                   `Failed to create transcription (retryable status ${res.status}). Error: ${errorDetail}`
                 )
-                lastError = new ServiceUnavailableError(`Failed to create transcription: ${errorDetail}`)
+                lastError = new ServiceUnavailableError(
+                  `Failed to create transcription: ${errorDetail}`
+                )
                 continue
               }
 
@@ -346,7 +350,9 @@ export class AssemblyAiProvider implements SttProvider {
 
         if (statusCode >= 400 && statusCode < 500) {
           const errMsg = responseBody?.error || `Polling failed with status ${statusCode}`
-          this.logger.error(`Client error during polling for ID: ${id} (status ${statusCode}): ${errMsg}`)
+          this.logger.error(
+            `Client error during polling for ID: ${id} (status ${statusCode}): ${errMsg}`
+          )
           throw new ServiceUnavailableError(errMsg)
         }
 
@@ -398,9 +404,7 @@ export class AssemblyAiProvider implements SttProvider {
 
         if (body.status === 'error') {
           const detail = body.error || 'Unknown error'
-          this.logger.error(
-            `Transcription failed for ID: ${id}. Error: ${detail}`
-          )
+          this.logger.error(`Transcription failed for ID: ${id}. Error: ${detail}`)
           throw new ServiceUnavailableError(`Transcription failed: ${detail}`)
         }
       }

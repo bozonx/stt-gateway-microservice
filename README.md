@@ -1,12 +1,12 @@
 # STT Gateway Microservice (Hono)
 
 High-performance microservice for synchronous speech-to-text from a public audio URL.
-Built with Hono. Runs on both **Cloudflare Workers** and **Node.js** (Docker). Uses AssemblyAI by default. No built-in auth, Swagger, or GraphQL.
+Built with Hono. Runs on both **Cloudflare Workers** and **Node.js** (Docker). Uses AssemblyAI by default. Optional Bearer token auth. No Swagger or GraphQL.
 
 Links:
 
 - API: see [API](#api) section below
-- Dev guide: see [Development guide](docs/dev.md) (link duplicated at the bottom)
+- Dev guide: see [Development guide](docs/dev.md)
 
 ## Table of contents
 
@@ -98,6 +98,9 @@ STT variables:
 - `MAX_RETRIES` — maximum number of retries for the initial submit request (default: 3)
 - `RETRY_DELAY_MS` — delay between retries in milliseconds (default: 1500)
 - `ASSEMBLYAI_API_KEY` — optional default provider key (used if request has no `apiKey`)
+- `TMP_FILES_BASE_URL` — base URL for tmp-files microservice (required for `POST /transcribe/stream`)
+- `TMP_FILES_BEARER_TOKEN` — optional Bearer token for tmp-files microservice
+- `TMP_FILES_DEFAULT_TTL_MINS` — default TTL (minutes) for uploaded files
 
 ## API
 
@@ -168,7 +171,7 @@ curl http://localhost:8080/api/v1/health
 | `restorePunctuation` | boolean | No | Whether to restore punctuation in the transcription. Default: `true`. |
 | `language` | string | No | Source language code for transcription (e.g., `en`, `es`, `fr`). If omitted, the service enables provider language auto-detection (AssemblyAI: `language_detection=true`). Value is trimmed before sending to provider. |
 | `formatText` | boolean | No | Whether to format the transcribed text. Default: `true`. |
-| `speechModels` | string[] | No | List of models to use (AssemblyAI only). If omitted, provider defaults are used. Recommended: `["universal-3-pro", "universal-2"]` for best accuracy and speed. |
+| `models` | string[] | No | List of STT models to use (AssemblyAI only). If omitted, provider defaults are used. Example: `["universal-3-pro", "universal-2"]`. |
 | `apiKey` | string | No | Provider API key. If not provided, uses `ASSEMBLYAI_API_KEY` from environment. |
 | `maxWaitMinutes` | number | No | Override max synchronous wait time in minutes. |
 
@@ -180,6 +183,7 @@ curl http://localhost:8080/api/v1/health
   "restorePunctuation": true,
   "language": "en",
   "formatText": true,
+  "models": ["universal-3-pro", "universal-2"],
   "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
 ```
@@ -198,9 +202,7 @@ curl http://localhost:8080/api/v1/health
   "wordsCount": 234,
   "processingMs": 5432,
   "punctuationRestored": true,
-  "raw": {
-    // Raw response from the provider (structure varies by provider)
-  }
+  "raw": {}
 }
 ```
 
@@ -254,6 +256,7 @@ curl -X POST \
 | `restorePunctuation` | boolean | No | Whether to restore punctuation. Default: `true`. |
 | `language` | string | No | Source language code (e.g., `en`, `es`). |
 | `formatText` | boolean | No | Whether to format the transcribed text. Default: `true`. |
+| `models` | string | No | Comma-separated list of STT models (AssemblyAI only). Example: `universal-3-pro,universal-2`. |
 | `apiKey` | string | No | Provider API key. |
 | `maxWaitMinutes` | number | No | Override max synchronous wait time in minutes. |
 
@@ -283,9 +286,7 @@ All error responses follow a consistent format:
   "path": "/api/v1/transcribe",
   "method": "POST",
   "message": "Human-readable error message",
-  "error": {
-    // Additional error details (varies by error type)
-  }
+  "error": "BadRequestError"
 }
 ```
 
@@ -443,7 +444,7 @@ Adjust verbosity with `LOG_LEVEL`.
 ## n8n integration
 
 - Community node: `n8n-nodes-bozonx-stt-gateway-microservice` (see package in this repo).
-- Use `Bozonx Microservices API` credentials with:
+- Use `STT Gateway API` credentials with:
   - Gateway URL (without trailing slash), e.g., `https://api.example.com`
   - Optional API Token: adds `Authorization: Bearer <token>` if provided
 - The node calls `POST {{gatewayUrl}}/{{basePath}}/api/v1/transcribe` with the same JSON body as the REST API.

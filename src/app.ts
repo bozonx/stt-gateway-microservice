@@ -46,8 +46,16 @@ export function createApp(deps: AppDeps) {
 
   // Global error handler — consistent error response format
   app.onError((err, c) => {
-    const status = err instanceof HttpError ? err.statusCode : 500
-    const message = err instanceof Error ? err.message : 'Internal server error'
+    const isInvalidJsonError =
+      err instanceof SyntaxError ||
+      (err instanceof Error && (err.message === 'Invalid JSON' || err.message.includes('JSON')))
+
+    const status = isInvalidJsonError ? 400 : err instanceof HttpError ? err.statusCode : 500
+    const message = isInvalidJsonError
+      ? 'Invalid JSON'
+      : err instanceof Error
+        ? err.message
+        : 'Internal server error'
 
     if (status >= 500) {
       logger.error(
@@ -105,87 +113,95 @@ export function createApp(deps: AppDeps) {
     `${prefix}/transcribe`,
     zValidator('json', transcribeJsonSchema, (result) => {
       if (!result.success) {
-        const message = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')
+        const message = result.error.issues
+          .map((i) => `${i.path.join('.')}: ${i.message}`)
+          .join('; ')
         throw new BadRequestError(`Validation failed: ${message}`)
       }
     }),
     async (c) => {
       const payload = c.req.valid('json')
 
-    logger.info(`Received transcription request for URL: ${payload.audioUrl}`)
+      logger.info(`Received transcription request for URL: ${payload.audioUrl}`)
 
-    const abortController = new AbortController()
+      const abortController = new AbortController()
 
-    // Listen for client disconnect if the runtime supports it
-    c.req.raw.signal?.addEventListener('abort', () => {
-      if (!abortController.signal.aborted) abortController.abort()
-    })
+      // Listen for client disconnect if the runtime supports it
+      c.req.raw.signal?.addEventListener('abort', () => {
+        if (!abortController.signal.aborted) abortController.abort()
+      })
 
-    const result = await transcriptionService.transcribeByUrl({
-      audioUrl: payload.audioUrl,
-      provider: payload.provider,
-      restorePunctuation: payload.restorePunctuation,
-      language: payload.language,
-      formatText: payload.formatText,
-      apiKey: payload.apiKey,
-      maxWaitMinutes: payload.maxWaitMinutes,
-      signal: abortController.signal,
-    })
+      const result = await transcriptionService.transcribeByUrl({
+        audioUrl: payload.audioUrl,
+        provider: payload.provider,
+        restorePunctuation: payload.restorePunctuation,
+        language: payload.language,
+        formatText: payload.formatText,
+        models: payload.models,
+        apiKey: payload.apiKey,
+        maxWaitMinutes: payload.maxWaitMinutes,
+        signal: abortController.signal,
+      })
 
-    logger.info(
-      `Transcription request completed. Provider: ${result.provider}, Processing time: ${result.processingMs}ms`
-    )
+      logger.info(
+        `Transcription request completed. Provider: ${result.provider}, Processing time: ${result.processingMs}ms`
+      )
 
-    return c.json(result)
-  })
+      return c.json(result)
+    }
+  )
 
   // POST /transcribe/stream — multipart/form-data
   app.post(
     `${prefix}/transcribe/stream`,
     zValidator('form', transcribeStreamSchema, (result) => {
       if (!result.success) {
-        const message = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')
+        const message = result.error.issues
+          .map((i) => `${i.path.join('.')}: ${i.message}`)
+          .join('; ')
         throw new BadRequestError(`Validation failed: ${message}`)
       }
     }),
     async (c) => {
-    const payload = c.req.valid('form')
+      const payload = c.req.valid('form')
 
-    logger.info('Received streaming transcription request')
+      logger.info('Received streaming transcription request')
 
-    const abortController = new AbortController()
-    c.req.raw.signal?.addEventListener('abort', () => {
-      if (!abortController.signal.aborted) abortController.abort()
-    })
+      const abortController = new AbortController()
+      c.req.raw.signal?.addEventListener('abort', () => {
+        if (!abortController.signal.aborted) abortController.abort()
+      })
 
-    logger.debug(`Found file: ${payload.file.name} (${payload.file.type})`)
+      logger.debug(`Found file: ${payload.file.name} (${payload.file.type})`)
 
-    // Upload to tmp-files service
-    const audioUrl = await tmpFilesService.uploadFile(
-      payload.file,
-      payload.file.name,
-      payload.file.type || 'application/octet-stream',
-      abortController.signal
-    )
+      // Upload to tmp-files service
+      const audioUrl = await tmpFilesService.uploadFile(
+        payload.file,
+        payload.file.name,
+        payload.file.type || 'application/octet-stream',
+        abortController.signal
+      )
 
-    const result = await transcriptionService.transcribeByUrl({
-      audioUrl,
-      provider: payload.provider,
-      language: payload.language,
-      apiKey: payload.apiKey,
-      restorePunctuation: payload.restorePunctuation,
-      formatText: payload.formatText,
-      maxWaitMinutes: payload.maxWaitMinutes,
-      signal: abortController.signal,
-      isInternalSource: true,
-    })
+      const result = await transcriptionService.transcribeByUrl({
+        audioUrl,
+        provider: payload.provider,
+        language: payload.language,
+        apiKey: payload.apiKey,
+        restorePunctuation: payload.restorePunctuation,
+        formatText: payload.formatText,
+        models: payload.models,
+        maxWaitMinutes: payload.maxWaitMinutes,
+        signal: abortController.signal,
+        isInternalSource: true,
+      })
 
-    logger.info(
-      `Stream transcription completed. Provider: ${result.provider}, Processing time: ${result.processingMs}ms`
-    )
+      logger.info(
+        `Stream transcription completed. Provider: ${result.provider}, Processing time: ${result.processingMs}ms`
+      )
 
-    return c.json(result)
-  })
+      return c.json(result)
+    }
+  )
 
   return { app, assemblyAiProvider }
 }

@@ -19,6 +19,8 @@ describe('Transcribe (e2e)', () => {
       }
 
       if (method === 'POST' && typeof url === 'string' && url.includes('api.assemblyai.com')) {
+        const body = JSON.parse(init?.body as string)
+        expect(body.speech_models).toEqual(['universal-3-pro', 'universal-2'])
         return new Response(JSON.stringify({ id: transcriptId, status: 'queued' }), { status: 200 })
       }
 
@@ -42,7 +44,11 @@ describe('Transcribe (e2e)', () => {
     const response = await app.request('/api/v1/transcribe', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ audioUrl: 'https://example.com/a.mp3', provider: 'assemblyai' }),
+      body: JSON.stringify({
+        audioUrl: 'https://example.com/a.mp3',
+        provider: 'assemblyai',
+        models: ['universal-3-pro', 'universal-2'],
+      }),
     })
 
     expect(response.status).toBe(200)

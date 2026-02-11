@@ -19,7 +19,7 @@ describe('Transcription Stream (e2e)', () => {
 
     expect(response.status).toBe(400)
     const body = await response.json()
-    expect(body.message).toContain('multipart/form-data')
+    expect(body.message).toContain('file')
   })
 
   it('POST /transcribe/stream should return 400 if no file provided', async () => {

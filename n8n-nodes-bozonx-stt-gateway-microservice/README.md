@@ -32,6 +32,7 @@ Content-Type: application/json
   "restorePunctuation": true,
   "language": "en",
   "formatText": true,
+  "models": ["universal-3-pro", "universal-2"],
   "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
 ```
@@ -71,6 +72,9 @@ Content-Type: application/json
 
 - **Format Text** (boolean)
   Whether to format text output (punctuation, capitalization). Default: `true`. When omitted the service still sends `format_text: true` to AssemblyAI.
+
+- **Models** (string[], optional)
+  List of STT models to use (AssemblyAI only). If omitted, provider defaults are used.
 
 - **Provider API Key** (string, optional)
   Direct provider API key (BYO) when allowed by service policy.

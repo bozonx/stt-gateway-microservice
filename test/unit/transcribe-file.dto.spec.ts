@@ -70,6 +70,31 @@ describe('Transcribe request validation', () => {
     expect(body.message).toContain('language')
   })
 
+  it('accepts optional models array', async () => {
+    const app = makeApp()
+    const res = await app.request('/api/v1/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        audioUrl: 'https://example.com/a.mp3',
+        models: ['universal-3-pro', 'universal-2'],
+      }),
+    })
+    expect(res.status).not.toBe(400)
+  })
+
+  it('rejects invalid models type', async () => {
+    const app = makeApp()
+    const res = await app.request('/api/v1/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ audioUrl: 'https://example.com/a.mp3', models: 'universal-3-pro' }),
+    })
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.message).toContain('models')
+  })
+
   it('rejects non-http url', async () => {
     const app = makeApp()
     const res = await app.request('/api/v1/transcribe', {

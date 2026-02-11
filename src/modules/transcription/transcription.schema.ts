@@ -15,7 +15,7 @@ export const transcribeJsonSchema = z.object({
   formatText: z.boolean().optional(),
   apiKey: z.string().optional(),
   maxWaitMinutes: z.number().int().min(1).optional(),
-  speechModels: z.array(z.string()).optional(),
+  models: z.array(z.string()).optional(),
 })
 
 /**
@@ -41,7 +41,7 @@ export const transcribeStreamSchema = z.object({
     .refine((val) => val === undefined || (!isNaN(val) && val >= 1), {
       message: 'maxWaitMinutes must be a number >= 1',
     }),
-  speechModels: z
+  models: z
     .string()
     .optional()
     .transform((val) => (val ? val.split(',').map((s) => s.trim()) : undefined)),

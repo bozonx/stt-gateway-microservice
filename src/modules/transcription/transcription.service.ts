@@ -84,7 +84,7 @@ export class TranscriptionService {
     language?: string
     formatText?: boolean
     maxWaitMinutes?: number
-    speechModels?: string[]
+    models?: string[]
     signal?: AbortSignal
     isInternalSource?: boolean
   }): Promise<{
@@ -161,7 +161,7 @@ export class TranscriptionService {
         restorePunctuation: params.restorePunctuation,
         language: trimmedLanguage,
         formatText: params.formatText,
-        speechModels: params.speechModels,
+        models: params.models,
         maxWaitMinutes: params.maxWaitMinutes ?? this.cfg.defaultMaxWaitMinutes,
       })
     } catch (err: unknown) {

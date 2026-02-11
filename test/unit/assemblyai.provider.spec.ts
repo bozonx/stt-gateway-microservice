@@ -90,6 +90,26 @@ describe('AssemblyAiProvider', () => {
     expect(body.language_detection).toBeUndefined()
   })
 
+  it('should pass speech_models when models are provided', async () => {
+    fetchResponses = [
+      { status: 200, body: { id: mockTranscriptId, status: 'queued' } },
+      { status: 200, body: { status: 'completed', text: 'Hello world' } },
+    ]
+
+    const result = await provider.submitAndWaitByUrl({
+      audioUrl: mockAudioUrl,
+      apiKey: mockApiKey,
+      models: ['universal-3-pro', 'universal-2'],
+    })
+
+    expect(result.text).toBe('Hello world')
+
+    const fetchMock = globalThis.fetch as jest.Mock
+    const firstCall = fetchMock.mock.calls[0] as any[]
+    const body = JSON.parse(firstCall[1].body)
+    expect(body.speech_models).toEqual(['universal-3-pro', 'universal-2'])
+  })
+
   it('should successfully complete transcription (queued → processing → completed)', async () => {
     fetchResponses = [
       { status: 200, body: { id: mockTranscriptId, status: 'queued' } },
