@@ -5,27 +5,13 @@ import {
   InternalServerError,
   ClientClosedRequestError,
 } from '../../common/errors/http-error.js'
+import { isAbortError } from '../../utils/error.utils.js'
 
 export class TmpFilesService {
   constructor(
     private readonly cfg: SttConfig,
     private readonly logger: Logger
   ) {}
-
-  private isAbortError(error: unknown): boolean {
-    if (!error || typeof error !== 'object') return false
-
-    const err = error as { name?: unknown; code?: unknown; message?: unknown }
-    const name = typeof err.name === 'string' ? err.name : undefined
-    const code = typeof err.code === 'string' ? err.code : undefined
-    const message = typeof err.message === 'string' ? err.message : undefined
-
-    return (
-      name === 'AbortError' ||
-      code === 'UND_ERR_ABORTED' ||
-      message === 'This operation was aborted'
-    )
-  }
 
   /**
    * Uploads a file (as Blob/File) to the temporary files microservice using Web-standard FormData.
@@ -93,7 +79,7 @@ export class TmpFilesService {
         throw error
       }
 
-      if (this.isAbortError(error) || signal?.aborted) {
+      if (isAbortError(error) || signal?.aborted) {
         throw new ClientClosedRequestError('Upload aborted by client')
       }
 

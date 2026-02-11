@@ -7,11 +7,12 @@ import type { Logger } from '../../common/interfaces/logger.interface.js'
 import {
   BadRequestError,
   UnauthorizedError,
-  GatewayTimeoutError,
   HttpError,
   ClientClosedRequestError,
+  InternalServerError,
 } from '../../common/errors/http-error.js'
 import { isPrivateHost } from '../../utils/network.utils.js'
+import { isAbortError } from '../../utils/error.utils.js'
 import type { SttProviderRegistry } from '../../providers/stt-provider.registry.js'
 
 export class TranscriptionService {
@@ -162,16 +163,25 @@ export class TranscriptionService {
         maxWaitMinutes: params.maxWaitMinutes ?? this.cfg.defaultMaxWaitMinutes,
       })
     } catch (err: unknown) {
-      if (params.signal?.aborted) {
+      if (params.signal?.aborted || isAbortError(err)) {
         throw new ClientClosedRequestError()
       }
       if (err instanceof HttpError) {
-        this.logger.error(`Transcription failed with HTTP error: ${err.message}`)
+        // Log errors with status check for better visibility
+        if (err.statusCode >= 500) {
+          this.logger.error(`Transcription failed with provider error: ${err.message}`)
+        } else {
+          this.logger.warn(`Transcription rejected: ${err.message}`)
+        }
         throw err
       }
+
+      // If it's not an HttpError, it's an unexpected system error (bug/crash)
       const em = err instanceof Error ? err.message : String(err)
-      this.logger.error(`Transcription timeout or unknown error: ${em}`)
-      throw new GatewayTimeoutError('TRANSCRIPTION_TIMEOUT')
+      const stack = err instanceof Error ? err.stack : undefined
+      this.logger.error({ err: em, stack }, `Unexpected error during transcription: ${em}`)
+
+      throw new InternalServerError(`Transcription failed due to an internal error: ${em}`)
     }
     const processingMs = Date.now() - start
 

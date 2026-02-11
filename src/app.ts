@@ -101,8 +101,16 @@ export function createApp(deps: AppDeps) {
   })
 
   // POST /transcribe — JSON body
-  app.post(`${prefix}/transcribe`, zValidator('json', transcribeJsonSchema), async (c) => {
-    const payload = c.req.valid('json')
+  app.post(
+    `${prefix}/transcribe`,
+    zValidator('json', transcribeJsonSchema, (result) => {
+      if (!result.success) {
+        const message = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')
+        throw new BadRequestError(`Validation failed: ${message}`)
+      }
+    }),
+    async (c) => {
+      const payload = c.req.valid('json')
 
     logger.info(`Received transcription request for URL: ${payload.audioUrl}`)
 
@@ -132,7 +140,15 @@ export function createApp(deps: AppDeps) {
   })
 
   // POST /transcribe/stream — multipart/form-data
-  app.post(`${prefix}/transcribe/stream`, zValidator('form', transcribeStreamSchema), async (c) => {
+  app.post(
+    `${prefix}/transcribe/stream`,
+    zValidator('form', transcribeStreamSchema, (result) => {
+      if (!result.success) {
+        const message = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).join('; ')
+        throw new BadRequestError(`Validation failed: ${message}`)
+      }
+    }),
+    async (c) => {
     const payload = c.req.valid('form')
 
     logger.info('Received streaming transcription request')

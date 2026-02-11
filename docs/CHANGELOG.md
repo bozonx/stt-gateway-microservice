@@ -1,5 +1,18 @@
 # CHANGELOG
 
+## 2.2.0 — Code Audit & Performance Improvements
+
+### New
+- **Cloudflare Workers Optimization**: Implemented lazy initialization (caching) of the Hono application instance, significantly reducing cold start overhead and memory churn.
+- **Structured Logging for Workers**: Replaced plain console logging with a JSON-based logger that matches the **Pino** format (used in Node.js), enabling unified log aggregation.
+- **Shared Error Utilities**: Centralized `AbortError` detection logic to reduce duplication across services.
+
+### Improved
+- **Error Handling**: 
+    - Transcription errors are now better categorized: distinguished between internal system errors (500) and provider/network timeouts (504).
+    - Validation errors from Zod are now caught and returned in the global consistent error format (fixing unit tests).
+- **Code Style**: Refactored `TranscriptionService` and `TmpFilesService` for better readability and consistent use of `isAbortError`.
+
 ## 2.1.0 — Validation & Error Handling Improvements
 
 ### New

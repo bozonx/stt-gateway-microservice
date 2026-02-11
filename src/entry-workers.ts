@@ -12,9 +12,9 @@ interface Env {
 }
 
 /**
- * Console-based logger for Cloudflare Workers
+ * JSON-based logger for Cloudflare Workers to match Pino format
  */
-function createWorkersLogger(level: string): Logger {
+function createWorkersLogger(level: string, env: string): Logger {
   const levels: Record<string, number> = {
     trace: 10,
     debug: 20,
@@ -26,33 +26,49 @@ function createWorkersLogger(level: string): Logger {
   }
   const threshold = levels[level] ?? 30
 
-  const noop = () => {}
+  const log = (lvlName: string, lvlNum: number, msgOrObj: any, msg?: string) => {
+    if (lvlNum < threshold) return
+
+    const logObj: Record<string, any> = {
+      level: lvlNum,
+      time: Date.now(),
+      hostname: 'workers',
+      environment: env,
+      service: 'stt-gateway-microservice',
+    }
+
+    if (typeof msgOrObj === 'string') {
+      logObj.msg = msgOrObj
+    } else {
+      Object.assign(logObj, msgOrObj)
+      if (msg) logObj.msg = msg
+    }
+
+    console.log(JSON.stringify(logObj))
+  }
 
   return {
-    debug: threshold <= 20 ? (msg: string) => console.debug(msg) : noop,
-    info: threshold <= 30 ? (msg: string) => console.info(msg) : noop,
-    warn: threshold <= 40 ? (msg: string) => console.warn(msg) : noop,
-    error: threshold <= 50
-      ? (msgOrObj: string | Record<string, unknown>, msg?: string) => {
-          if (typeof msgOrObj === 'string') {
-            console.error(msgOrObj)
-          } else {
-            console.error(msg, msgOrObj)
-          }
-        }
-      : noop,
+    debug: (msg: any) => log('debug', 20, msg),
+    info: (msg: any) => log('info', 30, msg),
+    warn: (msg: any) => log('warn', 40, msg),
+    error: (msgOrObj: any, msg?: string) => log('error', 50, msgOrObj, msg),
   }
 }
 
+let cachedApp: any = null
+
 export default {
   async fetch(request: Request, env: Env): Promise<Response> {
-    const envRecord = env as Record<string, string | undefined>
-    const appConfig = loadAppConfig(envRecord)
-    const sttConfig = loadSttConfig(envRecord)
-    const logger = createWorkersLogger(appConfig.logLevel)
+    if (!cachedApp) {
+      const envRecord = env as Record<string, string | undefined>
+      const appConfig = loadAppConfig(envRecord)
+      const sttConfig = loadSttConfig(envRecord)
+      const logger = createWorkersLogger(appConfig.logLevel, appConfig.nodeEnv)
 
-    const { app } = createApp({ appConfig, sttConfig, logger })
+      const { app } = createApp({ appConfig, sttConfig, logger })
+      cachedApp = app
+    }
 
-    return app.fetch(request, env)
+    return cachedApp.fetch(request, env)
   },
 }
