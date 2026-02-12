@@ -284,7 +284,7 @@ curl -X POST \
 
 **Notes:**
 - In Cloudflare Workers, `TMP_FILES_BASE_URL` must be a publicly reachable URL (a Docker-internal hostname like `http://tmp-files-microservice:8080` will not work).
-- **Cloudflare Workers require a Service Binding** (`TMP_FILES_SERVICE`) to communicate with `tmp-files-microservice` on the same account. Without it, Worker-to-Worker `fetch()` via `*.workers.dev` fails with Cloudflare error 1042. The binding is configured in `wrangler.toml`.
+- **Cloudflare Workers require a Service Binding** (`tmp-files`) to communicate with `tmp-files-microservice` on the same account. Without it, Worker-to-Worker `fetch()` via `*.workers.dev` fails with Cloudflare error 1042. The binding is configured in `wrangler.toml`. `TMP_FILES_BASE_URL` is still required — it provides the request path and resolves relative download URLs.
 
 **Request:**
 

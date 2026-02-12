@@ -8,7 +8,7 @@ import type { Logger } from './common/interfaces/logger.interface.js'
  * Add your bindings here as needed
  */
 interface Env extends Record<string, unknown> {
-  TMP_FILES_SERVICE?: { fetch: typeof fetch }
+  'tmp-files'?: { fetch: typeof fetch }
 }
 
 /**
@@ -65,8 +65,9 @@ export default {
       const sttConfig = loadSttConfig(envRecord)
       const logger = createWorkersLogger(appConfig.logLevel, appConfig.nodeEnv)
 
-      const tmpFilesFetcher = env.TMP_FILES_SERVICE
-        ? env.TMP_FILES_SERVICE.fetch.bind(env.TMP_FILES_SERVICE)
+      const tmpFilesBinding = env['tmp-files']
+      const tmpFilesFetcher = tmpFilesBinding
+        ? tmpFilesBinding.fetch.bind(tmpFilesBinding)
         : undefined
 
       const { app } = createApp({ appConfig, sttConfig, logger, tmpFilesFetcher })
