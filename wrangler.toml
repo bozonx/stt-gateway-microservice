@@ -12,7 +12,7 @@ POLL_INTERVAL_MS = "1500"
 DEFAULT_MAX_WAIT_MINUTES = "3"
 MAX_RETRIES = "3"
 RETRY_DELAY_MS = "1500"
-TMP_FILES_BASE_URL = "https://tmp-files.example.com/api/v1"
+TMP_FILES_BASE_URL = "https://tmp-files-microservice.ivank.workers.dev/api/v1"
 TMP_FILES_DEFAULT_TTL_MINS = "10"
 
 # Secrets (set via `wrangler secret put`):

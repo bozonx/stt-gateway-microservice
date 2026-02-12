@@ -16,8 +16,6 @@ RUN pnpm install --frozen-lockfile --prefer-offline || pnpm install --prefer-off
 
 COPY tsconfig.json tsconfig.build.json ./
 COPY src ./src
-COPY test ./test
-COPY jest.config.ts jest.d.ts ./
 RUN pnpm build
 RUN pnpm prune --prod
 
