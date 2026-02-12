@@ -46,9 +46,13 @@ export function createApp(deps: AppDeps) {
 
   // Global error handler — consistent error response format
   app.onError((err, c) => {
+    const reqContentType = c.req.header('content-type')
+    const isRequestJson = Boolean(reqContentType && reqContentType.startsWith('application/json'))
+
     const isInvalidJsonError =
-      err instanceof SyntaxError ||
-      (err instanceof Error && (err.message === 'Invalid JSON' || err.message.includes('JSON')))
+      isRequestJson &&
+      (err instanceof SyntaxError ||
+        (err instanceof Error && (err.message === 'Invalid JSON' || err.message.includes('JSON'))))
 
     const status = isInvalidJsonError ? 400 : err instanceof HttpError ? err.statusCode : 500
     const message = isInvalidJsonError

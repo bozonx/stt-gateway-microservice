@@ -107,12 +107,38 @@ export class TmpFilesService {
       throw new BadRequestError('File too large for temporary storage')
     }
 
-    const responseBody = (await res.json()) as Record<string, unknown>
+    const contentType = res.headers.get('content-type')
+    const isJson = Boolean(contentType && contentType.toLowerCase().includes('application/json'))
+
+    const bodyText = await res
+      .clone()
+      .text()
+      .catch(() => undefined)
+
+    const looksLikeJson = Boolean(bodyText && /^[\s]*[\[{]/.test(bodyText))
+    const shouldAttemptJsonParse = isJson || looksLikeJson
+
+    const responseBody: Record<string, unknown> = (() => {
+      if (!shouldAttemptJsonParse) return {}
+      if (!bodyText) return {}
+      try {
+        return JSON.parse(bodyText) as Record<string, unknown>
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error)
+        this.logger.error(
+          `Invalid JSON from tmp-files service. Status: ${res.status}, Content-Type: ${contentType ?? 'unknown'}, Error: ${msg}, Body: ${bodyText.slice(
+            0,
+            500
+          )}`
+        )
+        throw new InternalServerError('Invalid response from temporary storage')
+      }
+    })()
 
     if (res.status !== 201) {
       this.logger.error(
         `Failed to upload to tmp-files service. Status: ${res.status}, Body: ${JSON.stringify(
-          responseBody
+          isJson ? responseBody : { rawBody: bodyText?.slice(0, 500) }
         )}`
       )
       throw new InternalServerError('Failed to upload file to temporary storage')

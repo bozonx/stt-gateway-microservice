@@ -109,4 +109,45 @@ describe('Transcription Stream (e2e)', () => {
     expect(body.text).toBe('hello stream')
     expect(body.requestId).toBe(transcriptId)
   })
+
+  it('POST /transcribe/stream returns 500 if tmp-files responds with invalid JSON', async () => {
+    globalThis.fetch = (jest.fn() as any).mockImplementation(async (...args: any[]) => {
+      const urlStr = String(args[0])
+      const init = args[1] as RequestInit | undefined
+      const method = init?.method ?? 'GET'
+
+      if (method === 'POST' && urlStr.includes('/files')) {
+        return new Response('not-json', {
+          status: 201,
+          headers: { 'content-type': 'application/json' },
+        })
+      }
+
+      return new Response(
+        JSON.stringify({ message: 'Unexpected fetch call', url: urlStr, method }),
+        {
+          status: 500,
+        }
+      )
+    }) as any
+
+    process.env.ASSEMBLYAI_API_KEY = 'x'
+    process.env.TMP_FILES_BASE_URL = 'https://tmp-files.example/api/v1'
+
+    const app = createTestApp()
+
+    const response = await app.request('/api/v1/transcribe/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'audio/mpeg',
+        'X-STT-Provider': 'assemblyai',
+        'X-File-Name': 'a.mp3',
+      },
+      body: 'abc',
+    })
+
+    expect(response.status).toBe(500)
+    const body = (await response.json()) as any
+    expect(body.message).toContain('Invalid response from temporary storage')
+  })
 })

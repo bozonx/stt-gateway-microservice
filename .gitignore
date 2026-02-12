@@ -2,6 +2,7 @@ test-data/
 dist/
 test-nest/
 .wrangler/
+.dev.vars
 
 # dotenv environment variable files
 .env
