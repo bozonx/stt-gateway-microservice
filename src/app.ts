@@ -21,6 +21,7 @@ export interface AppDeps {
   appConfig: AppConfig
   sttConfig: SttConfig
   logger: Logger
+  tmpFilesFetcher?: typeof fetch
 }
 
 /**
@@ -28,13 +29,13 @@ export interface AppDeps {
  * Platform-agnostic — works on both Node.js and Cloudflare Workers.
  */
 export function createApp(deps: AppDeps) {
-  const { appConfig, sttConfig, logger } = deps
+  const { appConfig, sttConfig, logger, tmpFilesFetcher } = deps
 
   // Wire up services (manual DI)
   const assemblyAiProvider = new AssemblyAiProvider(sttConfig, logger)
   const registry = new SttProviderRegistry(assemblyAiProvider)
   const transcriptionService = new TranscriptionService(registry, sttConfig, logger)
-  const tmpFilesService = new TmpFilesService(sttConfig, logger)
+  const tmpFilesService = new TmpFilesService(sttConfig, logger, tmpFilesFetcher)
 
   // Build base path prefix
   const prefix = appConfig.basePath ? `/${appConfig.basePath}/api/v1` : '/api/v1'

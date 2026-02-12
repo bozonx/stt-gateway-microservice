@@ -15,6 +15,11 @@ RETRY_DELAY_MS = "1500"
 TMP_FILES_BASE_URL = "https://tmp-files-microservice.ivank.workers.dev/api/v1"
 TMP_FILES_DEFAULT_TTL_MINS = "10"
 
+# Service Bindings (Worker-to-Worker)
+[[services]]
+binding = "tmp-files"
+service = "tmp-files-microservice"
+
 # Secrets (set via `wrangler secret put`):
 # ASSEMBLYAI_API_KEY
 # TMP_FILES_BEARER_TOKEN

@@ -7,8 +7,8 @@ import type { Logger } from './common/interfaces/logger.interface.js'
  * Cloudflare Workers env bindings
  * Add your bindings here as needed
  */
-interface Env {
-  [key: string]: string | undefined
+interface Env extends Record<string, unknown> {
+  TMP_FILES_SERVICE?: { fetch: typeof fetch }
 }
 
 /**
@@ -65,7 +65,11 @@ export default {
       const sttConfig = loadSttConfig(envRecord)
       const logger = createWorkersLogger(appConfig.logLevel, appConfig.nodeEnv)
 
-      const { app } = createApp({ appConfig, sttConfig, logger })
+      const tmpFilesFetcher = env.TMP_FILES_SERVICE
+        ? env.TMP_FILES_SERVICE.fetch.bind(env.TMP_FILES_SERVICE)
+        : undefined
+
+      const { app } = createApp({ appConfig, sttConfig, logger, tmpFilesFetcher })
       cachedApp = app
     }
 

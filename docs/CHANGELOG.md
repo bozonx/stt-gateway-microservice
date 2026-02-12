@@ -5,6 +5,7 @@
 ### Changed
 - **Tmp-files integration**: Migrated from multipart/form-data to raw HTTP streaming upload. The gateway now sends raw audio bytes directly to `tmp-files-microservice` via `POST /files` with `X-File-Name`, `X-Ttl-Mins`, `Content-Type`, and optional `Content-Length` headers. This eliminates multipart framing overhead and ensures true streaming without buffering on the gateway side.
 - **Content-Length forwarding**: The `/transcribe/stream` endpoint now forwards the incoming `Content-Length` header to tmp-files. This is critical for Cloudflare Workers/R2 runtime, where tmp-files buffers the entire request body in memory if `Content-Length` is not provided.
+- **Cloudflare Service Binding for tmp-files**: Added `TMP_FILES_SERVICE` Service Binding in `wrangler.toml` for Worker-to-Worker communication with `tmp-files-microservice`. This fixes Cloudflare error 1042 (Worker Not Found) that occurred when one Worker called another on the same account via `*.workers.dev` domain using global `fetch()`. The binding is used automatically on Cloudflare Workers; Node.js runtime continues to use standard `fetch()`.
 
 ### New
 - Added optional `includeWords` request parameter to `/transcribe` and `/transcribe/stream`.

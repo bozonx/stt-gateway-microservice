@@ -8,10 +8,15 @@ import {
 import { isAbortError } from '../../utils/error.utils.js'
 
 export class TmpFilesService {
+  private readonly fetchFn: typeof fetch
+
   constructor(
     private readonly cfg: SttConfig,
-    private readonly logger: Logger
-  ) {}
+    private readonly logger: Logger,
+    fetcher?: typeof fetch
+  ) {
+    this.fetchFn = fetcher ?? ((...args: Parameters<typeof fetch>) => globalThis.fetch(...args))
+  }
 
   /**
    * Uploads a file stream to the temporary files microservice using streaming multipart.
@@ -44,7 +49,7 @@ export class TmpFilesService {
     }
 
     try {
-      const res = await fetch(`${this.cfg.tmpFilesBaseUrl}/files`, {
+      const res = await this.fetchFn(`${this.cfg.tmpFilesBaseUrl}/files`, {
         method: 'POST',
         // @ts-expect-error duplex is required for streaming body in Node.js but not in Workers
         duplex: 'half',
@@ -89,7 +94,7 @@ export class TmpFilesService {
     }
 
     try {
-      const res = await fetch(`${this.cfg.tmpFilesBaseUrl}/files`, {
+      const res = await this.fetchFn(`${this.cfg.tmpFilesBaseUrl}/files`, {
         method: 'POST',
         body: file,
         headers,
