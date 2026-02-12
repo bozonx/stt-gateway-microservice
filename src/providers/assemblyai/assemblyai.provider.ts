@@ -43,7 +43,7 @@ export class AssemblyAiProvider implements SttProvider {
   } as const
 
   private readonly activeAbortControllers = new Set<AbortController>()
-  private readonly shutdownAbortController = new AbortController()
+  private shutdownRequested = false
 
   constructor(
     private readonly cfg: SttConfig,
@@ -72,9 +72,7 @@ export class AssemblyAiProvider implements SttProvider {
   }
 
   public shutdown(): void {
-    if (!this.shutdownAbortController.signal.aborted) {
-      this.shutdownAbortController.abort()
-    }
+    this.shutdownRequested = true
 
     for (const ac of this.activeAbortControllers) {
       if (!ac.signal.aborted) {
@@ -94,7 +92,7 @@ export class AssemblyAiProvider implements SttProvider {
       if (!ac.signal.aborted) ac.abort()
     }
 
-    if (externalSignal?.aborted || this.shutdownAbortController.signal.aborted) {
+    if (externalSignal?.aborted || this.shutdownRequested) {
       abort()
       const cleanup = () => {
         this.activeAbortControllers.delete(ac)
@@ -103,15 +101,13 @@ export class AssemblyAiProvider implements SttProvider {
     }
 
     externalSignal?.addEventListener('abort', abort)
-    this.shutdownAbortController.signal.addEventListener('abort', abort)
 
-    if (externalSignal?.aborted || this.shutdownAbortController.signal.aborted) {
+    if (externalSignal?.aborted || this.shutdownRequested) {
       abort()
     }
 
     const cleanup = () => {
       externalSignal?.removeEventListener('abort', abort)
-      this.shutdownAbortController.signal.removeEventListener('abort', abort)
       this.activeAbortControllers.delete(ac)
     }
 
@@ -174,7 +170,7 @@ export class AssemblyAiProvider implements SttProvider {
 
       this.logger.debug(
         `AssemblyAI create request: url=${apiUrl}, hasAuthHeader=${Boolean(
-          headers.Authorization
+          headers.authorization
         )}, punctuate=${Boolean(payload.punctuate)}, language_detection=${Boolean(
           payload.language_detection
         )}, language_code=${(payload.language_code as string) ?? 'default'}, format_text=${Boolean(
