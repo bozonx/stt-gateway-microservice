@@ -6,7 +6,6 @@ import {
   ClientClosedRequestError,
 } from '../../common/errors/http-error.js'
 import { isAbortError } from '../../utils/error.utils.js'
-import { createMultipartStream } from '../../utils/multipart-stream.utils.js'
 
 export class TmpFilesService {
   constructor(
@@ -27,22 +26,18 @@ export class TmpFilesService {
     fileStream: ReadableStream<Uint8Array>,
     filename: string,
     contentType: string,
+    contentLengthBytes?: number,
     signal?: AbortSignal
   ): Promise<string> {
     this.logger.info(`Streaming file to tmp-files service: ${filename} (${contentType})`)
 
-    const { body, contentType: multipartContentType } = createMultipartStream({
-      textFields: [{ name: 'ttlMins', value: this.cfg.tmpFilesDefaultTtlMins.toString() }],
-      fileField: {
-        name: 'file',
-        filename,
-        contentType,
-        stream: fileStream,
-      },
-    })
-
     const headers: Record<string, string> = {
-      'Content-Type': multipartContentType,
+      'Content-Type': contentType,
+      'X-File-Name': filename,
+      'X-Ttl-Mins': this.cfg.tmpFilesDefaultTtlMins.toString(),
+    }
+    if (typeof contentLengthBytes === 'number' && Number.isFinite(contentLengthBytes)) {
+      headers['Content-Length'] = String(Math.max(0, Math.trunc(contentLengthBytes)))
     }
     if (this.cfg.tmpFilesBearerToken) {
       headers['Authorization'] = `Bearer ${this.cfg.tmpFilesBearerToken}`
@@ -53,7 +48,7 @@ export class TmpFilesService {
         method: 'POST',
         // @ts-expect-error duplex is required for streaming body in Node.js but not in Workers
         duplex: 'half',
-        body,
+        body: fileStream,
         headers,
         signal,
       })
@@ -81,11 +76,14 @@ export class TmpFilesService {
   ): Promise<string> {
     this.logger.info(`Forwarding file to tmp-files service: ${filename} (${contentType})`)
 
-    const form = new FormData()
-    form.append('file', new File([file], filename, { type: contentType }))
-    form.append('ttlMins', this.cfg.tmpFilesDefaultTtlMins.toString())
-
-    const headers: Record<string, string> = {}
+    const headers: Record<string, string> = {
+      'Content-Type': contentType,
+      'X-File-Name': filename,
+      'X-Ttl-Mins': this.cfg.tmpFilesDefaultTtlMins.toString(),
+    }
+    if (Number.isFinite(file.size)) {
+      headers['Content-Length'] = String(Math.max(0, Math.trunc(file.size)))
+    }
     if (this.cfg.tmpFilesBearerToken) {
       headers['Authorization'] = `Bearer ${this.cfg.tmpFilesBearerToken}`
     }
@@ -93,7 +91,7 @@ export class TmpFilesService {
     try {
       const res = await fetch(`${this.cfg.tmpFilesBaseUrl}/files`, {
         method: 'POST',
-        body: form,
+        body: file,
         headers,
         signal,
       })

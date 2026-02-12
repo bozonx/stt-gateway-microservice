@@ -30,6 +30,17 @@ describe('TmpFilesService', () => {
     service = new TmpFilesService(mockCfg, logger)
   })
 
+  function concatUint8Arrays(parts: Uint8Array[]): Uint8Array {
+    const total = parts.reduce((sum, p) => sum + p.length, 0)
+    const out = new Uint8Array(total)
+    let offset = 0
+    for (const p of parts) {
+      out.set(p, offset)
+      offset += p.length
+    }
+    return out
+  }
+
   afterEach(() => {
     globalThis.fetch = originalFetch
   })
@@ -39,11 +50,11 @@ describe('TmpFilesService', () => {
   })
 
   it('should successfully upload a file and return the download URL', async () => {
-    globalThis.fetch = jest
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ downloadUrl: '/api/v1/download/uuid-123' }), { status: 201 })
-      ) as any
+    globalThis.fetch = jest.fn(async () => {
+      return new Response(JSON.stringify({ downloadUrl: '/api/v1/download/uuid-123' }), {
+        status: 201,
+      })
+    }) as any as any
 
     const file = new Blob(['test audio data'], { type: 'audio/mpeg' })
     const result = await service.uploadFile(file, 'test.mp3', 'audio/mpeg')
@@ -53,13 +64,11 @@ describe('TmpFilesService', () => {
 
   describe('uploadStream', () => {
     it('should stream file to tmp-files and return the download URL', async () => {
-      const fetchMock = jest
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ downloadUrl: '/api/v1/download/stream-123' }), {
-            status: 201,
-          })
-        ) as any
+      const fetchMock = jest.fn(async () => {
+        return new Response(JSON.stringify({ downloadUrl: '/api/v1/download/stream-123' }), {
+          status: 201,
+        })
+      }) as any as any
       globalThis.fetch = fetchMock
 
       const chunks = [new Uint8Array([1, 2, 3]), new Uint8Array([4, 5, 6])]
@@ -78,17 +87,20 @@ describe('TmpFilesService', () => {
         expect.objectContaining({
           method: 'POST',
           headers: expect.objectContaining({
-            'Content-Type': expect.stringContaining('multipart/form-data; boundary='),
+            'Content-Type': 'audio/mpeg',
+            'X-File-Name': 'test.mp3',
+            'X-Ttl-Mins': '30',
           }),
         })
       )
     })
 
-    it('should send correct multipart body with file data and ttlMins', async () => {
+    it('should forward raw stream bytes without multipart framing', async () => {
       let capturedBody: ReadableStream<Uint8Array> | null = null
-      const fetchMock = jest.fn().mockImplementation(async (_url: string, init?: RequestInit) => {
+      const fetchMock = jest.fn().mockImplementation(async (...args: any[]) => {
+        const init = args[1] as RequestInit | undefined
         capturedBody = init?.body as ReadableStream<Uint8Array>
-        // Consume the stream to get the full body
+
         const reader = capturedBody.getReader()
         const parts: Uint8Array[] = []
         while (true) {
@@ -96,13 +108,17 @@ describe('TmpFilesService', () => {
           if (done) break
           parts.push(value)
         }
-        const decoder = new TextDecoder()
-        const bodyText = parts.map((p) => decoder.decode(p, { stream: true })).join('')
-        expect(bodyText).toContain('name="ttlMins"')
-        expect(bodyText).toContain('30')
-        expect(bodyText).toContain('name="file"')
-        expect(bodyText).toContain('filename="audio.wav"')
-        expect(bodyText).toContain('Content-Type: audio/wav')
+
+        const text = new TextDecoder().decode(concatUint8Arrays(parts))
+        expect(text).toBe('audio-data')
+
+        expect(init?.headers).toEqual(
+          expect.objectContaining({
+            'Content-Type': 'audio/wav',
+            'X-File-Name': 'audio.wav',
+            'X-Ttl-Mins': '30',
+          })
+        )
 
         return new Response(JSON.stringify({ downloadUrl: '/download/x' }), { status: 201 })
       }) as any
@@ -119,6 +135,31 @@ describe('TmpFilesService', () => {
       expect(fetchMock).toHaveBeenCalledTimes(1)
     })
 
+    it('should send Content-Length header when contentLengthBytes is provided', async () => {
+      const fetchMock = jest.fn(async () => {
+        return new Response(JSON.stringify({ downloadUrl: '/download/y' }), { status: 201 })
+      }) as any as any
+      globalThis.fetch = fetchMock
+
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(new Uint8Array([1, 2, 3]))
+          controller.close()
+        },
+      })
+
+      await service.uploadStream(stream, 'a.bin', 'application/octet-stream', 3)
+
+      expect(fetchMock).toHaveBeenCalledWith(
+        expect.stringContaining('/files'),
+        expect.objectContaining({
+          headers: expect.objectContaining({
+            'Content-Length': '3',
+          }),
+        })
+      )
+    })
+
     it('should include Authorization header when tmpFilesBearerToken is set', async () => {
       const token = 'stream-token'
       const serviceWithAuth = new TmpFilesService(
@@ -126,11 +167,9 @@ describe('TmpFilesService', () => {
         createMockLogger()
       )
 
-      const fetchMock = jest
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ downloadUrl: '/file' }), { status: 201 })
-        ) as any
+      const fetchMock = jest.fn(async () => {
+        return new Response(JSON.stringify({ downloadUrl: '/file' }), { status: 201 })
+      }) as any as any
       globalThis.fetch = fetchMock
 
       const stream = new ReadableStream<Uint8Array>({
@@ -154,11 +193,9 @@ describe('TmpFilesService', () => {
 
     it('should return full URL when tmp-files returns absolute downloadUrl', async () => {
       const fullUrl = 'https://cdn.example.com/file/abc'
-      globalThis.fetch = jest
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ downloadUrl: fullUrl }), { status: 201 })
-        ) as any
+      globalThis.fetch = jest.fn(async () => {
+        return new Response(JSON.stringify({ downloadUrl: fullUrl }), { status: 201 })
+      }) as any as any
 
       const stream = new ReadableStream<Uint8Array>({
         start(controller) {
@@ -172,11 +209,9 @@ describe('TmpFilesService', () => {
     })
 
     it('should throw BadRequestError when tmp-files returns 413', async () => {
-      globalThis.fetch = jest
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ message: 'Payload Too Large' }), { status: 413 })
-        ) as any
+      globalThis.fetch = jest.fn(async () => {
+        return new Response(JSON.stringify({ message: 'Payload Too Large' }), { status: 413 })
+      }) as any as any
 
       const stream = new ReadableStream<Uint8Array>({
         start(controller) {
@@ -191,11 +226,9 @@ describe('TmpFilesService', () => {
     })
 
     it('should throw InternalServerError for server errors', async () => {
-      globalThis.fetch = jest
-        .fn()
-        .mockResolvedValue(
-          new Response(JSON.stringify({ message: 'Internal Error' }), { status: 500 })
-        ) as any
+      globalThis.fetch = jest.fn(async () => {
+        return new Response(JSON.stringify({ message: 'Internal Error' }), { status: 500 })
+      }) as any as any
 
       const stream = new ReadableStream<Uint8Array>({
         start(controller) {
@@ -210,11 +243,9 @@ describe('TmpFilesService', () => {
     })
 
     it('should throw ClientClosedRequestError when aborted', async () => {
-      globalThis.fetch = jest
-        .fn()
-        .mockRejectedValue(
-          Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })
-        ) as any
+      globalThis.fetch = jest.fn(async () => {
+        throw Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })
+      }) as any as any
 
       const abortController = new AbortController()
       abortController.abort()
@@ -227,7 +258,7 @@ describe('TmpFilesService', () => {
       })
 
       await expect(
-        service.uploadStream(stream, 'test.mp3', 'audio/mpeg', abortController.signal)
+        service.uploadStream(stream, 'test.mp3', 'audio/mpeg', undefined, abortController.signal)
       ).rejects.toThrow(ClientClosedRequestError)
     })
   })
@@ -235,11 +266,9 @@ describe('TmpFilesService', () => {
   it('should return the full download URL if the service returns a full URL', async () => {
     const fullUrl = 'https://external-storage.com/file/uuid-456'
 
-    globalThis.fetch = jest
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ downloadUrl: fullUrl }), { status: 201 })
-      ) as any
+    globalThis.fetch = jest.fn(async () => {
+      return new Response(JSON.stringify({ downloadUrl: fullUrl }), { status: 201 })
+    }) as any as any
 
     const file = new Blob(['test'], { type: 'audio/mpeg' })
     const result = await service.uploadFile(file, 'test.mp3', 'audio/mpeg')
@@ -254,11 +283,9 @@ describe('TmpFilesService', () => {
       createMockLogger()
     )
 
-    const fetchMock = jest
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ downloadUrl: '/file' }), { status: 201 })
-      ) as any
+    const fetchMock = jest.fn(async () => {
+      return new Response(JSON.stringify({ downloadUrl: '/file' }), { status: 201 })
+    }) as any as any
     globalThis.fetch = fetchMock
 
     const file = new Blob(['test'], { type: 'audio/mpeg' })
@@ -275,11 +302,9 @@ describe('TmpFilesService', () => {
   })
 
   it('should throw BadRequestError when tmp-files returns 413', async () => {
-    globalThis.fetch = jest
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ message: 'Payload Too Large' }), { status: 413 })
-      ) as any
+    globalThis.fetch = jest.fn(async () => {
+      return new Response(JSON.stringify({ message: 'Payload Too Large' }), { status: 413 })
+    }) as any as any
 
     const file = new Blob(['large file'], { type: 'audio/mpeg' })
     await expect(service.uploadFile(file, 'large.mp3', 'audio/mpeg')).rejects.toThrow(
@@ -288,11 +313,9 @@ describe('TmpFilesService', () => {
   })
 
   it('should throw InternalServerError for other errors', async () => {
-    globalThis.fetch = jest
-      .fn()
-      .mockResolvedValue(
-        new Response(JSON.stringify({ message: 'Internal Error' }), { status: 500 })
-      ) as any
+    globalThis.fetch = jest.fn(async () => {
+      return new Response(JSON.stringify({ message: 'Internal Error' }), { status: 500 })
+    }) as any as any
 
     const file = new Blob(['test'], { type: 'audio/mpeg' })
     await expect(service.uploadFile(file, 'test.mp3', 'audio/mpeg')).rejects.toThrow(
@@ -301,9 +324,9 @@ describe('TmpFilesService', () => {
   })
 
   it('should throw InternalServerError if downloadUrl is missing in response', async () => {
-    globalThis.fetch = jest
-      .fn()
-      .mockResolvedValue(new Response(JSON.stringify({}), { status: 201 })) as any
+    globalThis.fetch = jest.fn(async () => {
+      return new Response(JSON.stringify({}), { status: 201 })
+    }) as any as any
 
     const file = new Blob(['test'], { type: 'audio/mpeg' })
     await expect(service.uploadFile(file, 'test.mp3', 'audio/mpeg')).rejects.toThrow(
@@ -312,11 +335,9 @@ describe('TmpFilesService', () => {
   })
 
   it('should throw ClientClosedRequestError when request is aborted', async () => {
-    globalThis.fetch = jest
-      .fn()
-      .mockRejectedValue(
-        Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })
-      ) as any
+    globalThis.fetch = jest.fn(async () => {
+      throw Object.assign(new Error('This operation was aborted'), { name: 'AbortError' })
+    }) as any as any
 
     const abortController = new AbortController()
     abortController.abort()

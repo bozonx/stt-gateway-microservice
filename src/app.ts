@@ -189,6 +189,13 @@ export function createApp(deps: AppDeps) {
       const contentType = contentTypeHeader ?? 'application/octet-stream'
       logger.debug(`Streaming raw body as file: ${filename} (${contentType})`)
 
+      const contentLengthHeader = c.req.header('content-length')
+      const contentLengthBytes = (() => {
+        if (!contentLengthHeader) return undefined
+        const parsed = Number(contentLengthHeader)
+        return Number.isFinite(parsed) && parsed >= 0 ? Math.trunc(parsed) : undefined
+      })()
+
       const fileStream = c.req.raw.body
       if (!fileStream) {
         throw new BadRequestError('Validation failed: body: No request body provided')
@@ -198,6 +205,7 @@ export function createApp(deps: AppDeps) {
         fileStream,
         filename,
         contentType,
+        contentLengthBytes,
         abortController.signal
       )
 
