@@ -7,9 +7,8 @@
   "scripts": {
     "build": "tsc",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "start": "node dist/src/entry-node.js",
-    "start:dev": "NODE_ENV=development node --env-file=.env.development --import tsx --watch src/entry-node.ts",
-    "start:worker:dev": "wrangler dev --port 8086",
+    "dev": "NODE_ENV=development node --env-file=.env.development --import tsx --watch src/entry-node.ts",
+    "dev:worker": "wrangler dev --port 8086",
     "start:prod": "NODE_ENV=production node dist/src/entry-node.js",
     "lint": "eslint \"{src,test}/**/*.ts\" --fix",
     "test": "NODE_OPTIONS=--experimental-vm-modules jest",
