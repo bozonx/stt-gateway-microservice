@@ -268,10 +268,21 @@ curl -X POST \
 
 **Endpoint:** `POST /{BASE_PATH}/api/v1/transcribe/stream`
 
-**Description:** Transcribes audio by uploading the raw audio bytes directly as a stream (request body). The service **forwards the uploaded bytes to `tmp-files-microservice`**, obtains a temporary public URL, and then proceeds with transcription through the configured STT provider.
+**Description:** Transcribes audio by uploading the raw audio bytes directly as a stream (request body). The service **forwards the uploaded bytes to `tmp-files-microservice` via raw HTTP streaming upload** (no multipart framing), obtains a temporary public URL, and then proceeds with transcription through the configured STT provider.
+
+**Implementation details:**
+- The gateway itself does not store files.
+- Raw audio bytes are streamed directly to tmp-files without buffering on the gateway side.
+- The request uses `POST {TMP_FILES_BASE_URL}/files` with headers:
+  - `Content-Type` — forwarded from the incoming request
+  - `X-File-Name` — from the `filename` query parameter (default: `upload`)
+  - `X-Ttl-Mins` — from `TMP_FILES_DEFAULT_TTL_MINS` (default: 30)
+  - `Content-Length` — forwarded from the incoming request when provided
+
+**Recommendation for clients:**
+- Always include the `Content-Length` header when uploading files. This is critical for Cloudflare Workers/R2 runtime, where tmp-files may buffer the entire request body in memory if `Content-Length` is not provided.
 
 **Notes:**
-- The gateway itself does not store files.
 - In Cloudflare Workers, `TMP_FILES_BASE_URL` must be a publicly reachable URL (a Docker-internal hostname like `http://tmp-files-microservice:8080` will not work).
 
 **Request:**

@@ -2,12 +2,13 @@
 
 ## Unreleased
 
+### Changed
+- **Tmp-files integration**: Migrated from multipart/form-data to raw HTTP streaming upload. The gateway now sends raw audio bytes directly to `tmp-files-microservice` via `POST /files` with `X-File-Name`, `X-Ttl-Mins`, `Content-Type`, and optional `Content-Length` headers. This eliminates multipart framing overhead and ensures true streaming without buffering on the gateway side.
+- **Content-Length forwarding**: The `/transcribe/stream` endpoint now forwards the incoming `Content-Length` header to tmp-files. This is critical for Cloudflare Workers/R2 runtime, where tmp-files buffers the entire request body in memory if `Content-Length` is not provided.
+
 ### New
 - Added optional `includeWords` request parameter to `/transcribe` and `/transcribe/stream`.
   When enabled, the API returns `words` with word-level timings in milliseconds (provider-dependent).
-
-### Improved
-- **Streaming upload for `/transcribe/stream`**: File data is now piped directly to the `tmp-files` microservice via a streaming multipart body (`ReadableStream`), eliminating the previous double-buffering (`File` → `new File([file])` → `FormData`). Uses `file.stream()` + custom `createMultipartStream()` utility on pure Web Streams API (works on both Node.js and Cloudflare Workers). Added `TmpFilesService.uploadStream()` method; legacy `uploadFile()` is deprecated.
 
 ## 2.2.0 — Code Audit & Performance Improvements
 
