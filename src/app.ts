@@ -11,7 +11,7 @@ import { AssemblyAiProvider } from './providers/assemblyai/assemblyai.provider.j
 import { SttProviderRegistry } from './providers/stt-provider.registry.js'
 import {
   transcribeJsonSchema,
-  transcribeStreamQuerySchema,
+  transcribeStreamHeadersSchema,
 } from './modules/transcription/transcription.schema.js'
 
 /**
@@ -155,10 +155,15 @@ export function createApp(deps: AppDeps) {
   // POST /transcribe/stream — raw audio bytes upload (streamed)
   app.post(
     `${prefix}/transcribe/stream`,
-    zValidator('query', transcribeStreamQuerySchema, (result) => {
+    zValidator('header', transcribeStreamHeadersSchema, (result) => {
       if (!result.success) {
         const message = result.error.issues
-          .map((i) => `${i.path.join('.')}: ${i.message}`)
+          .map((i: unknown) => {
+            const issue = i as { path?: PropertyKey[]; message?: string }
+            const path = issue.path ? issue.path.map(String).join('.') : 'unknown'
+            const msg = issue.message ?? 'Invalid value'
+            return `${path}: ${msg}`
+          })
           .join('; ')
         throw new BadRequestError(`Validation failed: ${message}`)
       }
@@ -183,9 +188,9 @@ export function createApp(deps: AppDeps) {
         )
       }
 
-      const query = c.req.valid('query')
+      const headers = c.req.valid('header')
 
-      const filename = query.filename ?? 'upload'
+      const filename = headers['x-file-name'] ?? 'upload'
       const contentType = contentTypeHeader ?? 'application/octet-stream'
       logger.debug(`Streaming raw body as file: ${filename} (${contentType})`)
 
@@ -211,14 +216,14 @@ export function createApp(deps: AppDeps) {
 
       const result = await transcriptionService.transcribeByUrl({
         audioUrl,
-        provider: query.provider,
-        language: query.language,
-        apiKey: query.apiKey,
-        restorePunctuation: query.restorePunctuation,
-        formatText: query.formatText,
-        includeWords: query.includeWords,
-        models: query.models,
-        maxWaitMinutes: query.maxWaitMinutes,
+        provider: headers['x-stt-provider'],
+        language: headers['x-stt-language'],
+        apiKey: headers['x-stt-api-key'],
+        restorePunctuation: headers['x-stt-restore-punctuation'],
+        formatText: headers['x-stt-format-text'],
+        includeWords: headers['x-stt-include-words'],
+        models: headers['x-stt-models'],
+        maxWaitMinutes: headers['x-stt-max-wait-minutes'],
         signal: abortController.signal,
         isInternalSource: true,
       })

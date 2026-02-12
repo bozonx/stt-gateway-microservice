@@ -19,8 +19,11 @@ describe('Transcription Stream (e2e)', () => {
       new File([new Blob(['abc'], { type: 'audio/mpeg' })], 'a.mp3', { type: 'audio/mpeg' })
     )
 
-    const response = await app.request('/api/v1/transcribe/stream?provider=assemblyai', {
+    const response = await app.request('/api/v1/transcribe/stream', {
       method: 'POST',
+      headers: {
+        'X-STT-Provider': 'assemblyai',
+      },
       body: form,
     })
 
@@ -32,8 +35,11 @@ describe('Transcription Stream (e2e)', () => {
   it('POST /transcribe/stream should return 400 if no body provided', async () => {
     const app = createTestApp()
 
-    const response = await app.request('/api/v1/transcribe/stream?provider=assemblyai', {
+    const response = await app.request('/api/v1/transcribe/stream', {
       method: 'POST',
+      headers: {
+        'X-STT-Provider': 'assemblyai',
+      },
     })
 
     expect(response.status).toBe(400)
@@ -88,16 +94,15 @@ describe('Transcription Stream (e2e)', () => {
 
     const app = createTestApp()
 
-    const response = await app.request(
-      '/api/v1/transcribe/stream?provider=assemblyai&filename=a.mp3',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'audio/mpeg',
-        },
-        body: 'abc',
-      }
-    )
+    const response = await app.request('/api/v1/transcribe/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'audio/mpeg',
+        'X-STT-Provider': 'assemblyai',
+        'X-File-Name': 'a.mp3',
+      },
+      body: 'abc',
+    })
 
     expect(response.status).toBe(200)
     const body = (await response.json()) as any

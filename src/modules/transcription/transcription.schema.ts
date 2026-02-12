@@ -20,38 +20,38 @@ export const transcribeJsonSchema = z.object({
 })
 
 /**
- * Schema for raw streaming transcription request query parameters.
- * All values come from the query string and therefore start as strings.
+ * Schema for raw streaming transcription request headers.
+ * All values come from HTTP headers and therefore start as strings.
  */
-export const transcribeStreamQuerySchema = z.object({
-  provider: z.string().optional(),
-  language: z.string().optional(),
-  filename: z.string().min(1).optional(),
-  restorePunctuation: z
+export const transcribeStreamHeadersSchema = z.object({
+  'x-stt-provider': z.string().optional(),
+  'x-stt-language': z.string().optional(),
+  'x-file-name': z.string().min(1).optional(),
+  'x-stt-restore-punctuation': z
     .enum(['true', 'false'])
     .transform((val) => val === 'true')
     .optional(),
-  formatText: z
+  'x-stt-format-text': z
     .enum(['true', 'false'])
     .transform((val) => val === 'true')
     .optional(),
-  includeWords: z
+  'x-stt-include-words': z
     .enum(['true', 'false'])
     .transform((val) => val === 'true')
     .optional(),
-  apiKey: z.string().optional(),
-  maxWaitMinutes: z
+  'x-stt-api-key': z.string().optional(),
+  'x-stt-max-wait-minutes': z
     .string()
     .optional()
     .transform((val) => (val ? parseInt(val, 10) : undefined))
     .refine((val) => val === undefined || (!isNaN(val) && val >= 1), {
-      message: 'maxWaitMinutes must be a number >= 1',
+      message: 'x-stt-max-wait-minutes must be a number >= 1',
     }),
-  models: z
+  'x-stt-models': z
     .string()
     .optional()
     .transform((val) => (val ? val.split(',').map((s) => s.trim()) : undefined)),
 })
 
 export type TranscribeJsonRequest = z.infer<typeof transcribeJsonSchema>
-export type TranscribeStreamQuery = z.infer<typeof transcribeStreamQuerySchema>
+export type TranscribeStreamHeaders = z.infer<typeof transcribeStreamHeadersSchema>

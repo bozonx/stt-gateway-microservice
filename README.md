@@ -275,7 +275,7 @@ curl -X POST \
 - Raw audio bytes are streamed directly to tmp-files without buffering on the gateway side.
 - The request uses `POST {TMP_FILES_BASE_URL}/files` with headers:
   - `Content-Type` — forwarded from the incoming request
-  - `X-File-Name` — from the `filename` query parameter (default: `upload`)
+  - `X-File-Name` — from the `X-File-Name` request header (default: `upload`)
   - `X-Ttl-Mins` — from `TMP_FILES_DEFAULT_TTL_MINS` (default: 30)
   - `Content-Length` — forwarded from the incoming request when provided
 
@@ -290,20 +290,15 @@ curl -X POST \
 - Method: `POST`
 - Headers:
   - `Content-Type: audio/*` (recommended) or `application/octet-stream`
+  - `X-File-Name: audio.mp3` (optional)
+  - `X-STT-Provider: assemblyai` (optional)
+  - `X-STT-Language: en` (optional)
+  - `X-STT-Restore-Punctuation: true|false` (optional)
+  - `X-STT-Format-Text: true|false` (optional)
+  - `X-STT-Models: universal-3-pro,universal-2` (optional, AssemblyAI only)
+  - `X-STT-Api-Key: ...` (optional)
+  - `X-STT-Max-Wait-Minutes: 3` (optional)
 - Body: Raw audio bytes
-
-**Query parameters:**
-
-| Parameter | Type | Required | Description |
-|----------|------|----------|-------------|
-| `filename` | string | No | Original filename (used for tmp-files upload metadata). Default: `upload`. |
-| `provider` | string | No | STT provider name (e.g., `assemblyai`). |
-| `restorePunctuation` | boolean | No | Whether to restore punctuation. Default: `true`. |
-| `language` | string | No | Source language code (e.g., `en`, `es`). |
-| `formatText` | boolean | No | Whether to format the transcribed text. Default: `true`. |
-| `models` | string | No | Comma-separated list of STT models (AssemblyAI only). Example: `universal-3-pro,universal-2`. |
-| `apiKey` | string | No | Provider API key. |
-| `maxWaitMinutes` | number | No | Override max synchronous wait time in minutes. |
 
 **Success (200 OK):**
 Same response format as `POST /transcribe`.
@@ -311,8 +306,11 @@ Same response format as `POST /transcribe`.
 **Example:**
 ```bash
 curl -X POST \
-  "http://localhost:8080/api/v1/transcribe/stream?provider=assemblyai&language=en&filename=audio.mp3" \
+  "http://localhost:8080/api/v1/transcribe/stream" \
   -H "Content-Type: audio/mpeg" \
+  -H "X-STT-Provider: assemblyai" \
+  -H "X-STT-Language: en" \
+  -H "X-File-Name: audio.mp3" \
   --data-binary "@/path/to/audio.mp3"
 ```
 
