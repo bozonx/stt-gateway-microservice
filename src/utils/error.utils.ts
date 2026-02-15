@@ -15,7 +15,11 @@ export function isAbortError(error: unknown): boolean {
 
   return (
     name === 'AbortError' ||
+    name === 'TimeoutError' ||
     code === 'UND_ERR_ABORTED' ||
+    code === 'ECONNABORTED' ||
+    code === 'ETIMEDOUT' ||
+    message === 'The operation was aborted' ||
     message === 'This operation was aborted' ||
     message?.includes('aborted') === true
   )

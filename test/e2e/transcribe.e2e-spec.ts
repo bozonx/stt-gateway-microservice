@@ -70,4 +70,69 @@ describe('Transcribe (e2e)', () => {
     const body = (await response.json()) as any
     expect(body.message).toContain('Invalid JSON')
   })
+
+  it('POST /api/v1/transcribe returns 499 when request is aborted', async () => {
+    const transcriptId = 't-456'
+
+    // Mock fetch that hangs on polling until aborted
+    globalThis.fetch = jest.fn().mockImplementation(async (url: string, init?: RequestInit) => {
+      const method = init?.method ?? 'GET'
+
+      if (method === 'HEAD') {
+        return new Response(null, { status: 200, headers: { 'content-length': '100' } })
+      }
+
+      if (method === 'POST') {
+        return new Response(JSON.stringify({ id: transcriptId, status: 'queued' }), { status: 200 })
+      }
+
+      if (method === 'GET') {
+        // Return processing to keep provider polling
+        return new Response(JSON.stringify({ id: transcriptId, status: 'processing' }), {
+          status: 200,
+        })
+      }
+
+      return new Response(null, { status: 500 })
+    }) as any
+
+    process.env.ASSEMBLYAI_API_KEY = 'x'
+    const app = createTestApp()
+
+    const ac = new AbortController()
+
+    const requestPromise = app.request('/api/v1/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        audioUrl: 'https://example.com/a.mp3',
+        provider: 'assemblyai',
+      }),
+    })
+
+    // Abort after a small delay
+    setTimeout(() => ac.abort(), 50)
+
+    // Note: Hono's app.request doesn't automatically link the signal from the options to c.req.raw.signal in all environments,
+    // but in our test factory it might. Let's make sure we pass it if Hono supports it, 
+    // or we might need to mock c.req.raw.signal.
+
+    // Actually, Hono's app.request(path, init) uses init as RequestInit.
+    // So 'signal' in init should work.
+    
+    // Wait, let's just use the fact that our app.ts links c.req.raw.signal.
+    const response = await app.request('/api/v1/transcribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        audioUrl: 'https://example.com/a.mp3',
+        provider: 'assemblyai',
+      }),
+      signal: ac.signal,
+    })
+
+    expect(response.status).toBe(499)
+    const body = (await response.json()) as any
+    expect(body.error).toBe('ClientClosedRequestError')
+  })
 })

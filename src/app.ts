@@ -130,30 +130,36 @@ export function createApp(deps: AppDeps) {
       logger.info(`Received transcription request for URL: ${payload.audioUrl}`)
 
       const abortController = new AbortController()
+      const onAbort = () => abortController.abort()
 
-      // Listen for client disconnect if the runtime supports it
-      c.req.raw.signal?.addEventListener('abort', () => {
-        if (!abortController.signal.aborted) abortController.abort()
-      })
+      if (c.req.raw.signal?.aborted) {
+        onAbort()
+      } else {
+        c.req.raw.signal?.addEventListener('abort', onAbort, { once: true })
+      }
 
-      const result = await transcriptionService.transcribeByUrl({
-        audioUrl: payload.audioUrl,
-        provider: payload.provider,
-        restorePunctuation: payload.restorePunctuation,
-        language: payload.language,
-        formatText: payload.formatText,
-        includeWords: payload.includeWords,
-        models: payload.models,
-        apiKey: payload.apiKey,
-        maxWaitMinutes: payload.maxWaitMinutes,
-        signal: abortController.signal,
-      })
+      try {
+        const result = await transcriptionService.transcribeByUrl({
+          audioUrl: payload.audioUrl,
+          provider: payload.provider,
+          restorePunctuation: payload.restorePunctuation,
+          language: payload.language,
+          formatText: payload.formatText,
+          includeWords: payload.includeWords,
+          models: payload.models,
+          apiKey: payload.apiKey,
+          maxWaitMinutes: payload.maxWaitMinutes,
+          signal: abortController.signal,
+        })
 
-      logger.info(
-        `Transcription request completed. Provider: ${result.provider}, Processing time: ${result.processingMs}ms`
-      )
+        logger.info(
+          `Transcription request completed. Provider: ${result.provider}, Processing time: ${result.processingMs}ms`
+        )
 
-      return c.json(result)
+        return c.json(result)
+      } finally {
+        c.req.raw.signal?.removeEventListener('abort', onAbort)
+      }
     }
   )
 
@@ -177,67 +183,75 @@ export function createApp(deps: AppDeps) {
       logger.info('Received streaming transcription request')
 
       const abortController = new AbortController()
-      c.req.raw.signal?.addEventListener('abort', () => {
-        if (!abortController.signal.aborted) abortController.abort()
-      })
+      const onAbort = () => abortController.abort()
 
-      const contentTypeHeader = c.req.header('content-type')
-      if (contentTypeHeader?.startsWith('multipart/form-data')) {
-        throw new BadRequestError(
-          'Validation failed: Content-Type multipart/form-data is not supported. Send raw audio bytes in the request body.'
+      if (c.req.raw.signal?.aborted) {
+        onAbort()
+      } else {
+        c.req.raw.signal?.addEventListener('abort', onAbort, { once: true })
+      }
+
+      try {
+        const contentTypeHeader = c.req.header('content-type')
+        if (contentTypeHeader?.startsWith('multipart/form-data')) {
+          throw new BadRequestError(
+            'Validation failed: Content-Type multipart/form-data is not supported. Send raw audio bytes in the request body.'
+          )
+        }
+        if (contentTypeHeader?.startsWith('application/json')) {
+          throw new BadRequestError(
+            'Validation failed: Content-Type application/json is not supported for this endpoint. Use POST /transcribe for JSON requests.'
+          )
+        }
+
+        const headers = c.req.valid('header')
+
+        const filename = headers['x-file-name'] ?? 'upload'
+        const contentType = contentTypeHeader ?? 'application/octet-stream'
+        logger.debug(`Streaming raw body as file: ${filename} (${contentType})`)
+
+        const contentLengthHeader = c.req.header('content-length')
+        const contentLengthBytes = (() => {
+          if (!contentLengthHeader) return undefined
+          const parsed = Number(contentLengthHeader)
+          return Number.isFinite(parsed) && parsed >= 0 ? Math.trunc(parsed) : undefined
+        })()
+
+        const fileStream = c.req.raw.body
+        if (!fileStream) {
+          throw new BadRequestError('Validation failed: body: No request body provided')
+        }
+
+        const audioUrl = await tmpFilesService.uploadStream(
+          fileStream,
+          filename,
+          contentType,
+          contentLengthBytes,
+          abortController.signal
         )
-      }
-      if (contentTypeHeader?.startsWith('application/json')) {
-        throw new BadRequestError(
-          'Validation failed: Content-Type application/json is not supported for this endpoint. Use POST /transcribe for JSON requests.'
+
+        const result = await transcriptionService.transcribeByUrl({
+          audioUrl,
+          provider: headers['x-stt-provider'] as string,
+          language: headers['x-stt-language'],
+          apiKey: headers['x-stt-api-key'],
+          restorePunctuation: headers['x-stt-restore-punctuation'],
+          formatText: headers['x-stt-format-text'],
+          includeWords: headers['x-stt-include-words'],
+          models: headers['x-stt-models'],
+          maxWaitMinutes: headers['x-stt-max-wait-minutes'],
+          signal: abortController.signal,
+          isInternalSource: true,
+        })
+
+        logger.info(
+          `Stream transcription completed. Provider: ${result.provider}, Processing time: ${result.processingMs}ms`
         )
+
+        return c.json(result)
+      } finally {
+        c.req.raw.signal?.removeEventListener('abort', onAbort)
       }
-
-      const headers = c.req.valid('header')
-
-      const filename = headers['x-file-name'] ?? 'upload'
-      const contentType = contentTypeHeader ?? 'application/octet-stream'
-      logger.debug(`Streaming raw body as file: ${filename} (${contentType})`)
-
-      const contentLengthHeader = c.req.header('content-length')
-      const contentLengthBytes = (() => {
-        if (!contentLengthHeader) return undefined
-        const parsed = Number(contentLengthHeader)
-        return Number.isFinite(parsed) && parsed >= 0 ? Math.trunc(parsed) : undefined
-      })()
-
-      const fileStream = c.req.raw.body
-      if (!fileStream) {
-        throw new BadRequestError('Validation failed: body: No request body provided')
-      }
-
-      const audioUrl = await tmpFilesService.uploadStream(
-        fileStream,
-        filename,
-        contentType,
-        contentLengthBytes,
-        abortController.signal
-      )
-
-      const result = await transcriptionService.transcribeByUrl({
-        audioUrl,
-        provider: headers['x-stt-provider'],
-        language: headers['x-stt-language'],
-        apiKey: headers['x-stt-api-key'],
-        restorePunctuation: headers['x-stt-restore-punctuation'],
-        formatText: headers['x-stt-format-text'],
-        includeWords: headers['x-stt-include-words'],
-        models: headers['x-stt-models'],
-        maxWaitMinutes: headers['x-stt-max-wait-minutes'],
-        signal: abortController.signal,
-        isInternalSource: true,
-      })
-
-      logger.info(
-        `Stream transcription completed. Provider: ${result.provider}, Processing time: ${result.processingMs}ms`
-      )
-
-      return c.json(result)
     }
   )
 

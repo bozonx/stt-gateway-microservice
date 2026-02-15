@@ -218,14 +218,23 @@ describe('AssemblyAiProvider', () => {
     ])
   })
 
-  it('should throw ServiceUnavailableError when status is error', async () => {
-    fetchResponses = [
-      { status: 200, body: { id: mockTranscriptId, status: 'queued' } },
-      { status: 200, body: { status: 'error', error: 'Internal fail' } },
-    ]
+  it('should throw ClientClosedRequestError when aborted during polling', async () => {
+    fetchResponses = [{ status: 200, body: { id: mockTranscriptId, status: 'queued' } }]
+
+    const ac = new AbortController()
+
+    // Mock sleep to abort the signal after the first "sleep" call (before next poll)
+    let sleepCount = 0
+    jest.spyOn(AssemblyAiProvider.prototype as any, 'sleep').mockImplementation(async () => {
+      sleepCount++
+      if (sleepCount === 1) {
+        ac.abort()
+      }
+      return Promise.resolve()
+    })
 
     await expect(
-      provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey })
-    ).rejects.toThrow('Internal fail')
+      provider.submitAndWaitByUrl({ audioUrl: mockAudioUrl, apiKey: mockApiKey, signal: ac.signal })
+    ).rejects.toThrow('CLIENT_CLOSED_REQUEST')
   })
 })

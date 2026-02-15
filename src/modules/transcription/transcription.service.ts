@@ -103,7 +103,7 @@ export class TranscriptionService {
         this.logger.debug('Content-Length header not available, skipping size check')
       }
     } catch (error) {
-      if (error instanceof BadRequestError) {
+      if (error instanceof BadRequestError || isAbortError(error) || (signal && signal.aborted)) {
         throw error
       }
       const msg = error instanceof Error ? error.message : String(error)

@@ -150,4 +150,51 @@ describe('Transcription Stream (e2e)', () => {
     const body = (await response.json()) as any
     expect(body.message).toContain('Invalid response from temporary storage')
   })
+
+  it('POST /api/v1/transcribe/stream returns 499 when request is aborted during upload', async () => {
+    // Mock tmp-files upload to hang
+    globalThis.fetch = jest.fn().mockImplementation(async (url: any, init?: any) => {
+      if (typeof url === 'string' && url.includes('/files')) {
+        const signal = init?.signal as AbortSignal | undefined
+        if (signal?.aborted) {
+          throw new Error('aborted')
+        }
+        // Return a promise that never resolves manually, but respects signal
+        return new Promise((_, reject) => {
+          signal?.addEventListener('abort', () => reject(new Error('aborted')), { once: true })
+        })
+      }
+      return new Response(null, { status: 500 })
+    }) as any
+
+    const app = createTestApp()
+    const ac = new AbortController()
+
+    // Note: We need a way to trigger abort while the request is in progress
+    const requestPromise = app.request('/api/v1/transcribe/stream', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'audio/mpeg',
+        'X-STT-Provider': 'assemblyai',
+        'X-File-Name': 'a.mp3',
+        'X-STT-Api-Key': 'key',
+      },
+      body: new ReadableStream({
+        start(controller) {
+          controller.enqueue(new TextEncoder().encode('some audio data'))
+          // Don't close yet to keep it hanging
+        },
+      }),
+      // @ts-expect-error duplex is required for streaming body in Node.js
+      duplex: 'half',
+      signal: ac.signal,
+    })
+
+    setTimeout(() => ac.abort(), 100)
+
+    const response = await requestPromise
+    expect(response.status).toBe(499)
+    const body = (await response.json()) as any
+    expect(body.error).toBe('ClientClosedRequestError')
+  })
 })
