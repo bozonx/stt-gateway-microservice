@@ -197,9 +197,9 @@ This is intentional: it makes adding new providers safe and prevents silently ig
 
 **Provider compatibility matrix**
 
-| Provider | `restorePunctuation` | `formatText` | `models` |
-|----------|----------------------|-------------|----------|
-| `assemblyai` | Yes | Yes | Yes |
+| Provider | `restorePunctuation` | `formatText` | `models` | `includeWords` |
+|----------|----------------------|-------------|----------|----------------|
+| `assemblyai` | Yes | Yes | Yes | Yes |
 
 **Request Example:**
 ```json
@@ -296,6 +296,7 @@ curl -X POST \
   - `X-STT-Language: en` (optional)
   - `X-STT-Restore-Punctuation: true|false` (optional)
   - `X-STT-Format-Text: true|false` (optional)
+  - `X-STT-Include-Words: true|false` (optional)
   - `X-STT-Models: universal-3-pro,universal-2` (optional, AssemblyAI only)
   - `X-STT-Api-Key: ...` (optional)
   - `X-STT-Max-Wait-Minutes: 3` (optional)

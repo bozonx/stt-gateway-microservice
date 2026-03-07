@@ -77,6 +77,13 @@ export class BozonxSttGateway implements INodeType {
 				description: 'Whether to format text output (punctuation, capitalization)',
 			},
 			{
+				displayName: 'Include Words',
+				name: 'includeWords',
+				type: 'boolean',
+				default: false,
+				description: 'Whether to include word-level timings in the response',
+			},
+			{
 				displayName: 'Additional Options',
 				name: 'additionalFields',
 				type: 'collection',
@@ -95,6 +102,13 @@ export class BozonxSttGateway implements INodeType {
 							},
 						},
 						description: 'Optional direct provider API key (when allowed by service policy)',
+					},
+					{
+						displayName: 'Models',
+						name: 'models',
+						type: 'string',
+						default: '',
+						description: 'Comma-separated list of STT models to use (AssemblyAI only). Example: universal-3-pro, universal-2',
 					},
 					{
 						displayName: 'Max Wait Minutes',
@@ -122,9 +136,12 @@ export class BozonxSttGateway implements INodeType {
 				const restorePunctuation = this.getNodeParameter('restorePunctuation', i) as boolean;
 				const language = (this.getNodeParameter('language', i, '') as string).trim();
 				const formatText = this.getNodeParameter('formatText', i) as boolean;
+				const includeWords = this.getNodeParameter('includeWords', i) as boolean;
 				const additionalFields = this.getNodeParameter('additionalFields', i, {}) as IDataObject;
 				const apiKey = provider ? (additionalFields.apiKey as string || '') : '';
 				const maxWaitMinutes = additionalFields.maxWaitMinutes as number | undefined;
+				const modelsRaw = additionalFields.models as string | undefined;
+				const models = modelsRaw ? modelsRaw.split(',').map(s => s.trim()).filter(Boolean) : undefined;
 
 				if (!audioUrl) {
 					throw new NodeOperationError(this.getNode(), 'Audio URL is required', { itemIndex: i });
@@ -156,7 +173,9 @@ export class BozonxSttGateway implements INodeType {
 						if (restorePunctuation === false) body.restorePunctuation = false;
 						if (language) body.language = language;
 						if (formatText === false) body.formatText = false;
+						if (includeWords === true) body.includeWords = true;
 						if (apiKey) body.apiKey = apiKey;
+						if (models && models.length > 0) body.models = models;
 						if (maxWaitMinutes !== undefined && maxWaitMinutes > 0) {
 							body.maxWaitMinutes = maxWaitMinutes;
 						}

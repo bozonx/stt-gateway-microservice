@@ -32,6 +32,7 @@ Content-Type: application/json
   "restorePunctuation": true,
   "language": "en",
   "formatText": true,
+  "includeWords": true,
   "models": ["universal-3-pro", "universal-2"],
   "apiKey": "YOUR_ASSEMBLYAI_KEY"
 }
@@ -71,7 +72,10 @@ Content-Type: application/json
   Explicit source language code for the audio, e.g., `en`, `ru`, `en-US`. Value is trimmed and forwarded to the provider as-is. Leave empty to let the provider auto-detect when supported. See AssemblyAI's supported languages: https://www.assemblyai.com/docs/pre-recorded-audio/supported-languages.
 
 - **Format Text** (boolean)
-  Whether to format text output (punctuation, capitalization). Default: `true`. When omitted the service still sends `format_text: true` to AssemblyAI.
+  Whether to format text output (punctuation, capitalization). Default: `true`.
+
+- **Include Words** (boolean)
+  Whether to include word-level timings in the response. Default: `false`.
 
 - **Models** (string[], optional)
   List of STT models to use (AssemblyAI only). If omitted, provider defaults are used.
