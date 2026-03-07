@@ -10,6 +10,7 @@ export interface AppConfig {
   nodeEnv: string
   logLevel: string
   authBearerTokens: string[]
+  corsAllowOrigin: string
 }
 
 const VALID_ENVS = ['development', 'production', 'test']
@@ -43,5 +44,6 @@ export function loadAppConfig(env: Record<string, string | undefined>): AppConfi
       .split(',')
       .map((t) => t.trim())
       .filter((t) => t.length > 0),
+    corsAllowOrigin: env.CORS_ALLOW_ORIGIN ?? '*',
   }
 }

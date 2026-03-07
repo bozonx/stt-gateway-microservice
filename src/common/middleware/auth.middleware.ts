@@ -13,7 +13,7 @@ export function authMiddleware(
 ): MiddlewareHandler {
   return async (c, next) => {
     // If no tokens are configured, auth is disabled
-    if (allowedTokens.length === 0) {
+    if (allowedTokens.length === 0 || c.req.method === 'OPTIONS') {
       return next()
     }
 

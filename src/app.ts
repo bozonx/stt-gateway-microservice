@@ -1,5 +1,6 @@
-import { Hono } from 'hono'
-import { zValidator } from '@hono/zod-validator'
+ import { Hono } from 'hono'
+ import { cors } from 'hono/cors'
+ import { zValidator } from '@hono/zod-validator'
 import type { AppConfig } from './config/app.config.js'
 import type { SttConfig } from './config/stt.config.js'
 import type { Logger } from './common/interfaces/logger.interface.js'
@@ -41,7 +42,31 @@ export function createApp(deps: AppDeps) {
   const prefix = appConfig.basePath ? `/${appConfig.basePath}/api/v1` : '/api/v1'
 
   const app = new Hono()
-
+ 
+  // CORS middleware
+  app.use(
+    '*',
+    cors({
+      origin: appConfig.corsAllowOrigin,
+      allowHeaders: [
+        'Content-Type',
+        'Authorization',
+        'x-stt-provider',
+        'x-stt-language',
+        'x-file-name',
+        'x-stt-restore-punctuation',
+        'x-stt-format-text',
+        'x-stt-include-words',
+        'x-stt-api-key',
+        'x-stt-max-wait-minutes',
+        'x-stt-models',
+      ],
+      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+      exposeHeaders: ['Content-Length', 'X-Kuma-Revision'],
+      maxAge: 600,
+    })
+  )
+ 
   // Bearer authentication
   app.use('*', authMiddleware(appConfig.authBearerTokens, [`${prefix}/health`]))
 
