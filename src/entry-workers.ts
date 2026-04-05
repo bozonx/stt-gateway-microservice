@@ -69,8 +69,15 @@ export default {
       const tmpFilesFetcher = tmpFilesBinding
         ? tmpFilesBinding.fetch.bind(tmpFilesBinding)
         : undefined
+      const useServiceBinding = Boolean(tmpFilesBinding)
 
-      const { app } = createApp({ appConfig, sttConfig, logger, tmpFilesFetcher })
+      const { app } = createApp({
+        appConfig,
+        sttConfig,
+        logger,
+        tmpFilesFetcher,
+        useServiceBinding,
+      })
       cachedApp = app
     }
 

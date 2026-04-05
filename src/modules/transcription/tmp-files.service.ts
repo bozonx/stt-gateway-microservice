@@ -9,24 +9,18 @@ import { isAbortError } from '../../utils/error.utils.js'
 
 export class TmpFilesService {
   private readonly fetchFn: typeof fetch
+  private readonly useServiceBinding: boolean
 
   constructor(
     private readonly cfg: SttConfig,
     private readonly logger: Logger,
-    fetcher?: typeof fetch
+    fetcher?: typeof fetch,
+    useServiceBinding: boolean = false
   ) {
     this.fetchFn = fetcher ?? ((...args: Parameters<typeof fetch>) => globalThis.fetch(...args))
+    this.useServiceBinding = useServiceBinding
   }
 
-  /**
-   * Uploads a file stream to the temporary files microservice using streaming multipart.
-   * Pipes chunks directly without buffering the entire file in memory.
-   * @param fileStream ReadableStream of the file data
-   * @param filename Original filename
-   * @param contentType MIME type of the file
-   * @param signal Optional AbortSignal for cancellation
-   * @returns downloadUrl from the tmp-files service
-   */
   public async uploadStream(
     fileStream: ReadableStream<Uint8Array>,
     filename: string,
@@ -48,8 +42,10 @@ export class TmpFilesService {
       headers['Authorization'] = `Bearer ${this.cfg.tmpFilesBearerToken}`
     }
 
+    const url = this.useServiceBinding ? '/api/v1/files' : `${this.cfg.tmpFilesBaseUrl}/files`
+
     try {
-      const res = await this.fetchFn(`${this.cfg.tmpFilesBaseUrl}/files`, {
+      const res = await this.fetchFn(url, {
         method: 'POST',
         // @ts-expect-error duplex is required for streaming body in Node.js but not in Workers
         duplex: 'half',
@@ -93,8 +89,10 @@ export class TmpFilesService {
       headers['Authorization'] = `Bearer ${this.cfg.tmpFilesBearerToken}`
     }
 
+    const url = this.useServiceBinding ? '/api/v1/files' : `${this.cfg.tmpFilesBaseUrl}/files`
+
     try {
-      const res = await this.fetchFn(`${this.cfg.tmpFilesBaseUrl}/files`, {
+      const res = await this.fetchFn(url, {
         method: 'POST',
         body: file,
         headers,

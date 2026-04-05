@@ -1,6 +1,6 @@
- import { Hono } from 'hono'
- import { cors } from 'hono/cors'
- import { zValidator } from '@hono/zod-validator'
+import { Hono } from 'hono'
+import { cors } from 'hono/cors'
+import { zValidator } from '@hono/zod-validator'
 import type { AppConfig } from './config/app.config.js'
 import type { SttConfig } from './config/stt.config.js'
 import type { Logger } from './common/interfaces/logger.interface.js'
@@ -23,6 +23,7 @@ export interface AppDeps {
   sttConfig: SttConfig
   logger: Logger
   tmpFilesFetcher?: typeof fetch
+  useServiceBinding?: boolean
 }
 
 /**
@@ -30,19 +31,19 @@ export interface AppDeps {
  * Platform-agnostic — works on both Node.js and Cloudflare Workers.
  */
 export function createApp(deps: AppDeps) {
-  const { appConfig, sttConfig, logger, tmpFilesFetcher } = deps
+  const { appConfig, sttConfig, logger, tmpFilesFetcher, useServiceBinding } = deps
 
   // Wire up services (manual DI)
   const assemblyAiProvider = new AssemblyAiProvider(sttConfig, logger)
   const registry = new SttProviderRegistry(assemblyAiProvider)
   const transcriptionService = new TranscriptionService(registry, sttConfig, logger)
-  const tmpFilesService = new TmpFilesService(sttConfig, logger, tmpFilesFetcher)
+  const tmpFilesService = new TmpFilesService(sttConfig, logger, tmpFilesFetcher, useServiceBinding)
 
   // Build base path prefix
   const prefix = appConfig.basePath ? `/${appConfig.basePath}/api/v1` : '/api/v1'
 
   const app = new Hono()
- 
+
   // CORS middleware
   app.use(
     '*',
@@ -66,7 +67,7 @@ export function createApp(deps: AppDeps) {
       maxAge: 600,
     })
   )
- 
+
   // Bearer authentication
   app.use('*', authMiddleware(appConfig.authBearerTokens, [`${prefix}/health`]))
 

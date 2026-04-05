@@ -2,31 +2,40 @@
 
 ## Unreleased
 
+### Fixed
+
+- **Service Binding URL fix**: When using Cloudflare Service Bindings, the gateway now uses relative paths (`/api/v1/files`) instead of full HTTP URLs. This ensures internal Worker-to-Worker communication without external HTTP roundtrips, preventing "Worker exceeded resource limits" errors caused by unnecessary network overhead.
+
 ### Changed
+
 - **Tmp-files integration**: Migrated from multipart/form-data to raw HTTP streaming upload. The gateway now sends raw audio bytes directly to `tmp-files-microservice` via `POST /files` with `X-File-Name`, `X-Ttl-Mins`, `Content-Type`, and optional `Content-Length` headers. This eliminates multipart framing overhead and ensures true streaming without buffering on the gateway side.
 - **Content-Length forwarding**: The `/transcribe/stream` endpoint now forwards the incoming `Content-Length` header to tmp-files. This is critical for Cloudflare Workers/R2 runtime, where tmp-files buffers the entire request body in memory if `Content-Length` is not provided.
 - **Cloudflare Service Binding for tmp-files**: Added `tmp-files` Service Binding in `wrangler.toml` for Worker-to-Worker communication with `tmp-files-microservice`. This fixes Cloudflare error 1042 (Worker Not Found) that occurred when one Worker called another on the same account via `*.workers.dev` domain using global `fetch()`. The binding is used automatically on Cloudflare Workers; Node.js runtime continues to use standard `fetch()`. `TMP_FILES_BASE_URL` is still required — it provides the request path and is used to resolve relative download URLs.
 
 ### New
+
 - Added optional `includeWords` request parameter to `/transcribe` and `/transcribe/stream`.
   When enabled, the API returns `words` with word-level timings in milliseconds (provider-dependent).
 
 ## 2.2.0 — Code Audit & Performance Improvements
 
 ### New
+
 - **Cloudflare Workers Optimization**: Implemented lazy initialization (caching) of the Hono application instance, significantly reducing cold start overhead and memory churn.
 - **Structured Logging for Workers**: Replaced plain console logging with a JSON-based logger that matches the **Pino** format (used in Node.js), enabling unified log aggregation.
 - **Shared Error Utilities**: Centralized `AbortError` detection logic to reduce duplication across services.
 
 ### Improved
-- **Error Handling**: 
-    - Transcription errors are now better categorized: distinguished between internal system errors (500) and provider/network timeouts (504).
-    - Validation errors from Zod are now caught and returned in the global consistent error format (fixing unit tests).
+
+- **Error Handling**:
+  - Transcription errors are now better categorized: distinguished between internal system errors (500) and provider/network timeouts (504).
+  - Validation errors from Zod are now caught and returned in the global consistent error format (fixing unit tests).
 - **Code Style**: Refactored `TranscriptionService` and `TmpFilesService` for better readability and consistent use of `isAbortError`.
 
 ## 2.1.0 — Validation & Error Handling Improvements
 
 ### New
+
 - Replaced manual request validation with **Zod** and **@hono/zod-validator** middleware for better reliability and declarative schemas.
 - Improved error reporting in **AssemblyAI** provider by extracting detailed error messages from API responses.
 - Shared validation schemas defined in `src/modules/transcription/transcription.schema.ts`.
@@ -34,6 +43,7 @@
 ## 2.0.0 — Hono Migration (Dual Runtime)
 
 ### Breaking Changes
+
 - Migrated from NestJS + Fastify to **Hono** web framework
 - Dual runtime support: **Cloudflare Workers** and **Node.js** (Docker)
 - Replaced `undici` with standard Web `fetch` API
@@ -44,6 +54,7 @@
 - Node.js entrypoint changed from `dist/src/main.js` to `dist/src/entry-node.js`
 
 ### New
+
 - `src/app.ts` — shared Hono app factory (platform-agnostic)
 - `src/entry-node.ts` — Node.js entrypoint with `@hono/node-server`
 - `src/entry-workers.ts` — Cloudflare Workers entrypoint
@@ -52,22 +63,26 @@
 - `src/common/interfaces/logger.interface.ts` — logger abstraction
 
 ### Removed
+
 - All NestJS dependencies (`@nestjs/*`, `reflect-metadata`, `rxjs`)
 - `fastify`, `@fastify/multipart`, `undici`, `form-data`, `class-validator`, `class-transformer`
 - NestJS modules, controllers, filters, DTOs, injection tokens
 - `nest-cli.json`
 
 ### Updated
+
 - Dockerfile entrypoint updated to `dist/src/entry-node.js`
 - Jest config simplified (removed NestJS path aliases)
 - All unit and e2e tests rewritten for plain class instantiation and `app.request()` testing
 - README, AGENTS.md updated for Hono stack
 
 ## 1.3.1 — AssemblyAI Language Auto-Detection
+
 - When `language` is omitted in `/transcribe` requests, the service now sends `language_detection: true` to AssemblyAI to avoid defaulting to `en_us`.
 - Updated documentation and unit tests accordingly.
 
 ## 1.3.0 — Graceful Shutdown Implementation
+
 - Implemented proper graceful shutdown handling for SIGTERM and SIGINT signals
 - Added `GRACEFUL_SHUTDOWN_TIMEOUT_MS` constant (25 seconds) in `app.constants.ts`
 - Configured FastifyAdapter with `forceCloseConnections: true` to prevent hanging connections
@@ -79,6 +94,7 @@
 - Added graceful shutdown documentation to README.md
 
 ## 1.2.0 — ESM Migration
+
 - Migrated the project to ECMAScript Modules (ESM).
 - Added `"type": "module"` to `package.json`.
 - Updated TypeScript configuration to use `ESNext` module and `node` resolution.
@@ -86,8 +102,8 @@
 - Updated npm scripts and Dockerfile to use `node --import tsx`.
 - Fixed Jest configuration for ESM support, including global `jest` injection for tests.
 
-
 ## 0.17.0 — Refactor
+
 - Renamed environment variable `API_BASE_PATH` to `BASE_PATH`.
 - `BASE_PATH` is now optional and unset by default.
 - API endpoints are hardcoded relative to `BASE_PATH` as `/api/v1` (falling back to `api/v1` if `BASE_PATH` is empty).
@@ -150,7 +166,6 @@
 - Consolidated environment, logging, Docker, and STT behavior into `README.md` (English)
 - Consolidated API documentation with endpoint reference, examples, and status codes into the main `README.md`
 - Rewrote `docs/dev.md` in English and moved dev-only content out of `README.md`
-  
 
 ## 0.15.0 — Refactor
 
